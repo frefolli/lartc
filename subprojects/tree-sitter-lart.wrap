@@ -1,0 +1,8 @@
+[wrap-git]
+directory = tree-sitter-lart.git
+url = https://github.com/frefolli/tree-sitter-lart.git
+revision = head
+depth = 1
+
+[provide]
+tree-sitter-lart = tree_sitter_lart_dep
