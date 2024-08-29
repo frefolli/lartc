@@ -11,13 +11,14 @@ lartc_utils = library('lartc_utils', [
     'src/lartc/internal_errors.cc',
   ], include_directories: include)
 
-lartc_declaration = library('lartc_declaration', [
+lartc_ast = library('lartc_declaration', [
     'src/lartc/ast/declaration/variants.cc',
     'src/lartc/ast/declaration/parse.cc',
     'src/lartc/ast/declaration.cc',
     'src/lartc/ast/type/variants.cc',
     'src/lartc/ast/type/parse.cc',
-    'src/lartc/ast/type.cc'
+    'src/lartc/ast/type.cc',
+    'src/lartc/ast/parse.cc',
   ], dependencies: [tree_sitter, tree_sitter_lart],
   link_with: [lartc_utils],
   include_directories: include)
@@ -25,5 +26,5 @@ lartc_declaration = library('lartc_declaration', [
 executable('lartc', [
     'src/lartc/main.cc'
   ], dependencies: [tree_sitter, tree_sitter_lart],
-  link_with: [lartc_declaration],
+  link_with: [lartc_ast],
   include_directories: include)

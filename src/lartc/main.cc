@@ -41,7 +41,7 @@ int main(int argc, char** args) {
   TSNode root_node = ts_tree_root_node(tree);
 
   Declaration* source_file = parse_source_file(lart, source_code, root_node);
-  Declaration::Print(std::clog, source_file);
+  Declaration::Print(std::clog, source_file) << std::endl;
   Declaration::Delete(source_file);
 
   ts_tree_delete(tree);

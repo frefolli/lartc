@@ -2,7 +2,7 @@
 #include <lartc/internal_errors.hh>
 
 Declaration* Declaration::New(declaration_t kind) {
-  return new Declaration {kind, {}, "", nullptr, nullptr};
+  return new Declaration {kind, {}, "", nullptr, nullptr, {}};
 }
 
 void Declaration::Delete(Declaration*& decl) {
@@ -12,6 +12,10 @@ void Declaration::Delete(Declaration*& decl) {
     }
     decl->children.clear();
     decl->name.clear();
+    for (std::pair<std::string, Type*>& item : decl->parameters) {
+      Type::Delete(item.second);
+    }
+    decl->parameters.clear();
     delete decl;
     decl = nullptr;
   }
@@ -19,6 +23,7 @@ void Declaration::Delete(Declaration*& decl) {
 
 std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t tabulation) {
   tabulate(out, tabulation) << decl->kind << " " << decl->name;
+  bool first;
   switch (decl->kind) {
     case declaration_t::MODULE_DECL:
       out << " {" << std::endl;
@@ -28,13 +33,20 @@ std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t 
       }
       return out << "}";
     case declaration_t::FUNCTION_DECL:
-      out << " of type {" << std::endl;
-      Type::Print(out, decl->type, tabulation + 1);
-      return out << std::endl << "}";
+      out << "(";
+      first = true;
+      for (std::pair<std::string, Type*> item : decl->parameters) {
+        if (first) {
+          first = false;
+        } else {
+          out << ", ";
+        }
+        Type::Print(out << item.first << ": ", item.second);
+      }
+      return Type::Print(out << ") -> ", decl->type, 0);
     case declaration_t::TYPE_DECL:
-      out << " of type {" << std::endl;
-      Type::Print(out, decl->type, tabulation + 1);
-      return out << std::endl << "}";
+      Type::Print(out << " ", decl->type);
+      return out;
   }
   return out;
 }

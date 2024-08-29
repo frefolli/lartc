@@ -11,6 +11,7 @@ struct Declaration {
   std::string name;
   Declaration* parent;
   Type* type;
+  std::vector<std::pair<std::string, Type*>> parameters;
 
   static Declaration* New(declaration_t kind);
   static std::ostream& Print(std::ostream& out, Declaration* decl, uint64_t tabulation = 0);

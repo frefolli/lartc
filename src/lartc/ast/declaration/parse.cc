@@ -1,5 +1,6 @@
 #include <lartc/ast/declaration/parse.hh>
 #include <lartc/ast/type/parse.hh>
+#include <lartc/ast/parse.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/tree_sitter.hh>
 #include <cstring>
@@ -50,6 +51,9 @@ inline Declaration* parse_declaration_function(const TSLanguage* language, const
   
   TSNode name = ts_node_child_by_field_name(node, "name");
   decl->name = ts_node_source_code(name, source_code);
+  
+  TSNode parameters = ts_node_child_by_field_name(node, "parameters");
+  decl->parameters = parse_field_parameter_list(language, source_code, parameters);
 
   TSNode type = ts_node_child_by_field_name(node, "type");
   if (type.id) {

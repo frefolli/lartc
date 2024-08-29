@@ -29,24 +29,45 @@ void Type::Delete(Type*& type) {
 }
 
 std::ostream& Type::Print(std::ostream& out, Type* type, uint64_t tabulation) {
-  tabulate(out, tabulation) << type->kind;
+  tabulate(out, tabulation);
+  bool first;
   switch (type->kind) {
     case type_t::INTEGER_TYPE:
-      return out << " " << type->size << " " << std::boolalpha << type->is_signed << std::noboolalpha << ";";
+      return out << "integer_type<" << type->size << "," << std::boolalpha << type->is_signed << std::noboolalpha << ">";
     case type_t::DOUBLE_TYPE:
-      return out << " " << type->size << " " << ";";
+      return out << "double_type<" << type->size << ">";
     case type_t::BOOLEAN_TYPE:
-      return out << ";";
+      return out << "boolean_type";
     case type_t::POINTER_TYPE:
-      return Type::Print(out << " of {" << std::endl, type->subtype, tabulation + 1) << std::endl << "}";
+      return Type::Print(out << "pointer_type<", type->subtype) << ">";
     case type_t::IDENTIFIER_TYPE:
-      return out << " ref " << type->identifier << ";";
+      return out << type->identifier;
     case type_t::VOID_TYPE:
-      return out << ";";
+      return out << "void";
     case type_t::STRUCT_TYPE:
-      return out << ";";
+      out << "struct {";
+      first = true;
+      for (std::pair<std::string, Type*> item : type->fields) {
+        if (first) {
+          first = false;
+        } else {
+          out << ", ";
+        }
+        Type::Print(out << item.first << ": ", item.second);
+      }
+      return out << "}";
     case type_t::FUNCTION_TYPE:
-      return out << ";";
+      out << "(";
+      first = true;
+      for (std::pair<std::string, Type*> item : type->parameters) {
+        if (first) {
+          first = false;
+        } else {
+          out << ", ";
+        }
+        Type::Print(out << item.first << ": ", item.second);
+      }
+      return Type::Print(out << ") -> ", type->subtype, 0);
   }
   return out;
 }
