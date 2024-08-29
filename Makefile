@@ -8,3 +8,9 @@ run : ./builddir/lartc
 
 ./builddir: meson.build
 	meson setup builddir --reconfigure
+
+clean:
+	rm -r builddir
+
+depclean: clean
+	rm -r subprojects/tree-sitter-lart.git

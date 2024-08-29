@@ -1,3 +1,7 @@
+#include <lartc/internal_errors.hh>
+#include <lartc/ast/declaration.hh>
+#include <lartc/ast/declaration/parse.hh>
+
 #include <assert.h>
 #include <cstring>
 #include <string.h>
@@ -23,23 +27,6 @@ char* read_source_code(int argc, char** args) {
     return text;
 }
 
-void tabulate(uint64_t tabulation) {
-  for (uint64_t i = 0; i < tabulation; ++i) {
-    std::cout << "  ";
-  }
-}
-
-void visit_node(const TSLanguage* language, const char* text, TSNode& node, uint64_t tabulation = 0) {
-  const char* symbol_name = ts_language_symbol_name(language, ts_node_grammar_symbol(node));
-  tabulate(tabulation);
-  uint64_t child_count = ts_node_named_child_count(node);
-  std::cout << symbol_name << std::endl;
-  for (uint64_t child_index = 0; child_index < child_count; ++child_index) {
-    TSNode child = ts_node_named_child(node, child_index);
-    visit_node(language, text, child, tabulation + 1);
-  }
-}
-
 int main(int argc, char** args) {
   TSParser* parser = ts_parser_new();
   const TSLanguage* lart =  tree_sitter_lart();
@@ -52,7 +39,10 @@ int main(int argc, char** args) {
     strlen(source_code)
   );
   TSNode root_node = ts_tree_root_node(tree);
-  visit_node(lart, source_code, root_node);
+
+  Declaration* source_file = parse_source_file(lart, source_code, root_node);
+  Declaration::Print(std::clog, source_file);
+  Declaration::Delete(source_file);
 
   ts_tree_delete(tree);
   ts_parser_delete(parser);
