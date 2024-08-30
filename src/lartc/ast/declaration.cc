@@ -22,18 +22,22 @@ void Declaration::Delete(Declaration*& decl) {
 }
 
 std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t tabulation) {
-  tabulate(out, tabulation) << decl->kind << " " << decl->name;
+  tabulate(out, tabulation);
   bool first;
   switch (decl->kind) {
     case declaration_t::MODULE_DECL:
-      out << " {" << std::endl;
+      out << "module";
+      if (!decl->name.empty())
+        out << " " << decl->name;
+      out<< " {" << std::endl;
       for (Declaration* child : decl->children) {
         Declaration::Print(out, child, tabulation + 1);
         out << std::endl;
       }
+      tabulate(out, tabulation);
       return out << "}";
     case declaration_t::FUNCTION_DECL:
-      out << "(";
+      out << "fn " << decl->name << "(";
       first = true;
       for (std::pair<std::string, Type*> item : decl->parameters) {
         if (first) {
@@ -43,10 +47,13 @@ std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t 
         }
         Type::Print(out << item.first << ": ", item.second);
       }
-      return Type::Print(out << ") -> ", decl->type, 0);
+      return Type::Print(out << ") -> ", decl->type, 0) << ";";
     case declaration_t::TYPE_DECL:
-      Type::Print(out << " ", decl->type);
-      return out;
+      out << "type";
+      if (!decl->name.empty())
+        out << " " << decl->name;
+      Type::Print(out << " = ", decl->type);
+      return out << ";";
   }
   return out;
 }

@@ -1,9 +1,9 @@
+#include <ios>
 #include <lartc/ast/type.hh>
 #include <lartc/internal_errors.hh>
-#include <ios>
 
 Type* Type::New(type_t kind) {
-  return new Type {kind, 0, false, nullptr, ""};
+  return new Type {kind, 0, false, nullptr, "", {}, {}};
 }
 
 void Type::Delete(Type*& type) {
@@ -33,13 +33,13 @@ std::ostream& Type::Print(std::ostream& out, Type* type, uint64_t tabulation) {
   bool first;
   switch (type->kind) {
     case type_t::INTEGER_TYPE:
-      return out << "integer_type<" << type->size << "," << std::boolalpha << type->is_signed << std::noboolalpha << ">";
+      return out << "int<" << type->size << "," << std::boolalpha << type->is_signed << std::noboolalpha << ">";
     case type_t::DOUBLE_TYPE:
-      return out << "double_type<" << type->size << ">";
+      return out << "double<" << type->size << ">";
     case type_t::BOOLEAN_TYPE:
-      return out << "boolean_type";
+      return out << "bool";
     case type_t::POINTER_TYPE:
-      return Type::Print(out << "pointer_type<", type->subtype) << ">";
+      return Type::Print(out << "&", type->subtype);
     case type_t::IDENTIFIER_TYPE:
       return out << type->identifier;
     case type_t::VOID_TYPE:
