@@ -3,7 +3,15 @@
 #include <lartc/internal_errors.hh>
 
 Type* Type::New(type_t kind) {
-  return new Type {kind, 0, false, nullptr, "", {}, {}};
+  return new Type {
+    .kind = kind,
+    .size = 0,
+    .is_signed = false,
+    .subtype = nullptr,
+    .identifier = "",
+    .fields = {},
+    .parameters = {}
+  };
 }
 
 void Type::Delete(Type*& type) {

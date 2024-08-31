@@ -10,7 +10,7 @@
 #include <cassert>
 #include <iostream>
 
-Type* parse_type_integer(const TSLanguage* language, const char* source_code, TSNode& node) {
+Type* parse_type_integer(const TSLanguage* /*language*/, const char* source_code, TSNode& node) {
   Type* type = Type::New(type_t::INTEGER_TYPE);
 
   TSNode size = ts_node_child_by_field_name(node, "size");
@@ -22,7 +22,7 @@ Type* parse_type_integer(const TSLanguage* language, const char* source_code, TS
   return type;
 }
 
-Type* parse_type_double(const TSLanguage* language, const char* source_code, TSNode& node) {
+Type* parse_type_double(const TSLanguage* /*language*/, const char* source_code, TSNode& node) {
   Type* type = Type::New(type_t::DOUBLE_TYPE);
 
   TSNode size = ts_node_child_by_field_name(node, "size");
@@ -31,7 +31,7 @@ Type* parse_type_double(const TSLanguage* language, const char* source_code, TSN
   return type;
 }
 
-Type* parse_type_boolean(const TSLanguage* language, const char* source_code, TSNode& node) {
+Type* parse_type_boolean(const TSLanguage* /*language*/, const char* /*source_code*/, TSNode& /*node*/) {
   Type* type = Type::New(type_t::BOOLEAN_TYPE);
 
   return type;
@@ -49,13 +49,13 @@ Type* parse_type_pointer(const TSLanguage* language, const char* source_code, TS
   return type;
 }
 
-Type* parse_type_identifier(const TSLanguage* language, const char* source_code, TSNode& node) {
+Type* parse_type_identifier(const TSLanguage* /*language*/, const char* source_code, TSNode& node) {
   Type* type = Type::New(type_t::IDENTIFIER_TYPE);
   type->identifier = ts_node_source_code(node, source_code);
   return type;
 }
 
-Type* parse_type_void(const TSLanguage* language, const char* source_code, TSNode& node) {
+Type* parse_type_void(const TSLanguage* /*language*/, const char* /*source_code*/, TSNode& /*node*/) {
   Type* type = Type::New(type_t::VOID_TYPE);
   return type;
 }

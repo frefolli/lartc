@@ -2,7 +2,15 @@
 #include <lartc/internal_errors.hh>
 
 Declaration* Declaration::New(declaration_t kind) {
-  return new Declaration {kind, {}, "", nullptr, nullptr, {}};
+  return new Declaration {
+    .kind = kind,
+    .children = {},
+    .name = "", 
+    .parent = nullptr,
+    .type = nullptr,
+    .parameters = {},
+    .body = nullptr
+  };
 }
 
 void Declaration::Delete(Declaration*& decl) {
@@ -16,6 +24,7 @@ void Declaration::Delete(Declaration*& decl) {
       Type::Delete(item.second);
     }
     decl->parameters.clear();
+    Statement::Delete(decl->body);
     delete decl;
     decl = nullptr;
   }
@@ -47,7 +56,14 @@ std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t 
         }
         Type::Print(out << item.first << ": ", item.second);
       }
-      return Type::Print(out << ") -> ", decl->type, 0) << ";";
+      Type::Print(out << ") -> ", decl->type, 0);
+      if (decl->body != nullptr) {
+        out << " ";
+        Statement::Print(out, decl->body, tabulation);
+        return out << std::endl;
+      } else {
+        return out << ";";
+      }
     case declaration_t::TYPE_DECL:
       out << "type";
       if (!decl->name.empty())

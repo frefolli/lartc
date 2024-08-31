@@ -4,15 +4,15 @@
 
 #define STATEMENT_VARIANTS \
       X(LET_STMT), \
-      X(CONST_STMT), \
       X(RETURN_STMT), \
       X(BREAK_STMT), \
       X(CONTINUE_STMT), \
       X(IF_ELSE_STMT), \
       X(WHILE_STMT), \
       X(FOR_STMT), \
-      X(BLOCK_STMT)
-  
+      X(BLOCK_STMT), \
+      X(EXPRESSION_STMT)
+
 enum statement_t {
 #define X(_) _
   STATEMENT_VARIANTS

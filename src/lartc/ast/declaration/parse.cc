@@ -1,5 +1,6 @@
 #include <lartc/ast/declaration/parse.hh>
 #include <lartc/ast/type/parse.hh>
+#include <lartc/ast/statement/parse.hh>
 #include <lartc/ast/parse.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/tree_sitter.hh>
@@ -60,6 +61,13 @@ inline Declaration* parse_declaration_function(const TSLanguage* language, const
     decl->type = parse_type(language, source_code, type);
   } else {
     decl->type = Type::New(type_t::VOID_TYPE);
+  }
+  
+  TSNode body = ts_node_child_by_field_name(node, "body");
+  if (body.id) {
+    decl->body = parse_statement(language, source_code, body);
+  } else {
+    decl->body = nullptr;
   }
 
   if (decl->type == nullptr) {
