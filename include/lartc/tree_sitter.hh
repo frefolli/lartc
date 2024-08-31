@@ -21,7 +21,14 @@ inline bool ts_can_ignore(const char* symbol_name) {
 inline void ts_validate_parsing(const TSLanguage* language, TSNode& node, const char* context, void* parsed) {
   if (parsed == nullptr) {
     const char* symbol_name = ts_language_symbol_name(language, ts_node_grammar_symbol(node));
-    throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(symbol_name) << " inside a (" << context << ")"));
+    TSPoint start = ts_node_start_point(node);
+    TSPoint end = ts_node_end_point(node);
+    throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(
+          ": " << std::string(symbol_name)
+          << " inside a (" << context << ")"
+          << " from " << start.row << ":" << start.column
+          << " to " << end.row << ":" << end.column
+    ));
   }
 }
 #endif//LARTC_TREE_SITTER

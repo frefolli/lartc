@@ -16,9 +16,9 @@ mod turing {
 
   fn tape_new(tape: &Tape, length: u64) {
     tape.length = length;
-    tape.cells = malloc(tape.length * sizeof<bool)>;
-    tape.buffer = malloc(tape.length * sizeof<bool)>;
-    tape.repr = malloc((tape.length + 1) * sizeof<char)>;
+    tape.cells = malloc(tape.length * sizeof<bool>);
+    tape.buffer = malloc(tape.length * sizeof<bool>);
+    tape.repr = malloc((tape.length + 1) * sizeof<char>);
   }
 
   fn tape_delete(tape: &Tape) {
