@@ -89,6 +89,9 @@ Expression* parse_expression_binary(const TSLanguage* language, const char* sour
   TSNode right = ts_node_child_by_field_name(node, "right");
   binary->right = parse_expression(language, source_code, right);
   ts_validate_parsing(language, right, "binary_expr:right", binary->right);
+
+  TSNode operator_ = ts_node_child_by_field_name(node, "operator");
+  binary->operator_ = ts_node_source_code(operator_, source_code);
   return binary;
 }
 
@@ -97,6 +100,9 @@ Expression* parse_expression_monary(const TSLanguage* language, const char* sour
   TSNode value = ts_node_child_by_field_name(node, "value");
   monary->value = parse_expression(language, source_code, value);
   ts_validate_parsing(language, value, "monary_expr:value", monary->value);
+
+  TSNode operator_ = ts_node_child_by_field_name(node, "operator");
+  monary->operator_ = ts_node_source_code(operator_, source_code);
   return monary;
 }
 
@@ -132,9 +138,9 @@ Expression* parse_expression_bitcast(const TSLanguage* language, const char* sou
   return bitcast;
 }
 
-inline Expression* parse_expression_parenthesis(const TSLanguage* language, const char* source_code, TSNode& node) {
-  std::clog << ts_node_source_code(node, source_code) << std::endl;
-  return nullptr;
+inline Expression* parse_expression_parenthesized(const TSLanguage* language, const char* source_code, TSNode& node) {
+  TSNode inner_expr = ts_node_named_child(node, 0);
+  return parse_expression(language, source_code, inner_expr);
 }
 
 typedef Expression*(*expression_parser)(const TSLanguage* language, const char* source_code, TSNode& node);
@@ -153,7 +159,7 @@ std::unordered_map<std::string, expression_parser> expression_parsers = {
   {"sizeof_expression", parse_expression_sizeof},
   {"cast_expression", parse_expression_cast},
   {"bitcast_expression", parse_expression_bitcast},
-  {"(", parse_expression_parenthesis},
+  {"parenthesized_expression", parse_expression_parenthesized},
 };
 
 Expression* parse_expression(const TSLanguage* language, const char* source_code, TSNode& node) {

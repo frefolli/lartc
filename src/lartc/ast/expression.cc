@@ -1,3 +1,4 @@
+#include "lartc/ast/expression/variants.hh"
 #include <lartc/ast/expression.hh>
 #include <lartc/internal_errors.hh>
 
@@ -33,7 +34,10 @@ void Expression::Delete(Expression*& expr) {
   }
 }
 
-std::ostream& Expression::Print(std::ostream& out, Expression* expr, uint64_t tabulation) {
+std::ostream& Expression::Print(std::ostream& out, Expression* expr, bool parenthesized) {
+  if (parenthesized && (expr->kind == expression_t::MONARY_EXPR
+                        || expr->kind == expression_t::BINARY_EXPR))
+    out << "(";
   bool first = true;
   switch (expr->kind) {
     case expression_t::IDENTIFIER_EXPR:
@@ -73,13 +77,13 @@ std::ostream& Expression::Print(std::ostream& out, Expression* expr, uint64_t ta
       out << ")";
       break;
     case expression_t::BINARY_EXPR:
-      Expression::Print(out, expr->left);
+      Expression::Print(out, expr->left, true);
       out << " " << expr->operator_ << " ";
-      Expression::Print(out, expr->right);
+      Expression::Print(out, expr->right, true);
       break;
     case expression_t::MONARY_EXPR:
-      out << " " << expr->operator_ << " ";
-      Expression::Print(out, expr->value);
+      out << expr->operator_;
+      Expression::Print(out, expr->value, true);
       break;
     case expression_t::SIZEOF_EXPR:
       out << "sizeof<";
@@ -101,5 +105,8 @@ std::ostream& Expression::Print(std::ostream& out, Expression* expr, uint64_t ta
       out << ")"; 
       break;
    }
+  if (parenthesized && (expr->kind == expression_t::MONARY_EXPR
+                        || expr->kind == expression_t::BINARY_EXPR))
+    out << ")";
   return out;
 }

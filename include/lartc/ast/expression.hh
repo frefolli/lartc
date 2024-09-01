@@ -2,7 +2,6 @@
 #define LARTC_AST_EXPRESSION
 #include <lartc/ast/expression/variants.hh>
 #include <lartc/ast/type.hh>
-#include <cstdint>
 #include <vector>
 
 struct Expression {
@@ -18,7 +17,7 @@ struct Expression {
   Expression* value;
 
   static Expression* New(expression_t kind);
-  static std::ostream& Print(std::ostream& out, Expression* decl, uint64_t tabulation = 0);
+  static std::ostream& Print(std::ostream& out, Expression* decl, bool parenthesized = false);
   static void Delete(Expression*& decl);
 };
 #endif//LARTC_AST_EXPRESSION

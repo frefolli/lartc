@@ -91,7 +91,7 @@ std::ostream& Statement::Print(std::ostream& out, Statement* stmt, uint64_t tabu
       Statement::Print(out, stmt->body, tabulation);
       break;
     case statement_t::EXPRESSION_STMT:
-      Expression::Print(out, stmt->expr, tabulation) << ";";
+      Expression::Print(out, stmt->expr) << ";";
       break;
   }
   return out;
