@@ -1,7 +1,8 @@
-#include <lartc/internal_errors.hh>
 #include <lartc/ast/declaration.hh>
 #include <lartc/ast/declaration/parse.hh>
 #include <lartc/ast/check.hh>
+#include <lartc/tree_sitter.hh>
+#include <lartc/terminal.hh>
 
 #include <assert.h>
 #include <cstring>
@@ -12,12 +13,8 @@
 
 extern "C" const TSLanguage *tree_sitter_lart(void);
 
-char* read_source_code(int argc, char** args) {
+char* read_source_code(const char* filepath) {
     char* text = NULL;
-    const char* filepath = "hello.lart";
-    if (argc > 1) {
-        filepath = args[1];
-    }
     FILE* file = fopen(filepath, "r");
     fseek(file, 0, SEEK_END);
     long fsize = ftell(file);
@@ -28,29 +25,61 @@ char* read_source_code(int argc, char** args) {
     return text;
 }
 
-int main(int argc, char** args) {
-  TSParser* parser = ts_parser_new();
-  const TSLanguage* lart =  tree_sitter_lart();
-  ts_parser_set_language(parser, lart);
-  char *source_code = read_source_code(argc, args);
+bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context) {
+  context.source_code = read_source_code(context.filepath);
   TSTree *tree = ts_parser_parse_string(
     parser,
     NULL,
-    source_code,
-    strlen(source_code)
+    context.source_code,
+    strlen(context.source_code)
   );
   TSNode root_node = ts_tree_root_node(tree);
-
-  bool ast_ok = check_ts_tree_for_errors(lart, source_code, root_node);
+  bool ast_ok = check_ts_tree_for_errors(context, root_node);
 
   if (ast_ok) {
-    Declaration* source_file = parse_source_file(lart, source_code, root_node);
-    Declaration::Print(std::clog, source_file) << std::endl;
-    Declaration::Delete(source_file);
+    parse_source_file(decl_tree, context, root_node);
   }
 
   ts_tree_delete(tree);
+  free((char*) context.source_code);
+
+  return ast_ok;
+}
+
+int main(int argc, char** args) {
+  TSParser* parser = ts_parser_new();
+  const TSLanguage* language = tree_sitter_lart();
+  ts_parser_set_language(parser, language); 
+
+  Declaration* decl_tree = Declaration::New(declaration_t::MODULE_DECL);
+
+  TSContext context = {
+    .language = language,
+    .source_code = nullptr,
+    .filepath = nullptr
+  };
+  
+  bool at_least_one_source_file = false;
+  bool no_errors_occurred = true;
+
+  for (uint64_t arg_index = 1; arg_index < argc; ++arg_index) {
+    context.filepath = args[arg_index];
+    no_errors_occurred &= parse_filepath(decl_tree, parser, context);
+    at_least_one_source_file = true;
+  }
+
+  if (!at_least_one_source_file) {
+    std::cerr << RED_TEXT << "error" << NORMAL_TEXT << ": not source file specified" << std::endl;
+    std::exit(1);
+  }
+
+  if (!no_errors_occurred) {
+    std::exit(2);
+  }
+
+  Declaration::Print(std::clog, decl_tree) << std::endl;
+  Declaration::Delete(decl_tree);
+
   ts_parser_delete(parser);
-  free(source_code);
   return 0;
 }

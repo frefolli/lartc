@@ -3,7 +3,8 @@
 #include <vector>
 #include <utility>
 #include <lartc/ast/type.hh>
+#include <lartc/tree_sitter.hh>
 #include <tree_sitter/api.h>
 
-std::vector<std::pair<std::string, Type*>> parse_field_parameter_list(const TSLanguage* language, const char* source_code, TSNode& node);
+std::vector<std::pair<std::string, Type*>> parse_field_parameter_list(TSContext& context, TSNode& node);
 #endif//LARTC_AST_PARSE

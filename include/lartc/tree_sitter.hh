@@ -31,4 +31,10 @@ inline void ts_validate_parsing(const TSLanguage* language, TSNode& node, const 
     ));
   }
 }
+
+struct TSContext {
+  const TSLanguage* language;
+  const char* source_code;
+  const char* filepath;
+};
 #endif//LARTC_TREE_SITTER
