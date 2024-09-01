@@ -1,6 +1,7 @@
 #include <lartc/internal_errors.hh>
 #include <lartc/ast/declaration.hh>
 #include <lartc/ast/declaration/parse.hh>
+#include <lartc/ast/check.hh>
 
 #include <assert.h>
 #include <cstring>
@@ -40,9 +41,13 @@ int main(int argc, char** args) {
   );
   TSNode root_node = ts_tree_root_node(tree);
 
-  Declaration* source_file = parse_source_file(lart, source_code, root_node);
-  Declaration::Print(std::clog, source_file) << std::endl;
-  Declaration::Delete(source_file);
+  bool ast_ok = check_ts_tree_for_errors(lart, source_code, root_node);
+
+  if (ast_ok) {
+    Declaration* source_file = parse_source_file(lart, source_code, root_node);
+    Declaration::Print(std::clog, source_file) << std::endl;
+    Declaration::Delete(source_file);
+  }
 
   ts_tree_delete(tree);
   ts_parser_delete(parser);
