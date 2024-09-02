@@ -3,8 +3,7 @@
 #include <ostream>
 
 #define EXPRESSION_VARIANTS \
-  X(IDENTIFIER_EXPR), \
-  X(SCOPED_IDENTIFIER_EXPR), \
+  X(SYMBOL_EXPR), \
   X(INTEGER_EXPR), \
   X(DOUBLE_EXPR), \
   X(BOOLEAN_EXPR), \

@@ -5,11 +5,11 @@
 Expression* Expression::New(expression_t kind) {
   return new Expression {
     .kind = kind,
-    .name = "",
+    .symbol = {},
     .literal = "",
     .callable = nullptr,
     .arguments = {},
-    .operator_ = "",
+    .operator_ = (operator_t)-1,
     .type = nullptr,
     .left = nullptr,
     .right = nullptr,
@@ -19,15 +19,15 @@ Expression* Expression::New(expression_t kind) {
 
 void Expression::Delete(Expression*& expr) {
   if (expr != nullptr) {
-    expr->name.clear();
+    expr->symbol = {};
     expr->literal.clear();
     Expression::Delete(expr->callable);
     for (Expression*& child : expr->arguments) {
       Expression::Delete(child);
     }
     expr->arguments.clear();
-    expr->name.clear();
-    expr->operator_.clear();
+    expr->symbol = {};
+    expr->operator_ = (operator_t)-1;
     Type::Delete(expr->type);
     delete expr;
     expr = nullptr;
@@ -40,11 +40,8 @@ std::ostream& Expression::Print(std::ostream& out, Expression* expr, bool parent
     out << "(";
   bool first = true;
   switch (expr->kind) {
-    case expression_t::IDENTIFIER_EXPR:
-      out << expr->name;
-      break;
-    case expression_t::SCOPED_IDENTIFIER_EXPR:
-      out << expr->name;
+    case expression_t::SYMBOL_EXPR:
+      Symbol::Print(out, expr->symbol);
       break;
     case expression_t::INTEGER_EXPR:
       out << expr->literal;
@@ -77,9 +74,15 @@ std::ostream& Expression::Print(std::ostream& out, Expression* expr, bool parent
       out << ")";
       break;
     case expression_t::BINARY_EXPR:
-      Expression::Print(out, expr->left, true);
-      out << " " << expr->operator_ << " ";
-      Expression::Print(out, expr->right, true);
+      Expression::Print(out, expr->left, parenthesized || expr->operator_ != operator_t::ASS_OP);
+      if (expr->operator_ != operator_t::DOT_OP) {
+        out << " ";
+      }
+      out << expr->operator_;
+      if (expr->operator_ != operator_t::DOT_OP) {
+        out << " ";
+      }
+      Expression::Print(out, expr->right, parenthesized || expr->operator_ != operator_t::ASS_OP);
       break;
     case expression_t::MONARY_EXPR:
       out << expr->operator_;

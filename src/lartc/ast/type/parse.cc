@@ -49,9 +49,9 @@ Type* parse_type_pointer(TSContext& context, TSNode& node) {
   return type;
 }
 
-Type* parse_type_identifier(TSContext& context, TSNode& node) {
-  Type* type = Type::New(type_t::IDENTIFIER_TYPE);
-  type->identifier = ts_node_source_code(node, context.source_code);
+Type* parse_type_symbol(TSContext& context, TSNode& node) {
+  Type* type = Type::New(type_t::SYMBOL_TYPE);
+  type->symbol = Symbol::From(ts_node_source_code(node, context.source_code));
   return type;
 }
 
@@ -91,8 +91,8 @@ std::unordered_map<std::string, type_parser> type_parsers = {
   {"double_type", parse_type_double},
   {"boolean_type", parse_type_boolean},
   {"pointer_type", parse_type_pointer},
-  {"identifier", parse_type_identifier},
-  {"scoped_identifier", parse_type_identifier},
+  {"identifier", parse_type_symbol},
+  {"scoped_identifier", parse_type_symbol},
   {"void_type", parse_type_void},
   {"struct_type", parse_type_struct},
   {"function_type", parse_type_function},

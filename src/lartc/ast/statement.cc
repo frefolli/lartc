@@ -45,7 +45,7 @@ std::ostream& Statement::Print(std::ostream& out, Statement* stmt, uint64_t tabu
     case statement_t::FOR_STMT:
       out << "for (";
       Statement::Print(out, stmt->init);
-      Expression::Print(out, stmt->condition);
+      Expression::Print(out << " ", stmt->condition);
       out << "; ";
       Expression::Print(out, stmt->step);
       out << ") ";
@@ -77,7 +77,7 @@ std::ostream& Statement::Print(std::ostream& out, Statement* stmt, uint64_t tabu
       out << "continue;";
       break;
     case statement_t::IF_ELSE_STMT:
-      out << "if-else (";
+      out << "if (";
       Expression::Print(out, stmt->condition);
       out << ") ";
       Statement::Print(out, stmt->then, tabulation);

@@ -27,6 +27,8 @@ lartc_ast = library('lartc_ast', [
     'src/lartc/ast/declaration/variants.cc',
     'src/lartc/ast/declaration/parse.cc',
     'src/lartc/ast/declaration.cc',
+    'src/lartc/ast/symbol.cc',
+    'src/lartc/ast/operator.cc',
   ], dependencies: [tree_sitter, tree_sitter_lart],
   link_with: [lartc_utils],
   include_directories: include)

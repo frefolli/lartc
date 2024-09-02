@@ -7,16 +7,10 @@
 #include <tree_sitter/api.h>
 #include <unordered_map>
 
-Expression* parse_expression_identifier(TSContext& context, TSNode& node) {
-  Expression* identifier = Expression::New(IDENTIFIER_EXPR);
-  identifier->name = ts_node_source_code(node, context.source_code);
+Expression* parse_expression_symbol(TSContext& context, TSNode& node) {
+  Expression* identifier = Expression::New(SYMBOL_EXPR);
+  identifier->symbol = Symbol::From(ts_node_source_code(node, context.source_code));
   return identifier;
-}
-
-Expression* parse_expression_scoped_identifier(TSContext& context, TSNode& node) {
-  Expression* scoped_identifier = Expression::New(SCOPED_IDENTIFIER_EXPR);
-  scoped_identifier->name = ts_node_source_code(node, context.source_code);
-  return scoped_identifier;
 }
 
 Expression* parse_expression_integer(TSContext& context, TSNode& node) {
@@ -90,7 +84,7 @@ Expression* parse_expression_binary(TSContext& context, TSNode& node) {
   ts_validate_parsing(context.language, right, "binary_expr:right", binary->right);
 
   TSNode operator_ = ts_node_child_by_field_name(node, "operator");
-  binary->operator_ = ts_node_source_code(operator_, context.source_code);
+  ts_node_source_code(operator_, context.source_code) >> binary->operator_;
   return binary;
 }
 
@@ -101,7 +95,7 @@ Expression* parse_expression_monary(TSContext& context, TSNode& node) {
   ts_validate_parsing(context.language, value, "monary_expr:value", monary->value);
 
   TSNode operator_ = ts_node_child_by_field_name(node, "operator");
-  monary->operator_ = ts_node_source_code(operator_, context.source_code);
+  ts_node_source_code(operator_, context.source_code) >> monary->operator_;
   return monary;
 }
 
@@ -144,8 +138,8 @@ inline Expression* parse_expression_parenthesized(TSContext& context, TSNode& no
 
 typedef Expression*(*expression_parser)(TSContext& context, TSNode& node);
 std::unordered_map<std::string, expression_parser> expression_parsers = {
-  {"identifier", parse_expression_identifier},
-  {"scoped_identifier", parse_expression_scoped_identifier},
+  {"identifier", parse_expression_symbol},
+  {"scoped_identifier", parse_expression_symbol},
   {"integer", parse_expression_integer},
   {"double", parse_expression_double},
   {"boolean", parse_expression_boolean},

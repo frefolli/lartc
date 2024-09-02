@@ -8,7 +8,7 @@ Type* Type::New(type_t kind) {
     .size = 0,
     .is_signed = false,
     .subtype = nullptr,
-    .identifier = "",
+    .symbol = {},
     .fields = {},
     .parameters = {}
   };
@@ -19,7 +19,7 @@ void Type::Delete(Type*& type) {
     Type::Delete(type->subtype);
     type->size = 0;
     type->is_signed = false;
-    type->identifier = "";
+    type->symbol = {};
 
     for (std::pair<std::string, Type*>& item : type->fields) {
       Type::Delete(item.second);
@@ -48,8 +48,8 @@ std::ostream& Type::Print(std::ostream& out, Type* type, uint64_t tabulation) {
       return out << "bool";
     case type_t::POINTER_TYPE:
       return Type::Print(out << "&", type->subtype);
-    case type_t::IDENTIFIER_TYPE:
-      return out << type->identifier;
+    case type_t::SYMBOL_TYPE:
+      return Symbol::Print(out, type->symbol);
     case type_t::VOID_TYPE:
       return out << "void";
     case type_t::STRUCT_TYPE:

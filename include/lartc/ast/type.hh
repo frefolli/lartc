@@ -1,6 +1,7 @@
 #ifndef LARTC_AST_TYPE
 #define LARTC_AST_TYPE
 #include <lartc/ast/type/variants.hh>
+#include <lartc/ast/symbol.hh>
 #include <cstdint>
 #include <vector>
 #include <utility>
@@ -10,7 +11,7 @@ struct Type {
   uint64_t size;
   bool is_signed;
   Type* subtype;
-  std::string identifier;
+  Symbol symbol;
   std::vector<std::pair<std::string, Type*>> fields;
   std::vector<std::pair<std::string, Type*>> parameters;
 
