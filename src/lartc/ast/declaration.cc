@@ -60,7 +60,7 @@ std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t 
       if (decl->body != nullptr) {
         out << " ";
         Statement::Print(out, decl->body, tabulation);
-        return out << std::endl;
+        return out;
       } else {
         return out << ";";
       }
@@ -100,6 +100,7 @@ std::ostream& Declaration::PrintShort(std::ostream& out, Declaration* decl) {
         }
         out << item.first;
       }
+      out << ")";
       break;
     case declaration_t::TYPE_DECL:
       out << "type " << Declaration::QualifiedName(decl);

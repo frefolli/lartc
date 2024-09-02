@@ -15,7 +15,7 @@ std::ostream& SymbolCache::Print(std::ostream& out, SymbolCache& symbol_cache) {
 Declaration* SymbolCache::find_by_going_up(Declaration* context, Symbol& symbol, uint64_t progress) {
   Declaration* query = find_by_going_down(context, symbol);
   while (query == nullptr && context->parent != nullptr) {
-    if (context->parent->name == symbol.identifiers.at(symbol.identifiers.size() - 1 - progress)) {
+    if (context->parent->name == symbol.identifiers.at(progress)) {
       progress += 1;
       if (symbol.identifiers.size() == progress) {
         return context->parent;
@@ -40,7 +40,7 @@ Declaration* SymbolCache::find_by_going_up(Declaration* context, Symbol& symbol,
 }
 
 Declaration* SymbolCache::find_by_going_down(Declaration* context, Symbol& symbol, uint64_t progress) {
-  if (context->name == symbol.identifiers.at(symbol.identifiers.size() - 1 - progress)) {
+  if (context->name == symbol.identifiers.at(progress)) {
     progress += 1;
     if (symbol.identifiers.size() == progress) {
       return context;
@@ -58,10 +58,14 @@ Declaration* SymbolCache::find_by_going_down(Declaration* context, Symbol& symbo
 }
 
 Declaration* SymbolCache::find(Declaration* context, Symbol symbol) {
-  Declaration* cached = cache[context][symbol];
-  if (cached == nullptr) {
-    cached = find_by_going_up(context, symbol);
-    cache[context][symbol] = cached;
+  if (cache.contains(context)) {
+    if (cache.at(context).contains(symbol)) {
+      return cache.at(context).at(symbol);
+    }
   }
-  return cached;
+  Declaration* query = find_by_going_up(context, symbol);
+  if (query != nullptr) {
+    cache[context][symbol] = query;
+  }
+  return query;
 }

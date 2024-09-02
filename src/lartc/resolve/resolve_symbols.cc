@@ -1,8 +1,15 @@
 #include <lartc/resolve/resolve_symbols.hh>
+#include <lartc/terminal.hh>
+#include <iostream>
 
-inline void resolve_symbol_or_throw_error(SymbolCache &symbol_cache, Declaration* context, Symbol symbol) {
+inline bool resolve_symbol_or_throw_error(SymbolCache &symbol_cache, Declaration* context, Symbol symbol) {
   Declaration* query = symbol_cache.find(context, symbol);
-  // TODO
+  if (query == nullptr && symbol.identifiers.size() > 1) {
+    std::cerr << "filepath" << ":" << "point.row+1" << ":" << "point.column+1" << ": " << RED_TEXT << "resolution error" << NORMAL_TEXT << ": unable to resolve reference '";
+    Symbol::Print(std::cerr, symbol) << "'" << std::endl;
+    return false;
+  }
+  return true;
 }
 
 bool resolve_symbols(SymbolCache &symbol_cache, Declaration* context, Type* type);
@@ -20,7 +27,7 @@ bool resolve_symbols(SymbolCache &symbol_cache, Declaration* context, Type* type
 
   switch (type->kind) {
     case type_t::SYMBOL_TYPE:
-      resolve_symbol_or_throw_error(symbol_cache, context, type->symbol);
+      resolution_ok &= resolve_symbol_or_throw_error(symbol_cache, context, type->symbol);
       break;
     case type_t::POINTER_TYPE:
       resolution_ok &= resolve_symbols(symbol_cache, context, type->subtype);
