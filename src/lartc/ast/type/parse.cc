@@ -31,7 +31,7 @@ Type* parse_type_double(TSContext& context, TSNode& node) {
   return type;
 }
 
-Type* parse_type_boolean(TSContext& context, TSNode& /*node*/) {
+Type* parse_type_boolean(TSContext& /*context*/, TSNode& /*node*/) {
   Type* type = Type::New(type_t::BOOLEAN_TYPE);
 
   return type;
@@ -55,7 +55,7 @@ Type* parse_type_symbol(TSContext& context, TSNode& node) {
   return type;
 }
 
-Type* parse_type_void(TSContext& context, TSNode& /*node*/) {
+Type* parse_type_void(TSContext& /*context*/, TSNode& /*node*/) {
   Type* type = Type::New(type_t::VOID_TYPE);
   return type;
 }

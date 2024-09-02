@@ -1,6 +1,7 @@
 #include <lartc/ast/declaration.hh>
 #include <lartc/ast/declaration/parse.hh>
 #include <lartc/ast/check.hh>
+#include <lartc/resolve/resolve_symbols.hh>
 #include <lartc/tree_sitter.hh>
 #include <lartc/terminal.hh>
 
@@ -53,6 +54,7 @@ int main(int argc, char** args) {
 
   Declaration* decl_tree = Declaration::New(declaration_t::MODULE_DECL);
 
+  /* AST-PHASE */
   TSContext context = {
     .language = language,
     .source_code = nullptr,
@@ -76,8 +78,21 @@ int main(int argc, char** args) {
   if (!no_errors_occurred) {
     std::exit(2);
   }
-
+  
   Declaration::Print(std::clog, decl_tree) << std::endl;
+
+  /* RESOLVE-PHASE */
+  SymbolCache symbol_cache;
+  no_errors_occurred &= resolve_symbols(symbol_cache, decl_tree);
+
+  if (!no_errors_occurred) {
+    std::exit(2);
+  }
+
+  SymbolCache::Print(std::clog, symbol_cache);
+  
+  /* END-PHASE */
+
   Declaration::Delete(decl_tree);
 
   ts_parser_delete(parser);

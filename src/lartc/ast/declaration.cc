@@ -73,3 +73,37 @@ std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t 
   }
   return out;
 }
+
+std::string Declaration::QualifiedName(Declaration* decl) {
+  if (decl->parent != nullptr) {
+    return decl->name;
+  } else {
+    std::string parent_name = Declaration::QualifiedName(decl->parent);
+    return parent_name + "::" + decl->name;
+  }
+}
+
+std::ostream& Declaration::PrintShort(std::ostream& out, Declaration* decl) {
+  bool first;
+  switch (decl->kind) {
+    case declaration_t::MODULE_DECL:
+      out << "mod " << Declaration::QualifiedName(decl);
+      break;
+    case declaration_t::FUNCTION_DECL:
+      out << "fn " << Declaration::QualifiedName(decl) << "(";
+      first = true;
+      for (std::pair<std::string, Type*> item : decl->parameters) {
+        if (first) {
+          first = false;
+        } else {
+          out << ", ";
+        }
+        out << item.first;
+      }
+      break;
+    case declaration_t::TYPE_DECL:
+      out << "type " << Declaration::QualifiedName(decl);
+      break;
+  }
+  return out;
+}

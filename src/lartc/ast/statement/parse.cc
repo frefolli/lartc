@@ -47,8 +47,13 @@ inline Statement* parse_statement_let(TSContext& context, TSNode& node) {
   return let;
 }
 
-inline Statement* parse_statement_return(TSContext& context, TSNode& /*node*/) {
+inline Statement* parse_statement_return(TSContext& context, TSNode& node) {
   Statement* return_ = Statement::New(statement_t::RETURN_STMT);
+  TSNode value = ts_node_child_by_field_name(node, "value");
+  if (value.id != nullptr) {
+    return_->expr = parse_expression(context, value);
+    ts_validate_parsing(context.language, value, "return:value", return_->expr);
+  }
   return return_;
 }
 

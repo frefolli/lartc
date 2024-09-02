@@ -1,3 +1,4 @@
+#include "lartc/ast/expression.hh"
 #include <lartc/ast/statement.hh>
 #include <lartc/internal_errors.hh>
 
@@ -71,7 +72,11 @@ std::ostream& Statement::Print(std::ostream& out, Statement* stmt, uint64_t tabu
       out << "break;";
       break;
     case statement_t::RETURN_STMT:
-      out << "return;";
+      out << "return";
+      if (stmt->expr != nullptr) {
+        Expression::Print(out << " ", stmt->expr);
+      }
+      out << ";";
       break;
     case statement_t::CONTINUE_STMT:
       out << "continue;";

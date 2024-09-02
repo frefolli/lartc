@@ -6,7 +6,9 @@
 struct Symbol {
   std::vector<std::string> identifiers;
 
+  bool operator<(const Symbol& other) const;
+
   static Symbol From(std::string);
-  static std::ostream& Print(std::ostream& out, Symbol& symbol);
+  static std::ostream& Print(std::ostream& out, const Symbol& symbol);
 };
 #endif//LARTC_AST_SYMBOL

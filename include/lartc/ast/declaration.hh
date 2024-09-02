@@ -18,5 +18,7 @@ struct Declaration {
   static Declaration* New(declaration_t kind);
   static std::ostream& Print(std::ostream& out, Declaration* decl, uint64_t tabulation = 0);
   static void Delete(Declaration*& decl);
+  static std::string QualifiedName(Declaration* decl);
+  static std::ostream& PrintShort(std::ostream& out, Declaration* decl);
 };
 #endif//LARTC_AST_DECLARATION

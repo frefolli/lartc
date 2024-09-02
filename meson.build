@@ -7,12 +7,8 @@ tree_sitter = dependency('tree-sitter')
 tree_sitter_lart = dependency('tree-sitter-lart')
 include = include_directories('./include')
 
-lartc_utils = library('lartc_utils', [
+executable('lartc', [
     'src/lartc/internal_errors.cc',
-  ], dependencies: [tree_sitter, tree_sitter_lart],
-  include_directories: include)
-
-lartc_ast = library('lartc_ast', [
     'src/lartc/ast/check.cc',
     'src/lartc/ast/parse.cc',
     'src/lartc/ast/type/variants.cc',
@@ -29,12 +25,9 @@ lartc_ast = library('lartc_ast', [
     'src/lartc/ast/declaration.cc',
     'src/lartc/ast/symbol.cc',
     'src/lartc/ast/operator.cc',
-  ], dependencies: [tree_sitter, tree_sitter_lart],
-  link_with: [lartc_utils],
-  include_directories: include)
-
-executable('lartc', [
+    'src/lartc/resolve/symbol_stack.cc',
+    'src/lartc/resolve/symbol_cache.cc',
+    'src/lartc/resolve/resolve_symbols.cc',
     'src/lartc/main.cc'
   ], dependencies: [tree_sitter, tree_sitter_lart],
-  link_with: [lartc_ast],
   include_directories: include)
