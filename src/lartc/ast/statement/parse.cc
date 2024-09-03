@@ -7,7 +7,6 @@
 #include <cstring>
 #include <tree_sitter/api.h>
 #include <unordered_map>
-#include <iostream>
 
 inline Statement* parse_statement_block(TSContext& context, TSNode& node) {
   Statement* block = Statement::New(statement_t::BLOCK_STMT);
@@ -29,11 +28,6 @@ inline Statement* parse_statement_block(TSContext& context, TSNode& node) {
   return block;
 }
 
-inline Statement* parse_statement_stub(TSContext& context, TSNode& node) {
-  std::clog << TS_DEBUG << " => " << ts_node_string(node) << std::endl;
-  return nullptr;
-}
-
 inline Statement* parse_statement_let(TSContext& context, TSNode& node) {
   Statement* let = Statement::New(statement_t::LET_STMT);
   
@@ -44,6 +38,11 @@ inline Statement* parse_statement_let(TSContext& context, TSNode& node) {
   let->type = parse_type(context, type);
   ts_validate_parsing(context.language, type, "let:type", let->type);
 
+  TSNode value = ts_node_child_by_field_name(node, "value");
+  if (value.id != nullptr) {
+    let->expr = parse_expression(context, value);
+    ts_validate_parsing(context.language, value, "let:value", let->expr);
+  }
   return let;
 }
 
@@ -57,12 +56,12 @@ inline Statement* parse_statement_return(TSContext& context, TSNode& node) {
   return return_;
 }
 
-inline Statement* parse_statement_break(TSContext& context, TSNode& /*node*/) {
+inline Statement* parse_statement_break(TSContext& /*context*/, TSNode& /*node*/) {
   Statement* break_ = Statement::New(statement_t::BREAK_STMT);
   return break_;
 }
 
-inline Statement* parse_statement_continue(TSContext& context, TSNode& /*node*/) {
+inline Statement* parse_statement_continue(TSContext& /*context*/, TSNode& /*node*/) {
   Statement* continue_ = Statement::New(statement_t::CONTINUE_STMT);
   return continue_;
 }

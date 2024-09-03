@@ -54,7 +54,11 @@ std::ostream& Statement::Print(std::ostream& out, Statement* stmt, uint64_t tabu
       break;
     case statement_t::LET_STMT:
       out << "let " << stmt->name << ": ";
-      Type::Print(out, stmt->type) << ";";
+      Type::Print(out, stmt->type);
+      if (stmt->expr != nullptr) {
+        Expression::Print(out << " = ", stmt->expr);
+      }
+      out << ";";
       break;
     case statement_t::BLOCK_STMT:
       out << "{" << std::endl;
@@ -97,6 +101,32 @@ std::ostream& Statement::Print(std::ostream& out, Statement* stmt, uint64_t tabu
       break;
     case statement_t::EXPRESSION_STMT:
       Expression::Print(out, stmt->expr) << ";";
+      break;
+  }
+  return out;
+}
+
+std::ostream& Statement::PrintShort(std::ostream& out, Statement* stmt) {
+  switch (stmt->kind) {
+    case statement_t::FOR_STMT:
+      break;
+    case statement_t::LET_STMT:
+      out << "let " << stmt->name << ": ";
+      Type::Print(out, stmt->type) << ";";
+      break;
+    case statement_t::BLOCK_STMT:
+      break;
+    case statement_t::BREAK_STMT:
+      break;
+    case statement_t::RETURN_STMT:
+      break;
+    case statement_t::CONTINUE_STMT:
+      break;
+    case statement_t::IF_ELSE_STMT:
+      break;
+    case statement_t::WHILE_STMT:
+      break;
+    case statement_t::EXPRESSION_STMT:
       break;
   }
   return out;

@@ -1,13 +1,28 @@
 #include <lartc/resolve/symbol_cache.hh>
 
 std::ostream& SymbolCache::Print(std::ostream& out, SymbolCache& symbol_cache) {
-  for (auto decl : symbol_cache.cache) {
+  out << "# Globals" << std::endl << std::endl;
+  for (auto decl : symbol_cache.globals) {
     out << "# " << Declaration::QualifiedName(decl.first) << std::endl << std::endl;
     for (auto solved : decl.second) {
       Symbol::Print(out << " - ", solved.first) << " -> ";
       Declaration::PrintShort(out, solved.second) << std::endl;
     }
-    out << std::endl << std::endl;
+    out << std::endl;
+  }
+
+  out << "# Locals" << std::endl << std::endl;
+  for (auto solved : symbol_cache.locals) {
+    Expression::Print(out << " - ", solved.first) << " -> ";
+    Statement::PrintShort(out, solved.second) << std::endl;
+  }
+  out << std::endl;
+
+  out << "# Parameters" << std::endl << std::endl;
+  for (auto solved : symbol_cache.parameters) {
+    Expression::Print(out << " - ", solved.first) << " -> ";
+    out << solved.second->first << ": ";
+    Type::Print(out, solved.second->second) << std::endl;
   }
   return out;
 }
@@ -57,15 +72,70 @@ Declaration* SymbolCache::find_by_going_down(Declaration* context, Symbol& symbo
   return nullptr;
 }
 
-Declaration* SymbolCache::find(Declaration* context, Symbol symbol) {
-  if (cache.contains(context)) {
-    if (cache.at(context).contains(symbol)) {
-      return cache.at(context).at(symbol);
-    }
-  }
-  Declaration* query = find_by_going_up(context, symbol);
+Declaration* SymbolCache::get_or_find_declaration(Declaration* context, Symbol& symbol) {
+  Declaration* query = get_declaration(context, symbol);
+  if (query != nullptr)
+    return query;
+
+  query = find_by_going_up(context, symbol);
   if (query != nullptr) {
-    cache[context][symbol] = query;
+    globals[context][symbol] = query;
   }
   return query;
+}
+
+Declaration* SymbolCache::get_declaration(Declaration* context, Symbol& symbol) const {
+  if (globals.contains(context)) {
+    if (globals.at(context).contains(symbol)) {
+      return globals.at(context).at(symbol);
+    }
+  }
+  return nullptr;
+}
+  
+Statement* SymbolCache::get_or_find_statement(SymbolStack& symbol_stack, Expression* expression, Symbol& symbol) {
+  Statement* query = get_statement(expression);
+  if (query != nullptr)
+    return query;
+
+  query = symbol_stack.get(symbol);
+  if (query != nullptr) {
+    locals[expression] = query;
+  }
+  return query;
+}
+
+Statement* SymbolCache::get_statement(Expression* context) const {
+  if (locals.contains(context)) {
+    return locals.at(context);
+  }
+  return nullptr;
+}
+
+inline std::pair<std::string, Type*>* find_parameter(Declaration* context, Symbol& symbol) {
+  for (auto it = context->parameters.begin(); it != context->parameters.end(); ++it) {
+    if (it->first == symbol.identifiers.front()) {
+      return &(*it);
+    }
+  }
+  return nullptr;
+}
+  
+std::pair<std::string, Type*>* SymbolCache::get_or_find_parameter(Declaration* context, Expression* expression, Symbol& symbol) {
+  std::pair<std::string, Type*>* query = get_parameter(expression);
+  if (query != nullptr)
+    return query;
+
+  query = find_parameter(context, symbol);
+  if (query != nullptr) {
+    parameters[expression] = query;
+  }
+  return query;
+}
+
+std::pair<std::string, Type*>* SymbolCache::get_parameter(Expression* context) const {
+  if (parameters.contains(context)) {
+    return parameters.at(context);
+  }
+  return nullptr;
 }

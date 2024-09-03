@@ -21,6 +21,7 @@ struct Statement {
 
   static Statement* New(statement_t kind);
   static std::ostream& Print(std::ostream& out, Statement* decl, uint64_t tabulation = 0);
+  static std::ostream& PrintShort(std::ostream& out, Statement* decl);
   static void Delete(Statement*& decl);
 };
 #endif//LARTC_AST_STATEMENT
