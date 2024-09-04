@@ -16,6 +16,7 @@ struct Type {
   std::vector<std::pair<std::string, Type*>> parameters;
 
   static Type* New(type_t kind);
+  static Type* Clone(Type* other);
   static std::ostream& Print(std::ostream&, Type* type, uint64_t tabulation = 0);
   static void Delete(Type*& type);
 };

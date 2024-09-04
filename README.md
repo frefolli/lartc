@@ -2,7 +2,18 @@
 
 ## TODO
 
-## Add Type* and Expression* to FileDB
+### Function Declaration / Definition
+
+When adding a Function to children of module (in general a scoping declaration), check if such Function has been declared / defined before and:
+
+- if declared after declaration:
+  - check if signatures match and skip the insertion of the last declaration
+- if defined after declaration:
+  - check if signatures match and replace the declaration with the definition
+- if declared after definition:
+  - check if signatures match and skip the insertion of the declaration
+- if defined after definition:
+  - throw redefinition error
 
 ### Expression Type Checking and Reference Resolution
 

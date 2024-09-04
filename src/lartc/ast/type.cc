@@ -36,6 +36,24 @@ void Type::Delete(Type*& type) {
   }
 }
 
+Type* Type::Clone(Type* other) {
+  Type* type = nullptr;
+  if (other != nullptr) {
+    type = Type::New(other->kind);
+    type->size = other->size;
+    type->is_signed = other->is_signed;
+    type->subtype = Type::Clone(other->subtype);
+    type->symbol = other->symbol;
+    for (auto item : other->fields) {
+      type->fields.push_back({item.first, Type::Clone(item.second)});
+    }
+    for (auto item : other->parameters) {
+      type->parameters.push_back({item.first, Type::Clone(item.second)});
+    }
+  }
+  return type;
+}
+
 std::ostream& Type::Print(std::ostream& out, Type* type, uint64_t tabulation) {
   tabulate(out, tabulation);
   bool first;

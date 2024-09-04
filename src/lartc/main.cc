@@ -7,6 +7,8 @@
 #include <lartc/tree_sitter.hh>
 #include <lartc/terminal.hh>
 #include <lartc/ast/file_db.hh>
+#include <lartc/typecheck/type_cache.hh>
+#include <lartc/typecheck/check_types.hh>
 
 #include <assert.h>
 #include <cstring>
@@ -93,11 +95,16 @@ int main(int argc, char** args) {
   if (!no_errors_occurred) {
     std::exit(2);
   }
+
+  /* TYPE-CHECK-PHASE */
+  TypeCache type_cache;
+  no_errors_occurred &= check_types(file_db, symbol_cache, type_cache, decl_tree);
   
   std::filesystem::create_directories("tmp");
   print_to_file(decl_tree, "tmp/decl_tree.txt");
   print_to_file(symbol_cache, "tmp/symbol_cache.txt");
   print_to_file(file_db, "tmp/file_db.txt");
+  print_to_file(type_cache, "tmp/type_cache.txt");
   
   /* END-PHASE */
 

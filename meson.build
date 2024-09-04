@@ -31,6 +31,7 @@ executable('lartc', [
     'src/lartc/resolve/symbol_cache.cc',
     'src/lartc/resolve/resolve_symbols.cc',
     'src/lartc/typecheck/type_cache.cc',
+    'src/lartc/typecheck/check_types.cc',
     'src/lartc/main.cc'
   ], dependencies: [tree_sitter, tree_sitter_lart],
   include_directories: include)
