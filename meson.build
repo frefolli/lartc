@@ -9,6 +9,7 @@ include = include_directories('./include')
 
 executable('lartc', [
     'src/lartc/internal_errors.cc',
+    'src/lartc/external_errors.cc',
     'src/lartc/ast/check.cc',
     'src/lartc/ast/parse.cc',
     'src/lartc/ast/type/variants.cc',
@@ -25,6 +26,7 @@ executable('lartc', [
     'src/lartc/ast/declaration.cc',
     'src/lartc/ast/symbol.cc',
     'src/lartc/ast/operator.cc',
+    'src/lartc/ast/file_db.cc',
     'src/lartc/resolve/symbol_stack.cc',
     'src/lartc/resolve/symbol_cache.cc',
     'src/lartc/resolve/resolve_symbols.cc',

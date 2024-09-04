@@ -2,6 +2,7 @@
 #define LARTC_TREE_SITTER
 #include <tree_sitter/api.h>
 #include <lartc/internal_errors.hh>
+#include <lartc/ast/file_db.hh>
 #include <cstring>
 #include <string>
 
@@ -36,5 +37,6 @@ struct TSContext {
   const TSLanguage* language;
   const char* source_code;
   const char* filepath;
+  FileDB* file_db;
 };
 #endif//LARTC_TREE_SITTER

@@ -52,6 +52,7 @@ Type* parse_type_pointer(TSContext& context, TSNode& node) {
 Type* parse_type_symbol(TSContext& context, TSNode& node) {
   Type* type = Type::New(type_t::SYMBOL_TYPE);
   type->symbol = Symbol::From(ts_node_source_code(node, context.source_code));
+  context.file_db->add_symbol(&type->symbol, node);
   return type;
 }
 

@@ -1,9 +1,12 @@
+#include <filesystem>
+#include <fstream>
 #include <lartc/ast/declaration.hh>
 #include <lartc/ast/declaration/parse.hh>
 #include <lartc/ast/check.hh>
 #include <lartc/resolve/resolve_symbols.hh>
 #include <lartc/tree_sitter.hh>
 #include <lartc/terminal.hh>
+#include <lartc/ast/file_db.hh>
 
 #include <assert.h>
 #include <cstring>
@@ -14,20 +17,24 @@
 
 extern "C" const TSLanguage *tree_sitter_lart(void);
 
-char* read_source_code(const char* filepath) {
-    char* text = NULL;
-    FILE* file = fopen(filepath, "r");
-    fseek(file, 0, SEEK_END);
-    long fsize = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    text = (char*) malloc(fsize + 1);
-    fread(text, fsize, 1, file);
-    fclose(file);
-    return text;
+template<typename T>
+void print_to_file(T& object, const char* filepath) {
+  std::ofstream out (filepath);
+  T::Print(out, object);
+  out.close();
+}
+
+template<typename T>
+void print_to_file(T* object, const char* filepath) {
+  std::ofstream out (filepath);
+  T::Print(out, object);
+  out.close();
 }
 
 bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context) {
-  context.source_code = read_source_code(context.filepath);
+  FileDB::File* file = context.file_db->add_file(context.filepath);
+  context.source_code = file->source_code;
+
   TSTree *tree = ts_parser_parse_string(
     parser,
     NULL,
@@ -42,8 +49,6 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
   }
 
   ts_tree_delete(tree);
-  free((char*) context.source_code);
-
   return ast_ok;
 }
 
@@ -53,12 +58,14 @@ int main(int argc, char** args) {
   ts_parser_set_language(parser, language); 
 
   Declaration* decl_tree = Declaration::New(declaration_t::MODULE_DECL);
+  FileDB file_db;
 
   /* AST-PHASE */
   TSContext context = {
     .language = language,
     .source_code = nullptr,
-    .filepath = nullptr
+    .filepath = nullptr,
+    .file_db = &file_db
   };
   
   bool at_least_one_source_file = false;
@@ -78,18 +85,19 @@ int main(int argc, char** args) {
   if (!no_errors_occurred) {
     std::exit(2);
   }
-  
-  Declaration::Print(std::clog, decl_tree) << std::endl;
 
   /* RESOLVE-PHASE */
   SymbolCache symbol_cache;
-  no_errors_occurred &= resolve_symbols(symbol_cache, decl_tree);
+  no_errors_occurred &= resolve_symbols(file_db, symbol_cache, decl_tree);
 
   if (!no_errors_occurred) {
     std::exit(2);
   }
-
-  SymbolCache::Print(std::clog, symbol_cache);
+  
+  std::filesystem::create_directories("tmp");
+  print_to_file(decl_tree, "tmp/decl_tree.txt");
+  print_to_file(symbol_cache, "tmp/symbol_cache.txt");
+  print_to_file(file_db, "tmp/file_db.txt");
   
   /* END-PHASE */
 

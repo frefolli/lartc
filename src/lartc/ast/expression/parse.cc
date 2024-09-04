@@ -10,6 +10,7 @@
 Expression* parse_expression_symbol(TSContext& context, TSNode& node) {
   Expression* identifier = Expression::New(SYMBOL_EXPR);
   identifier->symbol = Symbol::From(ts_node_source_code(node, context.source_code));
+  context.file_db->add_symbol(&identifier->symbol, node);
   return identifier;
 }
 
