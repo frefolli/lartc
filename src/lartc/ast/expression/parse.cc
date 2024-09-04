@@ -32,7 +32,7 @@ Expression* parse_expression_boolean(TSContext& context, TSNode& node) {
   return boolean;
 }
 
-Expression* parse_expression_nullptr(TSContext& context, TSNode& node) {
+Expression* parse_expression_nullptr(TSContext& /*context*/, TSNode& /*node*/) {
   Expression* nullptr_ = Expression::New(NULLPTR_EXPR);
   return nullptr_;
 }
@@ -160,7 +160,11 @@ Expression* parse_expression(TSContext& context, TSNode& node) {
   const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(node));
   auto it = expression_parsers.find(symbol_name);
   if (it != expression_parsers.end()) {
-    return it->second(context, node);
+    Expression* expr = it->second(context, node);
+    if (expr != nullptr) {
+      context.file_db->add_expression(expr, node);
+    }
+    return expr;
   }
   return nullptr;
 }

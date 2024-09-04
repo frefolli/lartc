@@ -2,6 +2,8 @@
 
 ## TODO
 
+## Add Type* and Expression* to FileDB
+
 ### Expression Type Checking and Reference Resolution
 
 In binary expressions with dot_operator the left operand should be searched first, then extracted it's type, search inside it the right symbol;

@@ -1,9 +1,10 @@
 #include <lartc/resolve/symbol_cache.hh>
 
 std::ostream& SymbolCache::Print(std::ostream& out, SymbolCache& symbol_cache) {
-  out << "# Globals" << std::endl << std::endl;
+  out << "# Symbol Cache" << std::endl << std::endl;
+  out << "## Globals" << std::endl << std::endl;
   for (auto decl : symbol_cache.globals) {
-    out << "# " << Declaration::QualifiedName(decl.first) << std::endl << std::endl;
+    out << "### " << Declaration::QualifiedName(decl.first) << std::endl << std::endl;
     for (auto solved : decl.second) {
       Symbol::Print(out << " - ", solved.first) << " -> ";
       Declaration::PrintShort(out, solved.second) << std::endl;
@@ -11,14 +12,14 @@ std::ostream& SymbolCache::Print(std::ostream& out, SymbolCache& symbol_cache) {
     out << std::endl;
   }
 
-  out << "# Locals" << std::endl << std::endl;
+  out << "## Locals" << std::endl << std::endl;
   for (auto solved : symbol_cache.locals) {
     Expression::Print(out << " - ", solved.first) << " -> ";
     Statement::PrintShort(out, solved.second) << std::endl;
   }
   out << std::endl;
 
-  out << "# Parameters" << std::endl << std::endl;
+  out << "## Parameters" << std::endl << std::endl;
   for (auto solved : symbol_cache.parameters) {
     Expression::Print(out << " - ", solved.first) << " -> ";
     out << solved.second->first << ": ";

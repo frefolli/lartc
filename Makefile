@@ -1,7 +1,7 @@
 @all: ./builddir/lartc
 
 run : ./builddir/lartc
-	./builddir/lartc
+	./builddir/lartc ../lart-examples/tree.lart
 
 ./builddir/lartc: ./builddir
 	ninja -C ./builddir

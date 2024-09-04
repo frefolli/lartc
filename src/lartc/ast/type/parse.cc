@@ -103,7 +103,11 @@ Type* parse_type(TSContext& context, TSNode& node) {
   const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(node));
   auto it = type_parsers.find(symbol_name);
   if (it != type_parsers.end()) {
-    return it->second(context, node);
+    Type* type = it->second(context, node);
+    if (type != nullptr) {
+      context.file_db->add_type(type, node);
+    }
+    return type;
   }
   return nullptr;
 }
