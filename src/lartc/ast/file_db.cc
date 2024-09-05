@@ -14,19 +14,11 @@ inline char* read_source_code(const char* filepath) {
     return text;
 }
 
-inline char* strcpy(const char* string) {
-  uint64_t length = strlen(string) + 1;
-  char* buffer = (char*) malloc (length * sizeof(char));
-  strcpy(buffer, string);
-  buffer[length] = '\0';
-  return buffer;
-}
-
 FileDB::File* FileDB::add_file(const char* filepath) {
   files.push_back(FileDB::File {});
   FileDB::File* file = &files.back();
-  file->filepath = strcpy(filepath);
-  file->source_code = read_source_code(file->filepath);
+  file->filepath = filepath;
+  file->source_code = read_source_code(file->filepath.c_str());
   return file;
 }
 

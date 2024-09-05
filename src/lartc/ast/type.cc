@@ -1,6 +1,7 @@
-#include <ios>
 #include <lartc/ast/type.hh>
 #include <lartc/internal_errors.hh>
+#include <ios>
+#include <iostream>
 
 Type* Type::New(type_t kind) {
   return new Type {
@@ -43,7 +44,7 @@ Type* Type::Clone(Type* other) {
   Type* type = Type::New(other->kind);
   type->size = other->size;
   type->is_signed = other->is_signed;
-  if (type->subtype != nullptr) {
+  if (other->subtype != nullptr) {
     type->subtype = Type::Clone(other->subtype);
   }
   type->symbol = other->symbol;

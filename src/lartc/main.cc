@@ -57,7 +57,7 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
 int main(int argc, char** args) {
   TSParser* parser = ts_parser_new();
   const TSLanguage* language = tree_sitter_lart();
-  ts_parser_set_language(parser, language); 
+  ts_parser_set_language(parser, language);
 
   Declaration* decl_tree = Declaration::New(declaration_t::MODULE_DECL);
   FileDB file_db;
@@ -75,8 +75,14 @@ int main(int argc, char** args) {
 
   for (uint64_t arg_index = 1; arg_index < argc; ++arg_index) {
     context.filepath = args[arg_index];
-    no_errors_occurred &= parse_filepath(decl_tree, parser, context);
     at_least_one_source_file = true;
+    if (std::filesystem::exists(context.filepath)) {
+      no_errors_occurred &= parse_filepath(decl_tree, parser, context);
+    } else {
+      no_errors_occurred = false;
+      std::cerr << RED_TEXT << "error" << NORMAL_TEXT << ": file '" << context.filepath << "' not found" << std::endl;
+      break;
+    }
   }
 
   if (!at_least_one_source_file) {
@@ -99,6 +105,10 @@ int main(int argc, char** args) {
   /* TYPE-CHECK-PHASE */
   TypeCache type_cache;
   no_errors_occurred &= check_types(file_db, symbol_cache, type_cache, decl_tree);
+
+  if (!no_errors_occurred) {
+    std::exit(2);
+  }
   
   std::filesystem::create_directories("tmp");
   print_to_file(decl_tree, "tmp/decl_tree.txt");

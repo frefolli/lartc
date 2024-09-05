@@ -2,38 +2,20 @@
 #include <lartc/internal_errors.hh>
 #include <lartc/external_errors.hh>
 #include <iostream>
+#include <cassert>
 
 // Internal Errors
 void symbol_should_be_resolved() {
   throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
 }
 
-// External Errors
-void type_is_not_dereferenceable() {
-  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
-}
-
-void module_has_no_type() {
-  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
-}
-
-void type_cannot_be_algebrically_manipulated() {
-  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
-}
-
-void type_is_not_callable() {
-  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
-}
-
-void wrong_parameter_number() {
-  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
-}
-
+/*
 bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cache, Declaration* context, Type* type) {
   bool type_check_ok = true;
-  /* THIS FUNCTION IS A STUB FOR SOME CHECKS THAT CAN BE DONE ON TYPE CONSISTENCY AND SAFE RECURSION */
+  // TODO: THIS FUNCTION IS A STUB FOR SOME CHECKS THAT CAN BE DONE ON TYPE CONSISTENCY AND SAFE RECURSION
   return type_check_ok;
 }
+*/
 
 bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cache, Declaration* context, Expression* expr) {
   bool type_check_ok = true;
@@ -67,7 +49,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 // for debug purposes
                 Type* type = Type::New(type_t::VOID_TYPE);
                 type_cache.expression_types[expr] = type;
-                module_has_no_type();
+                throw_module_has_no_type_error(file_db.expression_points[expr], context, expr->symbol);
                 type_check_ok = false;
               }
             } else {
@@ -136,7 +118,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
               // TODO: check if argument_type can be implicitly casted to parameter_type
             }
           } else {
-            wrong_parameter_number();
+            throw_wrong_parameter_number_error(file_db.expression_points[expr], context, callable_type);
             type_check_ok = false;
           }
           type_cache.expression_types[expr] = Type::Clone(callable_type->subtype);
@@ -144,7 +126,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           // for debug purposes
           Type* type = Type::New(type_t::VOID_TYPE);
           type_cache.expression_types[expr] = type;
-          type_is_not_callable();
+          throw_type_is_not_callable_error(file_db.expression_points[expr], context, callable_type);
           type_check_ok = false;
         }
       }
@@ -179,7 +161,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 Type* type = Type::Clone(value_type->subtype);
                 type_cache.expression_types[expr] = type;
               } else {
-                type_is_not_dereferenceable();
+                throw_type_is_not_dereferenceable_error(file_db.expression_points[expr], context, value_type);
                 type_check_ok = false;
               }
             }
@@ -199,7 +181,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 Type* type = Type::Clone(value_type);
                 type_cache.expression_types[expr] = type;
               } else {
-                type_cannot_be_algebrically_manipulated();
+                throw_type_cannot_be_algebraically_manipulated_error(file_db.expression_points[expr], context, value_type);
                 type_check_ok = false;
               }
             }
@@ -259,7 +241,9 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
     case statement_t::IF_ELSE_STMT:
       type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, stmt->condition);
       type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, stmt->then);
-      type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, stmt->else_);
+      if (stmt->else_ != nullptr) {
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, stmt->else_);
+      }
       break;
     case statement_t::WHILE_STMT:
       type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, stmt->condition);
@@ -289,9 +273,9 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
 
   switch (decl->kind) {
     case declaration_t::FUNCTION_DECL:
-      type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->type);
+      // TODO: type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->type);
       for (auto param : decl->parameters) {
-        type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, param.second);
+        // TODO: type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, param.second);
       }
       if (decl->body != nullptr) {
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->body);
@@ -303,7 +287,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       }
       break;
     case declaration_t::TYPE_DECL:
-      type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->type);
+      // TODO: type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->type);
       break;
   }
 

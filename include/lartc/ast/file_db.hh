@@ -9,7 +9,7 @@
 
 struct FileDB {
   struct File {
-    char* filepath;
+    std::string filepath;
     char* source_code;
 
     static std::ostream& Print(std::ostream& out, const File& file);

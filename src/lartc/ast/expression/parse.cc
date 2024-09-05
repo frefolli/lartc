@@ -149,6 +149,7 @@ std::unordered_map<std::string, expression_parser> expression_parsers = {
   {"string", parse_expression_string},
   {"call_expression", parse_expression_call},
   {"binary_expression", parse_expression_binary},
+  {"callable_binary_expression", parse_expression_binary},
   {"monary_expression", parse_expression_monary},
   {"sizeof_expression", parse_expression_sizeof},
   {"cast_expression", parse_expression_cast},

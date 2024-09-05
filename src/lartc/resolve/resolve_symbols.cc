@@ -69,7 +69,7 @@ bool resolve_symbols(FileDB& file_db, SymbolCache &symbol_cache, SymbolStack& sy
 
   switch (expr->kind) {
     case expression_t::SYMBOL_EXPR:
-      resolve_symbol_or_throw_error(file_db, symbol_cache, symbol_stack, context, expr, expr->symbol);
+      resolution_ok &= resolve_symbol_or_throw_error(file_db, symbol_cache, symbol_stack, context, expr, expr->symbol);
       break;
     case expression_t::CALL_EXPR:
       resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->callable);
