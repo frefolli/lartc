@@ -1,4 +1,32 @@
 #include <lartc/typecheck/check_types.hh>
+#include <lartc/internal_errors.hh>
+#include <lartc/external_errors.hh>
+
+// Internal Errors
+void symbol_should_be_resolved() {
+  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
+}
+
+// External Errors
+void type_is_not_dereferenceable() {
+  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
+}
+
+void module_has_no_type() {
+  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
+}
+
+void type_cannot_be_algebrically_manipulated() {
+  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
+}
+
+void type_is_not_callable() {
+  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
+}
+
+void wrong_parameter_number() {
+  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
+}
 
 bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cache, Declaration* context, Type* type) {
   bool type_check_ok = true;
@@ -23,7 +51,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
             type_cache.expression_types[expr] = type;
           } else {
             Declaration* query_decl = symbol_cache.get_declaration(context, expr->symbol);
-            if (query_decl != nullptr && query_decl->kind != declaration_t::MODULE_DECL) {
+            if (query_decl != nullptr) {
               if (query_decl->kind == declaration_t::TYPE_DECL) {
                 Type* type = Type::Clone(query_decl->type);
                 type_cache.expression_types[expr] = type;
@@ -34,13 +62,15 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                   type->parameters.push_back({param.first, Type::Clone(param.second)});
                 }
                 type_cache.expression_types[expr] = type;
+              } else {// = declaration_t::MODULE_DECL
+                // for debug purposes
+                Type* type = Type::New(type_t::VOID_TYPE);
+                type_cache.expression_types[expr] = type;
+                module_has_no_type();
+                type_check_ok = false;
               }
             } else {
-              // for debug purposes
-              Type* type = Type::New(type_t::VOID_TYPE);
-              type_cache.expression_types[expr] = type;
-              // TODO: throw type resolution error
-              type_check_ok = false;
+              symbol_should_be_resolved();
             }
           }
         }
@@ -104,7 +134,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
               // TODO: check if argument_type can be implicitly casted to parameter_type
             }
           } else {
-            // TODO: throw wrong parameter number error
+            wrong_parameter_number();
             type_check_ok = false;
           }
           type_cache.expression_types[expr] = Type::Clone(callable_type->subtype);
@@ -112,17 +142,27 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           // for debug purposes
           Type* type = Type::New(type_t::VOID_TYPE);
           type_cache.expression_types[expr] = type;
-          // TODO: throw type resolution error
+          type_is_not_callable();
           type_check_ok = false;
         }
       }
       break;
     case expression_t::BINARY_EXPR:
-      // TODO
+      {
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->left);
+        Type* left_type = type_cache.expression_types[expr->left];
+
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
+        Type* right_type = type_cache.expression_types[expr->right];
+
+          // TODO: implement
+          Type* type = Type::New(type_t::VOID_TYPE);
+          type_cache.expression_types[expr] = type;
+      }
       break;
     case expression_t::MONARY_EXPR:
       {
-        check_types(file_db, symbol_cache, type_cache, context, expr->value);
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->value);
         Type* value_type = type_cache.expression_types[expr->value];
 
         switch (expr->operator_) {
@@ -132,7 +172,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 Type* type = Type::Clone(value_type->subtype);
                 type_cache.expression_types[expr] = type;
               } else {
-                // TODO: throw error due to undereferenceable type
+                type_is_not_dereferenceable();
                 type_check_ok = false;
               }
             }
@@ -152,7 +192,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 Type* type = Type::Clone(value_type);
                 type_cache.expression_types[expr] = type;
               } else {
-                // TODO: throw error due to invalid type
+                type_cannot_be_algebrically_manipulated();
                 type_check_ok = false;
               }
             }
@@ -170,7 +210,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       break;
     case expression_t::CAST_EXPR:
       {
-        check_types(file_db, symbol_cache, type_cache, context, expr->value);
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->value);
         Type* value_type = type_cache.expression_types[expr->value];
         Type* casted_type = expr->type;
         // TODO: check if value_type can be explicitly casted to casted_type
@@ -179,7 +219,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       break;
     case expression_t::BITCAST_EXPR:
       {
-        check_types(file_db, symbol_cache, type_cache, context, expr->value);
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->value);
         Type* value_type = type_cache.expression_types[expr->value];
         Type* casted_type = expr->type;
         // TODO: check if value_type can be explicitly casted to casted_type
