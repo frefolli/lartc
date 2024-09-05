@@ -79,9 +79,11 @@ bool resolve_symbols(FileDB& file_db, SymbolCache &symbol_cache, SymbolStack& sy
       break;
     case expression_t::CAST_EXPR:
       resolution_ok &= resolve_symbols(file_db, symbol_cache, context, expr->type);
+      resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->value);
       break;
     case expression_t::BITCAST_EXPR:
       resolution_ok &= resolve_symbols(file_db, symbol_cache, context, expr->type);
+      resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->value);
       break;
     case expression_t::SIZEOF_EXPR:
       resolution_ok &= resolve_symbols(file_db, symbol_cache, context, expr->type);

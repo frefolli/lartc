@@ -1,6 +1,7 @@
 #include <lartc/typecheck/check_types.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/external_errors.hh>
+#include <iostream>
 
 // Internal Errors
 void symbol_should_be_resolved() {
@@ -70,6 +71,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 type_check_ok = false;
               }
             } else {
+              Symbol::Print(std::cout, expr->symbol);
               symbol_should_be_resolved();
             }
           }
@@ -152,12 +154,17 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->left);
         Type* left_type = type_cache.expression_types[expr->left];
 
-        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
-        Type* right_type = type_cache.expression_types[expr->right];
+        if (expr->operator_ == DOT_OP) {
+          // Right should be a Symbol
+        } else {
+          // Types should be algrebically manipulable
+          type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
+          Type* right_type = type_cache.expression_types[expr->right];
+        }
 
-          // TODO: implement
-          Type* type = Type::New(type_t::VOID_TYPE);
-          type_cache.expression_types[expr] = type;
+        // TODO: implement
+        Type* type = Type::New(type_t::VOID_TYPE);
+        type_cache.expression_types[expr] = type;
       }
       break;
     case expression_t::MONARY_EXPR:

@@ -2,6 +2,8 @@
 
 ## TODO
 
+### Use type_ckec_ok to stop lazily before having a segfault
+
 ### Function Declaration / Definition
 
 When adding a Function to children of module (in general a scoping declaration), check if such Function has been declared / defined before and:

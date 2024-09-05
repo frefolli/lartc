@@ -37,19 +37,21 @@ void Type::Delete(Type*& type) {
 }
 
 Type* Type::Clone(Type* other) {
-  Type* type = nullptr;
-  if (other != nullptr) {
-    type = Type::New(other->kind);
-    type->size = other->size;
-    type->is_signed = other->is_signed;
+  if (other == nullptr) {
+    throw_internal_error(ATTEMPT_TO_CLONE_NULLPTR_AS_TYPE, MSG(""));
+  }
+  Type* type = Type::New(other->kind);
+  type->size = other->size;
+  type->is_signed = other->is_signed;
+  if (type->subtype != nullptr) {
     type->subtype = Type::Clone(other->subtype);
-    type->symbol = other->symbol;
-    for (auto item : other->fields) {
-      type->fields.push_back({item.first, Type::Clone(item.second)});
-    }
-    for (auto item : other->parameters) {
-      type->parameters.push_back({item.first, Type::Clone(item.second)});
-    }
+  }
+  type->symbol = other->symbol;
+  for (auto item : other->fields) {
+    type->fields.push_back({item.first, Type::Clone(item.second)});
+  }
+  for (auto item : other->parameters) {
+    type->parameters.push_back({item.first, Type::Clone(item.second)});
   }
   return type;
 }
