@@ -100,3 +100,120 @@ std::ostream& Type::Print(std::ostream& out, Type* type, uint64_t tabulation) {
   }
   return out;
 }
+
+bool Type::Equal(Type* A, Type* B) {
+  if (A->kind != B->kind)
+    return false;
+  bool equals = true;
+  switch (A->kind) {
+    case type_t::POINTER_TYPE:
+      equals &= Type::Equal(A->subtype, B->subtype);
+      break;
+    case type_t::VOID_TYPE:
+      break;
+    case type_t::DOUBLE_TYPE:
+      equals &= A->size == B->size;
+      break;
+    case type_t::INTEGER_TYPE:
+      equals &= A->size == B->size;
+      equals &= A->is_signed == B->is_signed;
+      break;
+    case type_t::STRUCT_TYPE:
+      equals &= A->fields.size() == B->fields.size();
+      if (equals) {
+        for (uint64_t i = 0; i < A->fields.size(); ++i) {
+          equals &= Type::Equal(A->fields.at(i).second, B->fields.at(i).second);
+        }
+      }
+      break;
+    case type_t::SYMBOL_TYPE:
+      equals &= A->symbol == B->symbol;
+      break;
+    case type_t::BOOLEAN_TYPE:
+      break;
+    case type_t::FUNCTION_TYPE:
+      equals &= Type::Equal(A->subtype, B->subtype);
+      equals &= A->parameters.size() == B->parameters.size();
+      if (equals) {
+        for (uint64_t i = 0; i < A->parameters.size(); ++i) {
+          equals &= Type::Equal(A->parameters.at(i).second, B->parameters.at(i).second);
+        }
+      }
+      break;
+  }
+  return equals;
+}
+
+bool Type::CanBeImplicitlyCastedTo(Type* src, Type* dst) {
+  bool implicitly_castable = true;
+  switch (src->kind) {
+    case type_t::POINTER_TYPE:
+      implicitly_castable &= (src->subtype->kind == VOID_TYPE || Type::Equal(src->subtype, dst->subtype));
+      break;
+    case type_t::VOID_TYPE:
+      break;
+    case type_t::DOUBLE_TYPE:
+      implicitly_castable &= src->size <= dst->size;
+      break;
+    case type_t::INTEGER_TYPE:
+      implicitly_castable &= src->size <= dst->size;
+      implicitly_castable &= src->is_signed == dst->is_signed;
+      break;
+    case type_t::STRUCT_TYPE:
+      implicitly_castable &= Type::Equal(src, dst);
+      break;
+    case type_t::SYMBOL_TYPE:
+      implicitly_castable &= Type::Equal(src, dst);
+      break;
+    case type_t::BOOLEAN_TYPE:
+      break;
+    case type_t::FUNCTION_TYPE:
+      implicitly_castable &= Type::Equal(src, dst);
+      break;
+  }
+  return implicitly_castable;
+}
+
+/*
+uint64_t Type::Size(Type* type) {
+  uint64_t size = 0;
+  switch (type->kind) {
+    case type_t::POINTER_TYPE:
+      size = 64;
+      break;
+    case type_t::VOID_TYPE:
+      break;
+    case type_t::DOUBLE_TYPE:
+      size = type->size;
+      break;
+    case type_t::INTEGER_TYPE:
+      size = type->size;
+      break;
+    case type_t::STRUCT_TYPE:
+      for (auto item : type->fields) {
+        size += Type::Size(item.second);
+      }
+      break;
+    case type_t::SYMBOL_TYPE:
+      // TODO: RESOLVE
+      size &= 64;
+      break;
+    case type_t::BOOLEAN_TYPE:
+      size = 1;
+      break;
+    case type_t::FUNCTION_TYPE:
+      size = 64;
+      break;
+  }
+  return size;
+}
+*/
+
+Type* Type::ExtractField(Type* struct_type, Symbol& name) {
+  for (auto item : struct_type->fields) {
+    if (item.first == name.identifiers.front()) {
+      return item.second;
+    }
+  }
+  return nullptr;
+}

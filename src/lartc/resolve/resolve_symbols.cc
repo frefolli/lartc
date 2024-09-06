@@ -90,7 +90,7 @@ bool resolve_symbols(FileDB& file_db, SymbolCache &symbol_cache, SymbolStack& sy
       break;
     case expression_t::BINARY_EXPR:
       resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->left);
-      if (expr->operator_ != DOT_OP) {
+      if (expr->operator_ != DOT_OP && expr->operator_ != ARR_OP) {
         resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->right);
       }
       break;

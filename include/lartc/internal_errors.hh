@@ -12,9 +12,10 @@
   X(TS_ROOT_NODE_SHOULD_BE_SOURCE_FILE), \
   X(TS_UNEXPECTED_SYMBOL_NAME), \
   X(TS_DEBUG), \
-  X(SYMBOL_SHOULD_BE_RESOLVE), \
+  X(SYMBOL_SHOULD_BE_RESOLVED), \
   X(NOT_IMPLEMENTED), \
-  X(ATTEMPT_TO_CLONE_NULLPTR_AS_TYPE)
+  X(ATTEMPT_TO_CLONE_NULLPTR_AS_TYPE), \
+  X(ATTEMPT_TO_USE_OTHER_DECLARATION_AS_TYPEDEF)
 
 enum internal_error_t {
 #define X(_) _
@@ -24,6 +25,7 @@ enum internal_error_t {
 
 std::ostream& operator<<(std::ostream& out, internal_error_t error);
 void throw_internal_error(internal_error_t error, std::stringstream msg);
+void throw_internal_error(internal_error_t error, std::string msg);
 
 inline std::ostream& tabulate(std::ostream& out, uint64_t tabulation) {
   for (uint64_t i = 0; i < tabulation; ++i) {

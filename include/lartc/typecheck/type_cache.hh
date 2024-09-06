@@ -8,6 +8,7 @@ struct TypeCache {
   std::map<Expression*, Type*> expression_types;
 
   static std::ostream& Print(std::ostream& out, TypeCache& type_cache);
+  static void Delete(TypeCache& type_cache);
 };
 #endif//LARTC_TYPECHECK_TYPE_CACHE
 

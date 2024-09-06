@@ -1,12 +1,20 @@
 #include <lartc/typecheck/check_types.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/external_errors.hh>
-#include <iostream>
 #include <cassert>
 
 // Internal Errors
-void symbol_should_be_resolved() {
-  throw_internal_error(NOT_IMPLEMENTED, MSG(__FILE__ << ", " << __LINE__));
+void throw_symbol_should_be_resolved(Declaration* context, Symbol& symbol) {
+  auto msg = MSG("");
+  Declaration::PrintShort(Symbol::Print(msg << "'", symbol) << " inside of declaration ", context);
+  throw_internal_error(SYMBOL_SHOULD_BE_RESOLVED, msg.str());
+}
+
+// Internal Errors
+void throw_attempt_to_use_other_declaration_as_typedef(Declaration* context, Declaration* decl) {
+  auto msg = MSG("");
+  Declaration::PrintShort(Declaration::PrintShort(msg << "'", decl) << " inside of declaration ", context);
+  throw_internal_error(SYMBOL_SHOULD_BE_RESOLVED, msg.str());
 }
 
 /*
@@ -46,15 +54,14 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 }
                 type_cache.expression_types[expr] = type;
               } else {// = declaration_t::MODULE_DECL
-                // for debug purposes
-                Type* type = Type::New(type_t::VOID_TYPE);
-                type_cache.expression_types[expr] = type;
                 throw_module_has_no_type_error(file_db.expression_points[expr], context, expr->symbol);
                 type_check_ok = false;
+                // for debug
+                Type* type = Type::New(type_t::VOID_TYPE);
+                type_cache.expression_types[expr] = type;
               }
             } else {
-              Symbol::Print(std::cout, expr->symbol);
-              symbol_should_be_resolved();
+              throw_symbol_should_be_resolved(context, expr->symbol);
             }
           }
         }
@@ -112,10 +119,14 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
         if (callable_type->kind == type_t::FUNCTION_TYPE) {
           if (callable_type->parameters.size() == expr->arguments.size()) {
             for (uint64_t argument_index = 0; argument_index < callable_type->parameters.size(); ++argument_index) {
-              type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->arguments.at(argument_index));
+              Expression* argument = expr->arguments.at(argument_index);
+              type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, argument);
               Type* parameter_type = callable_type->parameters.at(argument_index).second;
-              Type* argument_type = type_cache.expression_types[expr->arguments.at(argument_index)];
-              // TODO: check if argument_type can be implicitly casted to parameter_type
+              Type* argument_type = type_cache.expression_types[argument];
+              if (!Type::CanBeImplicitlyCastedTo(argument_type, parameter_type)) {
+                throw_type_is_not_implcitly_castable_to(file_db.expression_points[argument], context, argument_type, parameter_type);
+                type_check_ok = false;
+              }
             }
           } else {
             throw_wrong_parameter_number_error(file_db.expression_points[expr], context, callable_type);
@@ -136,17 +147,56 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->left);
         Type* left_type = type_cache.expression_types[expr->left];
 
-        if (expr->operator_ == DOT_OP) {
-          // Right should be a Symbol
+        if (expr->operator_ == ARR_OP) {
+          // TODO: implement
+          Type* type = Type::New(type_t::VOID_TYPE);
+          type_cache.expression_types[expr] = type;
+        } else if (expr->operator_ == DOT_OP) {
+          if (expr->right->kind != expression_t::SYMBOL_EXPR) {
+            throw_right_operand_of_dot_operator_should_be_a_symbol(file_db.expression_points[expr], context);
+            type_check_ok = false;
+            Type* type = Type::New(type_t::VOID_TYPE);
+            type_cache.expression_types[expr] = type;
+          } else {
+            while (left_type->kind == type_t::SYMBOL_TYPE) {
+              Declaration* decl = symbol_cache.get_declaration(context, left_type->symbol);
+              if (decl == nullptr) {
+                throw_symbol_should_be_resolved(context, left_type->symbol);
+              }
+
+              if (decl->kind != declaration_t::TYPE_DECL) {
+                throw_attempt_to_use_other_declaration_as_typedef(context, decl);
+              }
+              left_type = decl->type;
+            }
+
+            if (left_type->kind != type_t::STRUCT_TYPE) {
+              throw_left_operand_of_dot_operator_should_be_a_struct(file_db.expression_points[expr], context, left_type);
+              type_check_ok = false;
+              Type* type = Type::New(type_t::VOID_TYPE);
+              type_cache.expression_types[expr] = type;
+            } else {
+              Type* field_type = Type::ExtractField(left_type, expr->right->symbol);
+              if (field_type == nullptr) {
+                throw_struct_has_not_named_field(file_db.expression_points[expr], context, left_type, expr->right->symbol);
+                type_check_ok = false;
+                Type* type = Type::New(type_t::VOID_TYPE);
+                type_cache.expression_types[expr] = type;
+              } else {
+                Type* type = Type::Clone(field_type);
+                type_cache.expression_types[expr] = type;
+              }
+            }
+          }
         } else {
           // Types should be algrebically manipulable
           type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
           Type* right_type = type_cache.expression_types[expr->right];
-        }
 
-        // TODO: implement
-        Type* type = Type::New(type_t::VOID_TYPE);
-        type_cache.expression_types[expr] = type;
+          // TODO: implement
+          Type* type = Type::New(type_t::VOID_TYPE);
+          type_cache.expression_types[expr] = type;
+        }
       }
       break;
     case expression_t::MONARY_EXPR:

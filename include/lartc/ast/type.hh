@@ -19,5 +19,9 @@ struct Type {
   static Type* Clone(Type* other);
   static std::ostream& Print(std::ostream&, Type* type, uint64_t tabulation = 0);
   static void Delete(Type*& type);
+
+  static bool Equal(Type* A, Type* B);
+  static bool CanBeImplicitlyCastedTo(Type* src, Type* dst);
+  static Type* ExtractField(Type* struct_type, Symbol& name);
 };
 #endif//LARTC_AST_TYPE

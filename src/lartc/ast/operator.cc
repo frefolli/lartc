@@ -3,6 +3,8 @@
 void operator>>(std::string op, operator_t& operator_) {
   if (op == ".")
     operator_ = DOT_OP;
+  if (op == "->")
+    operator_ = ARR_OP;
   if (op == "^")
     operator_ = XOR_OP;
   if (op == "*")
@@ -52,6 +54,7 @@ void operator>>(std::string op, operator_t& operator_) {
 std::ostream& operator<<(std::ostream& out, operator_t operator_) {
   switch (operator_) {
     case DOT_OP: return out << ".";
+    case ARR_OP: return out << ".";
     case XOR_OP: return out << "^";
     case MUL_OP: return out << "*";
     case DIV_OP: return out << "/";

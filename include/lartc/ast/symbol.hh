@@ -7,6 +7,7 @@ struct Symbol {
   std::vector<std::string> identifiers;
 
   bool operator<(const Symbol& other) const;
+  bool operator==(const Symbol& other) const;
 
   static Symbol From(std::string);
   static std::ostream& Print(std::ostream& out, const Symbol& symbol);

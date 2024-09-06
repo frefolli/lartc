@@ -86,3 +86,49 @@ void throw_wrong_parameter_number_error(FileDB::Point& point, Declaration* conte
 
   print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
 }
+
+void throw_type_is_not_implcitly_castable_to(FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": type '";
+  Type::Print(std::cerr, src_type) << "'";
+  std::cerr << "' is not implicitly castable to '";
+  Type::Print(std::cerr, dst_type) << "' and must be casted explicitly" << std::endl;
+  std::cerr << " inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_right_operand_of_dot_operator_should_be_a_symbol(FileDB::Point& point, Declaration* context) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": right operand of dot operator should be a symbol" << std::endl;
+  std::cerr << "inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_left_operand_of_dot_operator_should_be_a_struct(FileDB::Point& point, Declaration* context, Type* non_struct_type) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": left operand of dot operator should be a struct, instead is '";
+  Type::Print(std::cerr, non_struct_type) << "'" << std::endl;
+  std::cerr << " inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_struct_has_not_named_field(FileDB::Point& point, Declaration* context, Type* struct_type, Symbol& field_name) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": struct '";
+  Type::Print(std::cerr, struct_type);
+  Symbol::Print(std::cerr << "' has not named field '", field_name) << "'" << std::endl;
+  std::cerr << " inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}

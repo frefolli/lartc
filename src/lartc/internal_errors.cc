@@ -19,3 +19,8 @@ void throw_internal_error(internal_error_t error, std::stringstream msg) {
   std::cerr << error << msg.str() << std::endl;
   std::exit(error);
 }
+
+void throw_internal_error(internal_error_t error, std::string msg) {
+  std::cerr << error << msg << std::endl;
+  std::exit(error);
+}

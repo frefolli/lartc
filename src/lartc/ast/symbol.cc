@@ -39,3 +39,7 @@ bool Symbol::operator<(const Symbol& other) const {
   }
   return i < j;
 }
+
+bool Symbol::operator==(const Symbol& other) const {
+  return identifiers == other.identifiers;
+}

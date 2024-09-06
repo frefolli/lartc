@@ -3,6 +3,7 @@
 #include <ostream>
 #define BINARY_OPERATOR_VARIANTS \
     X(DOT_OP), \
+    X(ARR_OP), \
     X(XOR_OP), \
     X(MUL_OP), \
     X(DIV_OP), \
