@@ -1,24 +1,6 @@
 #include <lartc/typecheck/size_cache.hh>
 
-void SizeCache::add_declaration(SymbolCache& symbol_cache, Declaration* decl) {
-  switch (decl->kind) {
-    case declaration_t::MODULE_DECL:
-      for (auto child : decl->children) {
-        add_declaration(symbol_cache, child);
-      }
-      break;
-    case declaration_t::TYPE_DECL:
-      if (!sizes.contains(decl)) {
-        staging[decl] = true;
-        sizes[decl] = compute_size(symbol_cache, decl, decl->type);
-        staging[decl] = false;
-      }
-      break;
-    case declaration_t::FUNCTION_DECL:
-      break;
-  }
-}
-
+// TODO: remove or refactor
 uint64_t SizeCache::compute_size(SymbolCache& symbol_cache, Declaration* context, Type* type) {
   uint64_t size = 0;
   switch (type->kind) {
@@ -45,7 +27,7 @@ uint64_t SizeCache::compute_size(SymbolCache& symbol_cache, Declaration* context
           // throw type system error
         } else {
           if (!sizes.contains(decl)) {
-            add_declaration(symbol_cache, decl);
+            // add_declaration(symbol_cache, decl);
           }
           size += sizes[decl];
         }

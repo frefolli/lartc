@@ -31,4 +31,6 @@ void throw_pointed_left_operand_of_arrow_operator_should_be_a_struct(FileDB::Poi
 void throw_types_cannot_be_algebraically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type);
 void throw_types_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type);
 void throw_type_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* type);
+void throw_a_type_definition_cannot_reference_a_non_type_declaration(FileDB::Point& point, Declaration* type_decl, Declaration* non_type_decl);
+void throw_cyclic_dependency_between_types_is_not_protected_by_usage_of_pointers(FileDB::Point& point, Declaration* type_decl, Declaration* requested_type_decl);
 #endif//LARTC_EXTERNAL_ERROR

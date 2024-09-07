@@ -301,8 +301,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
     case expression_t::CAST_EXPR:
       {
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->value);
-        Type* value_type = type_cache.expression_types[expr->value];
-        Type* casted_type = expr->type;
+        // Type* value_type = type_cache.expression_types[expr->value];
+        // Type* casted_type = expr->type;
         // TODO: check if value_type can be explicitly casted to casted_type
         type_cache.expression_types[expr] = Type::Clone(expr->type);
       }
@@ -310,8 +310,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
     case expression_t::BITCAST_EXPR:
       {
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->value);
-        Type* value_type = type_cache.expression_types[expr->value];
-        Type* casted_type = expr->type;
+        // Type* value_type = type_cache.expression_types[expr->value];
+        // Type* casted_type = expr->type;
         // by definition, every type can always be explicitly bit-casted to another type
         type_cache.expression_types[expr] = Type::Clone(expr->type);
       }

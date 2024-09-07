@@ -9,6 +9,8 @@
 #include <lartc/ast/file_db.hh>
 #include <lartc/typecheck/type_cache.hh>
 #include <lartc/typecheck/check_types.hh>
+#include <lartc/typecheck/size_cache.hh>
+#include <lartc/typecheck/check_declared_types.hh>
 
 #include <assert.h>
 #include <cstring>
@@ -73,7 +75,7 @@ int main(int argc, char** args) {
   bool at_least_one_source_file = false;
   bool no_errors_occurred = true;
 
-  for (uint64_t arg_index = 1; arg_index < argc; ++arg_index) {
+  for (uint64_t arg_index = 1; arg_index < (uint64_t) argc; ++arg_index) {
     context.filepath = args[arg_index];
     at_least_one_source_file = true;
     if (std::filesystem::exists(context.filepath)) {
@@ -97,6 +99,14 @@ int main(int argc, char** args) {
   /* RESOLVE-PHASE */
   SymbolCache symbol_cache;
   no_errors_occurred &= resolve_symbols(file_db, symbol_cache, decl_tree);
+
+  if (!no_errors_occurred) {
+    std::exit(2);
+  }
+
+  /* DECL-TYPE-CHECK-PHASE */
+  SizeCache size_cache;
+  no_errors_occurred &= check_declared_types(file_db, symbol_cache, size_cache, decl_tree);
 
   if (!no_errors_occurred) {
     std::exit(2);

@@ -4,7 +4,7 @@ run: ./builddir/lartc
 	./builddir/lartc ../lart-examples/tree.lart
 
 test: ./builddir/lartc
-	./builddir/lartc ../lart-examples/bad-type-checking.lart
+	./builddir/lartc ../lart-examples/bad-decl-type-checking.lart
 
 ./builddir/lartc: ./builddir
 	ninja -C ./builddir

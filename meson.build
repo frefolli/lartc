@@ -34,6 +34,7 @@ executable('lartc', [
     'src/lartc/typecheck/check_types.cc',
     'src/lartc/typecheck/size_cache.cc',
     'src/lartc/typecheck/casting.cc',
+    'src/lartc/typecheck/check_declared_types.cc',
     'src/lartc/main.cc'
   ], dependencies: [tree_sitter, tree_sitter_lart],
   include_directories: include)
