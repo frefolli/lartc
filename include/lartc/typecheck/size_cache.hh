@@ -9,6 +9,6 @@ struct SizeCache {
   std::map<Declaration*, uint64_t> sizes;
   std::map<Declaration*, bool> staging;
 
-  uint64_t compute_size(SymbolCache& symbol_cache, Declaration* context, Type* type);
+  static std::ostream& Print(std::ostream& out, SizeCache& size_cache);
 };
 #endif//LARTC_TYPECHECK_SIZE_CACHE

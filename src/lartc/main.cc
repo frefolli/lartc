@@ -125,6 +125,7 @@ int main(int argc, char** args) {
   print_to_file(symbol_cache, "tmp/symbol_cache.txt");
   print_to_file(file_db, "tmp/file_db.txt");
   print_to_file(type_cache, "tmp/type_cache.txt");
+  print_to_file(size_cache, "tmp/size_cache.txt");
   
   /* END-PHASE */
 
