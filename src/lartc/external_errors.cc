@@ -91,7 +91,7 @@ void throw_type_is_not_implicitly_castable_to(FileDB::Point& point, Declaration*
   FileDB::Point::Print(std::cerr, point);
   std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": type '";
   Type::Print(std::cerr, src_type) << "'";
-  std::cerr << "' is not implicitly castable to '";
+  std::cerr << " is not implicitly castable to '";
   Type::Print(std::cerr, dst_type) << "' and must be casted explicitly" << std::endl;
   std::cerr << " inside of declaration '";
   Declaration::PrintShort(std::cerr, context);
@@ -168,7 +168,7 @@ void throw_pointed_left_operand_of_arrow_operator_should_be_a_struct(FileDB::Poi
 void throw_types_cannot_be_algebraically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type) {
   FileDB::Point::Print(std::cerr, point);
   std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": types  '";
-  Type::Print(std::cerr, left_type) << "' and ";
+  Type::Print(std::cerr, left_type) << "' and '";
   Type::Print(std::cerr, right_type) << "' cannot be algebraically manipulated together" << std::endl;
   std::cerr << " inside of declaration '";
   Declaration::PrintShort(std::cerr, context);
@@ -191,7 +191,7 @@ void throw_type_cannot_be_logically_manipulated_error(FileDB::Point& point, Decl
 void throw_types_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type) {
   FileDB::Point::Print(std::cerr, point);
   std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": types  '";
-  Type::Print(std::cerr, left_type) << "' and ";
+  Type::Print(std::cerr, left_type) << "' and '";
   Type::Print(std::cerr, right_type) << "' cannot be logically manipulated together" << std::endl;
   std::cerr << " inside of declaration '";
   Declaration::PrintShort(std::cerr, context);

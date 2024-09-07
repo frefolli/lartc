@@ -197,13 +197,12 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
           Type* right_type = type_cache.expression_types[expr->right];
 
-          if (type_can_be_implicitly_casted_to(symbol_cache, context, right_type, left_type)) {
-            Type* type = Type::Clone(left_type);
-            type_cache.expression_types[expr] = type;
-          } else {
+          if (!type_can_be_implicitly_casted_to(symbol_cache, context, right_type, left_type)) {
             throw_type_is_not_implicitly_castable_to(file_db.expression_points[expr], context, right_type, left_type);
             type_check_ok = false;
           }
+          Type* type = Type::Clone(left_type);
+          type_cache.expression_types[expr] = type;
         } else if (is_algebraic_operator(expr->operator_)) {
           type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
           Type* right_type = type_cache.expression_types[expr->right];
@@ -214,6 +213,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           } else {
             throw_types_cannot_be_algebraically_manipulated_error(file_db.expression_points[expr], context, left_type, right_type);
             type_check_ok = false;
+            Type* type = Type::New(type_t::VOID_TYPE);
+            type_cache.expression_types[expr] = type;
           }
         } else if (is_logical_operator(expr->operator_)) {
           type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
@@ -225,6 +226,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           } else {
             throw_types_cannot_be_logically_manipulated_error(file_db.expression_points[expr], context, left_type, right_type);
             type_check_ok = false;
+            Type* type = Type::New(type_t::VOID_TYPE);
+            type_cache.expression_types[expr] = type;
           }
         } else {
           assert(false);
@@ -245,6 +248,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
               } else {
                 throw_type_is_not_dereferenceable_error(file_db.expression_points[expr], context, value_type);
                 type_check_ok = false;
+                Type* type = Type::New(type_t::VOID_TYPE);
+                type_cache.expression_types[expr] = type;
               }
             }
             break;
@@ -264,6 +269,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 } else {
                   throw_type_cannot_be_algebraically_manipulated_error(file_db.expression_points[expr], context, value_type);
                   type_check_ok = false;
+                  Type* type = Type::New(type_t::VOID_TYPE);
+                  type_cache.expression_types[expr] = type;
                 }
               } else if (is_logical_operator(expr->operator_)) {
                 if (type_is_logically_manipulable(symbol_cache, context, value_type)) {
@@ -272,6 +279,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 } else {
                   throw_type_cannot_be_logically_manipulated_error(file_db.expression_points[expr], context, value_type);
                   type_check_ok = false;
+                  Type* type = Type::New(type_t::VOID_TYPE);
+                  type_cache.expression_types[expr] = type;
                 }
               } else {
                 assert(false);
@@ -303,7 +312,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->value);
         Type* value_type = type_cache.expression_types[expr->value];
         Type* casted_type = expr->type;
-        // TODO: check if value_type can be explicitly casted to casted_type
+        // by definition, every type can always be explicitly bit-casted to another type
         type_cache.expression_types[expr] = Type::Clone(expr->type);
       }
       break;

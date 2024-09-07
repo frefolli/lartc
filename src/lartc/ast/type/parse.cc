@@ -71,6 +71,7 @@ Type* parse_type_struct(TSContext& context, TSNode& node) {
 }
 
 Type* parse_type_function(TSContext& context, TSNode& node) {
+
   Type* type = Type::New(type_t::FUNCTION_TYPE);
   
   TSNode parameters = ts_node_child_by_field_name(node, "parameters");
