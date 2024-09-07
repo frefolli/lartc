@@ -123,7 +123,7 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
     case type_t::POINTER_TYPE:
       {
         if (src->kind == type_t::POINTER_TYPE) {
-          implicitly_castable &= (src->subtype->kind == VOID_TYPE || types_are_namely_equal(src->subtype, dst->subtype));
+          implicitly_castable &= (src->subtype->kind == VOID_TYPE || dst->subtype->kind == VOID_TYPE || types_are_namely_equal(src->subtype, dst->subtype));
         } else {
           implicitly_castable = false;
         }
