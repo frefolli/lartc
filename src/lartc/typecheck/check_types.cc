@@ -1,29 +1,9 @@
 #include <lartc/typecheck/check_types.hh>
+#include <lartc/typecheck/casting.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/external_errors.hh>
 #include <cassert>
-
-// Internal Errors
-void throw_symbol_should_be_resolved(Declaration* context, Symbol& symbol) {
-  auto msg = MSG("");
-  Declaration::PrintShort(Symbol::Print(msg << "'", symbol) << " inside of declaration ", context);
-  throw_internal_error(SYMBOL_SHOULD_BE_RESOLVED, msg.str());
-}
-
-// Internal Errors
-void throw_attempt_to_use_other_declaration_as_typedef(Declaration* context, Declaration* decl) {
-  auto msg = MSG("");
-  Declaration::PrintShort(Declaration::PrintShort(msg << "'", decl) << " inside of declaration ", context);
-  throw_internal_error(SYMBOL_SHOULD_BE_RESOLVED, msg.str());
-}
-
-/*
-bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cache, Declaration* context, Type* type) {
-  bool type_check_ok = true;
-  // TODO: THIS FUNCTION IS A STUB FOR SOME CHECKS THAT CAN BE DONE ON TYPE CONSISTENCY AND SAFE RECURSION
-  return type_check_ok;
-}
-*/
+#include <iostream>
 
 bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cache, Declaration* context, Expression* expr) {
   bool type_check_ok = true;
@@ -123,8 +103,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
               type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, argument);
               Type* parameter_type = callable_type->parameters.at(argument_index).second;
               Type* argument_type = type_cache.expression_types[argument];
-              if (!Type::CanBeImplicitlyCastedTo(argument_type, parameter_type)) {
-                throw_type_is_not_implcitly_castable_to(file_db.expression_points[argument], context, argument_type, parameter_type);
+              if (!type_can_be_implicitly_casted_to(symbol_cache, context, argument_type, parameter_type)) {
+                throw_type_is_not_implicitly_castable_to(file_db.expression_points[argument], context, argument_type, parameter_type);
                 type_check_ok = false;
               }
             }
@@ -146,11 +126,46 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       {
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->left);
         Type* left_type = type_cache.expression_types[expr->left];
+        Type* original_left_type = left_type;
 
         if (expr->operator_ == ARR_OP) {
-          // TODO: implement
-          Type* type = Type::New(type_t::VOID_TYPE);
-          type_cache.expression_types[expr] = type;
+          if (expr->right->kind != expression_t::SYMBOL_EXPR) {
+            throw_right_operand_of_arrow_operator_should_be_a_symbol(file_db.expression_points[expr], context);
+            type_check_ok = false;
+            Type* type = Type::New(type_t::VOID_TYPE);
+            type_cache.expression_types[expr] = type;
+          } else {
+            if (left_type->kind == type_t::SYMBOL_TYPE)
+              left_type = resolve_symbol_type(symbol_cache, context, left_type).first;
+            if (left_type->kind != type_t::POINTER_TYPE) {
+              Type::Print(std::clog << "DEBUG: ", original_left_type) << std::endl;
+              throw_left_operand_of_arrow_operator_should_be_a_pointer(file_db.expression_points[expr], context, left_type);
+              type_check_ok = false;
+              Type* type = Type::New(type_t::VOID_TYPE);
+              type_cache.expression_types[expr] = type;
+            } else {
+              left_type = left_type->subtype;
+              if (left_type->kind == type_t::SYMBOL_TYPE)
+                left_type = resolve_symbol_type(symbol_cache, context, left_type).first;
+              if (left_type->kind != type_t::STRUCT_TYPE) {
+                throw_pointed_left_operand_of_arrow_operator_should_be_a_struct(file_db.expression_points[expr], context, left_type);
+                type_check_ok = false;
+                Type* type = Type::New(type_t::VOID_TYPE);
+                type_cache.expression_types[expr] = type;
+              } else {
+                Type* field_type = Type::ExtractField(left_type, expr->right->symbol);
+                if (field_type == nullptr) {
+                  throw_struct_has_not_named_field(file_db.expression_points[expr], context, left_type, expr->right->symbol);
+                  type_check_ok = false;
+                  Type* type = Type::New(type_t::VOID_TYPE);
+                  type_cache.expression_types[expr] = type;
+                } else {
+                  Type* type = Type::Clone(field_type);
+                  type_cache.expression_types[expr] = type;
+                }
+              }
+            }
+          }
         } else if (expr->operator_ == DOT_OP) {
           if (expr->right->kind != expression_t::SYMBOL_EXPR) {
             throw_right_operand_of_dot_operator_should_be_a_symbol(file_db.expression_points[expr], context);
@@ -158,18 +173,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
             Type* type = Type::New(type_t::VOID_TYPE);
             type_cache.expression_types[expr] = type;
           } else {
-            while (left_type->kind == type_t::SYMBOL_TYPE) {
-              Declaration* decl = symbol_cache.get_declaration(context, left_type->symbol);
-              if (decl == nullptr) {
-                throw_symbol_should_be_resolved(context, left_type->symbol);
-              }
-
-              if (decl->kind != declaration_t::TYPE_DECL) {
-                throw_attempt_to_use_other_declaration_as_typedef(context, decl);
-              }
-              left_type = decl->type;
-            }
-
+            if (left_type->kind == type_t::SYMBOL_TYPE)
+              left_type = resolve_symbol_type(symbol_cache, context, left_type).first;
             if (left_type->kind != type_t::STRUCT_TYPE) {
               throw_left_operand_of_dot_operator_should_be_a_struct(file_db.expression_points[expr], context, left_type);
               type_check_ok = false;
@@ -188,14 +193,41 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
               }
             }
           }
-        } else {
-          // Types should be algrebically manipulable
+        } else if (expr->operator_ == ASS_OP) {
           type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
           Type* right_type = type_cache.expression_types[expr->right];
 
-          // TODO: implement
-          Type* type = Type::New(type_t::VOID_TYPE);
-          type_cache.expression_types[expr] = type;
+          if (type_can_be_implicitly_casted_to(symbol_cache, context, right_type, left_type)) {
+            Type* type = Type::Clone(left_type);
+            type_cache.expression_types[expr] = type;
+          } else {
+            throw_type_is_not_implicitly_castable_to(file_db.expression_points[expr], context, right_type, left_type);
+            type_check_ok = false;
+          }
+        } else if (is_algebraic_operator(expr->operator_)) {
+          type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
+          Type* right_type = type_cache.expression_types[expr->right];
+
+          if (types_are_algebraically_manipulable(symbol_cache, context, left_type, right_type)) {
+            Type* type = Type::Clone(left_type);
+            type_cache.expression_types[expr] = type;
+          } else {
+            throw_types_cannot_be_algebraically_manipulated_error(file_db.expression_points[expr], context, left_type, right_type);
+            type_check_ok = false;
+          }
+        } else if (is_logical_operator(expr->operator_)) {
+          type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
+          Type* right_type = type_cache.expression_types[expr->right];
+
+          if (types_are_logically_manipulable(symbol_cache, context, left_type, right_type)) {
+            Type* type = Type::Clone(left_type);
+            type_cache.expression_types[expr] = type;
+          } else {
+            throw_types_cannot_be_logically_manipulated_error(file_db.expression_points[expr], context, left_type, right_type);
+            type_check_ok = false;
+          }
+        } else {
+          assert(false);
         }
       }
       break;
@@ -225,14 +257,24 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
             break;
           default: // other ops: -, +
             {
-              if (value_type->kind == type_t::INTEGER_TYPE &&
-                  value_type->kind == type_t::DOUBLE_TYPE &&
-                  value_type->kind == type_t::POINTER_TYPE) {
-                Type* type = Type::Clone(value_type);
-                type_cache.expression_types[expr] = type;
+              if (is_algebraic_operator(expr->operator_)) {
+                if (type_is_algebraically_manipulable(symbol_cache, context, value_type)) {
+                  Type* type = Type::Clone(value_type);
+                  type_cache.expression_types[expr] = type;
+                } else {
+                  throw_type_cannot_be_algebraically_manipulated_error(file_db.expression_points[expr], context, value_type);
+                  type_check_ok = false;
+                }
+              } else if (is_logical_operator(expr->operator_)) {
+                if (type_is_logically_manipulable(symbol_cache, context, value_type)) {
+                  Type* type = Type::Clone(value_type);
+                  type_cache.expression_types[expr] = type;
+                } else {
+                  throw_type_cannot_be_logically_manipulated_error(file_db.expression_points[expr], context, value_type);
+                  type_check_ok = false;
+                }
               } else {
-                throw_type_cannot_be_algebraically_manipulated_error(file_db.expression_points[expr], context, value_type);
-                type_check_ok = false;
+                assert(false);
               }
             }
             break;

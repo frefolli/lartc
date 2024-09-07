@@ -79,9 +79,8 @@ Declaration* SymbolCache::get_or_find_declaration(Declaration* context, Symbol& 
     return query;
 
   query = find_by_going_up(context, symbol);
-  if (query != nullptr) {
-    globals[context][symbol] = query;
-  }
+  // i want to signal that no definition is found from scope of context
+  globals[context][symbol] = query;
   return query;
 }
 

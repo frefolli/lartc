@@ -87,7 +87,7 @@ void throw_wrong_parameter_number_error(FileDB::Point& point, Declaration* conte
   print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
 }
 
-void throw_type_is_not_implcitly_castable_to(FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type) {
+void throw_type_is_not_implicitly_castable_to(FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type) {
   FileDB::Point::Print(std::cerr, point);
   std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": type '";
   Type::Print(std::cerr, src_type) << "'";
@@ -126,6 +126,73 @@ void throw_struct_has_not_named_field(FileDB::Point& point, Declaration* context
   std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": struct '";
   Type::Print(std::cerr, struct_type);
   Symbol::Print(std::cerr << "' has not named field '", field_name) << "'" << std::endl;
+  std::cerr << " inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_right_operand_of_arrow_operator_should_be_a_symbol(FileDB::Point& point, Declaration* context) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": right operand of arrow operator should be a symbol" << std::endl;
+  std::cerr << "inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_left_operand_of_arrow_operator_should_be_a_pointer(FileDB::Point& point, Declaration* context, Type* non_struct_type) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": left operand of arrow operator should be a pointer, instead is '";
+  Type::Print(std::cerr, non_struct_type) << "'" << std::endl;
+  std::cerr << " inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_pointed_left_operand_of_arrow_operator_should_be_a_struct(FileDB::Point& point, Declaration* context, Type* non_struct_type) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": pointed left operand of arrow operator should be a struct, instead is '";
+  Type::Print(std::cerr, non_struct_type) << "'" << std::endl;
+  std::cerr << " inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_types_cannot_be_algebraically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": types  '";
+  Type::Print(std::cerr, left_type) << "' and ";
+  Type::Print(std::cerr, right_type) << "' cannot be algebraically manipulated together" << std::endl;
+  std::cerr << " inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_type_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* type) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": type cannot be logically manipulated '";
+  Type::Print(std::cerr, type) << "'" << std::endl;
+  std::cerr << " inside of declaration '";
+  Declaration::PrintShort(std::cerr, context);
+  std::cerr << "'" << std::endl;
+
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
+void throw_types_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": types  '";
+  Type::Print(std::cerr, left_type) << "' and ";
+  Type::Print(std::cerr, right_type) << "' cannot be logically manipulated together" << std::endl;
   std::cerr << " inside of declaration '";
   Declaration::PrintShort(std::cerr, context);
   std::cerr << "'" << std::endl;

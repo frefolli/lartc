@@ -80,3 +80,37 @@ std::ostream& operator<<(std::ostream& out, operator_t operator_) {
   }
   return out << "operator-t>";
 }
+
+operator_category_t get_operator_category(operator_t operator_) {
+  switch (operator_) {
+    case DOT_OP:
+      return FIELD_ACCESS_OPC;
+    case ARR_OP:
+      return POINTED_FIELD_ACCESS_OPC;
+    case NOT_OP:
+    case EQ_OP:
+    case NE_OP:
+    case SCA_OP:
+    case SCO_OP:
+    case AND_OP:
+    case OR_OP:
+    case GE_OP:
+    case LE_OP:
+    case GR_OP:
+    case LR_OP:
+      return LOGICAL_OPC;
+    case XOR_OP:
+    case TILDE_OP:
+    case MUL_OP:
+    case DIV_OP:
+    case ADD_OP:
+    case SUB_OP:
+    case INC_OP:
+    case DEC_OP:
+    case LROT_OP:
+    case RROT_OP:
+      return ALGEBRAIC_OPC;
+    case ASS_OP:
+      return ASSIGNMENT_OPC;
+  }
+}

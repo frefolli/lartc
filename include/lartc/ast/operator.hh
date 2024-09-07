@@ -33,6 +33,26 @@ enum operator_t {
   #undef X
 };
 
+#define BINARY_OPERATOR_CATEGORY_VARIANTS \
+  X(FIELD_ACCESS_OPC), \
+  X(POINTED_FIELD_ACCESS_OPC), \
+  X(ALGEBRAIC_OPC), \
+  X(LOGICAL_OPC), \
+  X(ASSIGNMENT_OPC)
+
+enum operator_category_t {
+  #define X(_) _
+    BINARY_OPERATOR_CATEGORY_VARIANTS
+  #undef X
+};
+
 void operator>>(std::string op, operator_t& operator_);
 std::ostream& operator<<(std::ostream& out, operator_t operator_);
+operator_category_t get_operator_category(operator_t operator_);
+inline bool is_algebraic_operator(operator_t operator_) {
+  return get_operator_category(operator_) == ALGEBRAIC_OPC;
+}
+inline bool is_logical_operator(operator_t operator_) {
+  return get_operator_category(operator_) == LOGICAL_OPC;
+}
 #endif//LARTC_AST_BINARY_OPERATOR

@@ -2,6 +2,8 @@
 #define LARTC_INTERNAL_ERROR
 #include <sstream>
 #include <cstdint>
+#include <lartc/ast/declaration.hh>
+#include <lartc/ast/symbol.hh>
 
 #define MSG(...) \
   std::stringstream() << __VA_ARGS__
@@ -33,4 +35,7 @@ inline std::ostream& tabulate(std::ostream& out, uint64_t tabulation) {
   }
   return out;
 }
+
+void throw_symbol_should_be_resolved(Declaration* context, Symbol& symbol);
+void throw_attempt_to_use_other_declaration_as_typedef(Declaration* context, Declaration* decl);
 #endif//LARTC_INTERNAL_ERROR

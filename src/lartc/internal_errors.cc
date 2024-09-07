@@ -24,3 +24,15 @@ void throw_internal_error(internal_error_t error, std::string msg) {
   std::cerr << error << msg << std::endl;
   std::exit(error);
 }
+
+void throw_symbol_should_be_resolved(Declaration* context, Symbol& symbol) {
+  auto msg = MSG("");
+  Declaration::PrintShort(Symbol::Print(msg << "'", symbol) << " inside of declaration ", context);
+  throw_internal_error(SYMBOL_SHOULD_BE_RESOLVED, msg.str());
+}
+
+void throw_attempt_to_use_other_declaration_as_typedef(Declaration* context, Declaration* decl) {
+  auto msg = MSG("");
+  Declaration::PrintShort(Declaration::PrintShort(msg << "'", decl) << " inside of declaration ", context);
+  throw_internal_error(SYMBOL_SHOULD_BE_RESOLVED, msg.str());
+}

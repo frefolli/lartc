@@ -21,8 +21,14 @@ void throw_module_has_no_type_error(FileDB::Point& point, Declaration* context, 
 void throw_type_cannot_be_algebraically_manipulated_error(FileDB::Point& point, Declaration* context, Type* type);
 void throw_type_is_not_callable_error(FileDB::Point& point, Declaration* context, Type* non_callable_type);
 void throw_wrong_parameter_number_error(FileDB::Point& point, Declaration* context, Type* fn_type);
-void throw_type_is_not_implcitly_castable_to(FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type);
+void throw_type_is_not_implicitly_castable_to(FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type);
 void throw_right_operand_of_dot_operator_should_be_a_symbol(FileDB::Point& point, Declaration* context);
+void throw_right_operand_of_arrow_operator_should_be_a_symbol(FileDB::Point& point, Declaration* context);
 void throw_left_operand_of_dot_operator_should_be_a_struct(FileDB::Point& point, Declaration* context, Type* non_struct_type);
 void throw_struct_has_not_named_field(FileDB::Point& point, Declaration* context, Type* struct_type, Symbol& field_name);
+void throw_left_operand_of_arrow_operator_should_be_a_pointer(FileDB::Point& point, Declaration* context, Type* non_struct_type);
+void throw_pointed_left_operand_of_arrow_operator_should_be_a_struct(FileDB::Point& point, Declaration* context, Type* non_struct_type);
+void throw_types_cannot_be_algebraically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type);
+void throw_types_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type);
+void throw_type_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* type);
 #endif//LARTC_EXTERNAL_ERROR
