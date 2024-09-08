@@ -1,3 +1,4 @@
+#include <iostream>
 #include <lartc/typecheck/casting.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/external_errors.hh>
@@ -16,13 +17,13 @@ std::pair<Type*, Declaration*> resolve_symbol_type(SymbolCache& symbol_cache, De
   return {decl->type, decl};
 }
 
-bool types_are_namely_equal(Type* A, Type* B) {
+bool types_are_namely_equal(SymbolCache& symbol_cache, Declaration* contextA, Type* A, Declaration* contextB, Type* B) {
   if (A->kind != B->kind)
     return false;
   bool equals = true;
   switch (A->kind) {
     case type_t::POINTER_TYPE:
-      equals &= types_are_namely_equal(A->subtype, B->subtype);
+      equals &= types_are_namely_equal(symbol_cache, contextA, A->subtype, contextB, B->subtype);
       break;
     case type_t::VOID_TYPE:
       break;
@@ -37,21 +38,25 @@ bool types_are_namely_equal(Type* A, Type* B) {
       equals &= A->fields.size() == B->fields.size();
       if (equals) {
         for (uint64_t i = 0; i < A->fields.size(); ++i) {
-          equals &= types_are_namely_equal(A->fields.at(i).second, B->fields.at(i).second);
+          equals &= types_are_namely_equal(symbol_cache, contextA, A->fields.at(i).second, contextB, B->fields.at(i).second);
         }
       }
       break;
     case type_t::SYMBOL_TYPE:
-      equals &= A->symbol == B->symbol;
+      if (A->symbol != B->symbol) {
+        auto solvedA = resolve_symbol_type(symbol_cache, contextA, A);
+        auto solvedB = resolve_symbol_type(symbol_cache, contextB, B);
+        equals &= (solvedA.second == solvedB.second);
+      }
       break;
     case type_t::BOOLEAN_TYPE:
       break;
     case type_t::FUNCTION_TYPE:
-      equals &= types_are_namely_equal(A->subtype, B->subtype);
+      equals &= types_are_namely_equal(symbol_cache, contextA, A->subtype, contextB, B->subtype);
       equals &= A->parameters.size() == B->parameters.size();
       if (equals) {
         for (uint64_t i = 0; i < A->parameters.size(); ++i) {
-          equals &= types_are_namely_equal(A->parameters.at(i).second, B->parameters.at(i).second);
+          equals &= types_are_namely_equal(symbol_cache, contextA, A->parameters.at(i).second, contextB, B->parameters.at(i).second);
         }
       }
       break;
@@ -64,15 +69,11 @@ bool types_are_structurally_equal(SymbolCache& symbol_cache, Declaration* contex
     auto solved = resolve_symbol_type(symbol_cache, contextA, A);
     A = solved.first;
     contextA = solved.second;
-    if (A == nullptr)
-      return false;
   }
   if (B->kind == type_t::SYMBOL_TYPE) {
     auto solved = resolve_symbol_type(symbol_cache, contextB, B);
     B = solved.first;
     contextB = solved.second;
-    if (B == nullptr)
-      return false;
   }
 
   if (A->kind != B->kind)
@@ -89,7 +90,7 @@ bool types_are_structurally_equal(SymbolCache& symbol_cache, Declaration* contex
       break;
     case type_t::INTEGER_TYPE:
       equals &= A->size == B->size;
-      equals &= A->is_signed == B->is_signed;
+      // equals &= A->is_signed == B->is_signed;
       break;
     case type_t::STRUCT_TYPE:
       equals &= A->fields.size() == B->fields.size();
@@ -123,7 +124,7 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
     case type_t::POINTER_TYPE:
       {
         if (src->kind == type_t::POINTER_TYPE) {
-          implicitly_castable &= (src->subtype->kind == VOID_TYPE || dst->subtype->kind == VOID_TYPE || types_are_namely_equal(src->subtype, dst->subtype));
+          implicitly_castable &= (src->subtype->kind == VOID_TYPE || dst->subtype->kind == VOID_TYPE || types_are_namely_equal(symbol_cache, context, src->subtype, context, dst->subtype));
         } else {
           implicitly_castable = false;
         }
@@ -148,7 +149,7 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
         if (src->kind == type_t::DOUBLE_TYPE) {
           implicitly_castable &= src->size <= dst->size;
         } else if (src->kind == type_t::INTEGER_TYPE) {
-          implicitly_castable &= src->is_signed == dst->is_signed;
+          // implicitly_castable &= src->is_signed == dst->is_signed;
           implicitly_castable &= src->size <= dst->size;
         } else if (src->kind == type_t::BOOLEAN_TYPE) {
           // yes
@@ -158,7 +159,7 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
       }
       break;
     case type_t::STRUCT_TYPE:
-      implicitly_castable &= types_are_namely_equal(src, dst);
+      implicitly_castable &= types_are_namely_equal(symbol_cache, context, src, context, dst);
       break;
     case type_t::SYMBOL_TYPE:
       implicitly_castable &= types_are_structurally_equal(symbol_cache, context, src, context, dst);
@@ -181,8 +182,6 @@ bool type_is_algebraically_manipulable(SymbolCache& symbol_cache, Declaration* c
   if (type->kind == type_t::SYMBOL_TYPE) {
     auto solved = resolve_symbol_type(symbol_cache, context, type);
     type = solved.first;
-    if (type == nullptr)
-      return false;
   }
   bool algebraically_manipulable = true;
   switch (type->kind) {
@@ -219,16 +218,12 @@ bool types_are_algebraically_manipulable(SymbolCache& symbol_cache, Declaration*
     auto solved = resolve_symbol_type(symbol_cache, contextA, A);
     A = solved.first;
     contextA = solved.second;
-    if (A == nullptr)
-      return false;
   }
 
   if (B->kind == type_t::SYMBOL_TYPE) {
     auto solved = resolve_symbol_type(symbol_cache, contextB, B);
     B = solved.first;
     contextB = solved.second;
-    if (B == nullptr)
-      return false;
   }
 
   if (A->kind == type_t::POINTER_TYPE) {
@@ -252,8 +247,6 @@ bool type_is_logically_manipulable(SymbolCache& symbol_cache, Declaration* conte
   if (type->kind == type_t::SYMBOL_TYPE) {
     auto solved = resolve_symbol_type(symbol_cache, context, type);
     type = solved.first;
-    if (type == nullptr)
-      return false;
   }
   bool logically_manipulable = true;
   switch (type->kind) {
@@ -288,16 +281,12 @@ bool types_are_logically_manipulable(SymbolCache& symbol_cache, Declaration* con
     auto solved = resolve_symbol_type(symbol_cache, contextA, A);
     A = solved.first;
     contextA = solved.second;
-    if (A == nullptr)
-      return false;
   }
 
   if (B->kind == type_t::SYMBOL_TYPE) {
     auto solved = resolve_symbol_type(symbol_cache, contextB, B);
     B = solved.first;
     contextB = solved.second;
-    if (B == nullptr)
-      return false;
   }
 
   return (type_is_logically_manipulable(symbol_cache, contextA, A)

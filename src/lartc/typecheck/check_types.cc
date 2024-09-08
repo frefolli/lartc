@@ -255,7 +255,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
             break;
           case operator_t::AND_OP: // &
             {
-              Type* type = Type::New(type_t::VOID_TYPE);
+              Type* type = Type::New(type_t::POINTER_TYPE);
               type->subtype = Type::Clone(value_type);
               type_cache.expression_types[expr] = type;
             }
