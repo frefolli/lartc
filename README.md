@@ -1,23 +1,63 @@
 # LartC - Compiler for Lart Programming Language
 
-## TODO
+Example from [lart-examples](github.com:frefolli/lart-examples):
 
-### Use type_ckec_ok to stop lazily before having a segfault
+```tree.lart
+typedef u64 = integer<64, false>;
 
-### Function Declaration / Definition
+fn malloc(size: u64) -> &void;
+fn free(ptr: &void);
 
-When adding a Function to children of module (in general a scoping declaration), check if such Function has been declared / defined before and:
+typedef Node = struct {
+  left: &Node,
+  right: &Node
+};
 
-- if declared after declaration:
-  - check if signatures match and skip the insertion of the last declaration
-- if defined after declaration:
-  - check if signatures match and replace the declaration with the definition
-- if declared after definition:
-  - check if signatures match and skip the insertion of the declaration
-- if defined after definition:
-  - throw redefinition error
+typedef Tree = struct {
+  root: &Node
+};
 
-### Expression Type Checking and Reference Resolution
+fn new_node(left: &Node, right: &Node) -> &Node {
+  let node: &Node = cast<&Node>(malloc(sizeof<Node>));
+  node->left = left;
+  node->right = right;
+  return node;
+}
 
-In binary expressions with dot_operator the left operand should be searched first, then extracted it's type, search inside it the right symbol;
-In other expressions compute the type inside a cache map and check type availabilities using both type resolution and reference resolution obtain via a prior global object scan.
+fn new_tree(root: &Node) -> &Tree {
+  let tree: &Tree = cast<&Tree>(malloc(sizeof<Tree>));
+  tree->root = root;
+  return tree;
+}
+
+fn delete_node(node: &Node) {
+  if (node != nullptr) {
+    delete_node(node->left);
+    delete_node(node->right);
+    free(cast<&void>(node));
+  }
+}
+
+fn delete_tree(tree: &Tree) {
+  if (tree != nullptr) {
+    delete_node(tree->root);
+    free(cast<&void>(tree));
+  }
+}
+
+fn main() {
+  let tree: &Tree = new_tree(
+    new_node(
+      new_node(
+        new_node(nullptr, nullptr),
+        new_node(nullptr, nullptr)
+        ),
+      new_node(
+        new_node(nullptr, nullptr),
+        new_node(nullptr, nullptr)
+        )
+    )
+  );
+  delete_tree(tree);
+}
+```
