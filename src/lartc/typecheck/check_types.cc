@@ -374,10 +374,6 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
 
   switch (decl->kind) {
     case declaration_t::FUNCTION_DECL:
-      // TODO: type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->type);
-      for (auto param : decl->parameters) {
-        // TODO: type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, param.second);
-      }
       if (decl->body != nullptr) {
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->body);
       }
@@ -388,7 +384,6 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       }
       break;
     case declaration_t::TYPE_DECL:
-      // TODO: type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->type);
       break;
   }
 
