@@ -14,13 +14,15 @@ inline Statement* parse_statement_block(TSContext& context, TSNode& node) {
   uint64_t child_count = ts_node_named_child_count(node);
   for (uint64_t child_index = 0; child_index < child_count; ++child_index) {
     TSNode child_node = ts_node_named_child(node, child_index);
-    Statement* child_stmt = parse_statement(context, child_node);
-    if (child_stmt != nullptr) {
-      block->children.push_back(child_stmt);
-    } else {
-      const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(child_node));
-      if (!ts_can_ignore(symbol_name)) {
-        throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(symbol_name) << " inside a (block)"));
+    const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(child_node));
+    if (!ts_can_ignore(symbol_name)) {
+      Statement* child_stmt = parse_statement(context, child_node);
+      if (child_stmt != nullptr) {
+        block->children.push_back(child_stmt);
+      } else {
+        if (!ts_can_ignore(symbol_name)) {
+          throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(symbol_name) << " inside a (block)"));
+        }
       }
     }
   }
@@ -110,6 +112,10 @@ inline Statement* parse_statement_for(TSContext& context, TSNode& node) {
 
 inline Statement* parse_statement_while(TSContext& context, TSNode& node) {
   Statement* while_ = Statement::New(statement_t::WHILE_STMT);
+
+  TSNode condition = ts_node_child_by_field_name(node, "condition");
+  while_->condition = parse_expression(context, condition);
+  ts_validate_parsing(context.language, condition, "while:condition", while_->condition);
 
   TSNode body = ts_node_child_by_field_name(node, "body");
   while_->body = parse_statement(context, body);

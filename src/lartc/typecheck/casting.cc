@@ -1,4 +1,3 @@
-#include <iostream>
 #include <lartc/typecheck/casting.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/external_errors.hh>
@@ -10,6 +9,9 @@ std::pair<Type*, Declaration*> resolve_symbol_type(SymbolCache& symbol_cache, De
   }
   if (decl->kind != declaration_t::TYPE_DECL) {
     throw_attempt_to_use_other_declaration_as_typedef(context, decl);
+  }
+  if (decl->type == nullptr) {
+    std::exit(1);
   }
   if (decl->type->kind == type_t::SYMBOL_TYPE) {
     return resolve_symbol_type(symbol_cache, decl, decl->type);
@@ -76,6 +78,12 @@ bool types_are_structurally_equal(SymbolCache& symbol_cache, Declaration* contex
     contextB = solved.second;
   }
 
+  if (A == B) {
+    // resolved to the same definition;
+    // are equal by definition
+    return true;
+  }
+
   if (A->kind != B->kind)
     return false;
   bool equals = true;
@@ -90,7 +98,7 @@ bool types_are_structurally_equal(SymbolCache& symbol_cache, Declaration* contex
       break;
     case type_t::INTEGER_TYPE:
       equals &= A->size == B->size;
-      // equals &= A->is_signed == B->is_signed;
+      equals &= A->is_signed == B->is_signed;
       break;
     case type_t::STRUCT_TYPE:
       equals &= A->fields.size() == B->fields.size();
@@ -118,13 +126,73 @@ bool types_are_structurally_equal(SymbolCache& symbol_cache, Declaration* contex
   return equals;
 }
 
+bool types_are_structurally_compatible(SymbolCache& symbol_cache, Declaration* contextSrc, Type* Src, Declaration* contextDst, Type* Dst) {
+  if (Src->kind == type_t::SYMBOL_TYPE) {
+    auto solved = resolve_symbol_type(symbol_cache, contextSrc, Src);
+    Src = solved.first;
+    contextSrc = solved.second;
+  }
+  if (Dst->kind == type_t::SYMBOL_TYPE) {
+    auto solved = resolve_symbol_type(symbol_cache, contextDst, Dst);
+    Dst = solved.first;
+    contextDst = solved.second;
+  }
+
+  if (Src == Dst) {
+    // resolved to the same definition;
+    // are equal by definition
+    return true;
+  }
+
+  if (Src->kind != Dst->kind)
+    return false;
+  bool compatibles = true;
+  switch (Src->kind) {
+    case type_t::POINTER_TYPE:
+      compatibles &= types_are_structurally_compatible(symbol_cache, contextSrc, Src->subtype, contextDst, Dst->subtype);
+      break;
+    case type_t::VOID_TYPE:
+      break;
+    case type_t::DOUBLE_TYPE:
+      compatibles &= Src->size <= Dst->size;
+      break;
+    case type_t::INTEGER_TYPE:
+      compatibles &= Src->size <= Dst->size;
+      // compatibles &= A->is_signed == Dst->is_signed;
+      break;
+    case type_t::STRUCT_TYPE:
+      compatibles &= Src->fields.size() == Dst->fields.size();
+      if (compatibles) {
+        for (uint64_t i = 0; i < Src->fields.size(); ++i) {
+          compatibles &= types_are_structurally_compatible(symbol_cache, contextSrc, Src->fields.at(i).second, contextDst, Dst->fields.at(i).second);
+        }
+      }
+      break;
+    case type_t::SYMBOL_TYPE:
+      // err
+      break;
+    case type_t::BOOLEAN_TYPE:
+      break;
+    case type_t::FUNCTION_TYPE:
+      compatibles &= types_are_structurally_compatible(symbol_cache, contextSrc, Src->subtype, contextDst, Dst->subtype);
+      compatibles &= Src->parameters.size() == Dst->parameters.size();
+      if (compatibles) {
+        for (uint64_t i = 0; i < Src->parameters.size(); ++i) {
+          compatibles &= types_are_structurally_compatible(symbol_cache, contextSrc, Src->parameters.at(i).second, contextDst, Dst->parameters.at(i).second);
+        }
+      }
+      break;
+  }
+  return compatibles;
+}
+
 bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* context, Type* src, Type* dst) {
   bool implicitly_castable = true;
   switch (dst->kind) {
     case type_t::POINTER_TYPE:
       {
         if (src->kind == type_t::POINTER_TYPE) {
-          implicitly_castable &= (src->subtype->kind == VOID_TYPE || dst->subtype->kind == VOID_TYPE || types_are_namely_equal(symbol_cache, context, src->subtype, context, dst->subtype));
+          implicitly_castable &= (src->subtype->kind == VOID_TYPE || dst->subtype->kind == VOID_TYPE || types_are_structurally_compatible(symbol_cache, context, src->subtype, context, dst->subtype));
         } else {
           implicitly_castable = false;
         }
@@ -140,7 +208,7 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
         if (src->kind == type_t::INTEGER_TYPE || src->kind == type_t::DOUBLE_TYPE) {
           implicitly_castable &= src->size <= dst->size;
         } else {
-          implicitly_castable &= types_are_structurally_equal(symbol_cache, context, src, context, dst);
+          implicitly_castable &= types_are_structurally_compatible(symbol_cache, context, src, context, dst);
         }
       }
       break;
@@ -154,7 +222,7 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
         } else if (src->kind == type_t::BOOLEAN_TYPE) {
           // yes
         } else {
-          implicitly_castable &= types_are_structurally_equal(symbol_cache, context, src, context, dst);
+          implicitly_castable &= types_are_structurally_compatible(symbol_cache, context, src, context, dst);
         }
       }
       break;
@@ -162,17 +230,17 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
       implicitly_castable &= types_are_namely_equal(symbol_cache, context, src, context, dst);
       break;
     case type_t::SYMBOL_TYPE:
-      implicitly_castable &= types_are_structurally_equal(symbol_cache, context, src, context, dst);
+      implicitly_castable &= types_are_structurally_compatible(symbol_cache, context, src, context, dst);
       break;
     case type_t::BOOLEAN_TYPE:
         if (src->kind == type_t::BOOLEAN_TYPE) {
           // yes
         } else {
-          implicitly_castable &= types_are_structurally_equal(symbol_cache, context, src, context, dst);
+          implicitly_castable &= types_are_structurally_compatible(symbol_cache, context, src, context, dst);
         }
       break;
     case type_t::FUNCTION_TYPE:
-      implicitly_castable &= types_are_structurally_equal(symbol_cache, context, src, context, dst);
+      implicitly_castable &= types_are_structurally_compatible(symbol_cache, context, src, context, dst);
       break;
   }
   return implicitly_castable;

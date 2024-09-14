@@ -28,3 +28,4 @@ should_fail_on_file bad-syntax
 should_fail_on_file bad-type-checking
 should_succ_on_file hello
 should_succ_on_file tree
+should_succ_on_file chatgpt

@@ -19,6 +19,8 @@
 #include <tree_sitter/api.h>
 #include <iostream>
 
+#define DEBUG_SEGFAULT_IDENTIFY_PHASE
+
 extern "C" const TSLanguage *tree_sitter_lart(void);
 
 template<typename T>
@@ -46,10 +48,22 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
     strlen(context.source_code)
   );
   TSNode root_node = ts_tree_root_node(tree);
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Checking ts_tree for errors ... \n");
+  #endif
   bool ast_ok = check_ts_tree_for_errors(context, root_node);
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Checking ts_tree for errors ... OK\n");
+  #endif
 
   if (ast_ok) {
+    #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+    printf("Parsing source file ... \n");
+    #endif
     parse_source_file(decl_tree, context, root_node);
+    #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+    printf("Parsing source file ... OK\n");
+    #endif
   }
 
   ts_tree_delete(tree);
@@ -98,7 +112,13 @@ int main(int argc, char** args) {
 
   /* RESOLVE-PHASE */
   SymbolCache symbol_cache;
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Resolving symbols ... \n");
+  #endif
   no_errors_occurred &= resolve_symbols(file_db, symbol_cache, decl_tree);
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Resolving symbols ... OK\n");
+  #endif
 
   if (!no_errors_occurred) {
     std::exit(2);
@@ -106,7 +126,13 @@ int main(int argc, char** args) {
 
   /* DECL-TYPE-CHECK-PHASE */
   SizeCache size_cache;
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Checking declared types ... \n");
+  #endif
   no_errors_occurred &= check_declared_types(file_db, symbol_cache, size_cache, decl_tree);
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Checking declared types ... OK\n");
+  #endif
 
   if (!no_errors_occurred) {
     std::exit(2);
@@ -114,7 +140,13 @@ int main(int argc, char** args) {
 
   /* TYPE-CHECK-PHASE */
   TypeCache type_cache;
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Checking types ... \n");
+  #endif
   no_errors_occurred &= check_types(file_db, symbol_cache, type_cache, decl_tree);
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Checking types ... OK\n");
+  #endif
 
   if (!no_errors_occurred) {
     std::exit(2);

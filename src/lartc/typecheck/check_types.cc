@@ -4,6 +4,22 @@
 #include <lartc/external_errors.hh>
 #include <cassert>
 #include <iostream>
+#include <cmath>
+
+uint64_t compute_minimum_size_for(std::string& literal) {
+  int64_t value = std::stol(literal);
+  if (value < 0) {
+    value = -value;
+  }
+  uint64_t bitlength = 1;
+  
+  // assuming signed numbers;
+  while(value > std::pow(2, bitlength - 1)) {
+    bitlength *= 2;
+  }
+
+  return bitlength;
+}
 
 bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cache, Declaration* context, Expression* expr) {
   bool type_check_ok = true;
@@ -50,7 +66,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
     case expression_t::INTEGER_EXPR:
       {
         Type* type = Type::New(type_t::INTEGER_TYPE);
-        type->size = 64;
+        type->size = compute_minimum_size_for(expr->literal);
         type->is_signed = true;
         type_cache.expression_types[expr] = type;
       }
@@ -101,8 +117,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
             for (uint64_t argument_index = 0; argument_index < callable_type->parameters.size(); ++argument_index) {
               Expression* argument = expr->arguments.at(argument_index);
               type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, argument);
-              Type* parameter_type = callable_type->parameters.at(argument_index).second;
               Type* argument_type = type_cache.expression_types[argument];
+              Type* parameter_type = callable_type->parameters.at(argument_index).second;
               if (!type_can_be_implicitly_casted_to(symbol_cache, context, argument_type, parameter_type)) {
                 throw_type_is_not_implicitly_castable_to(file_db.expression_points[argument], context, argument_type, parameter_type);
                 type_check_ok = false;
