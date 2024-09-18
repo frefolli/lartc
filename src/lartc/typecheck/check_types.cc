@@ -21,6 +21,34 @@ uint64_t compute_minimum_size_for(std::string& literal) {
   return bitlength;
 }
 
+Type* decide_algebric_binop_type(Type* left, Type* right) {
+  Type* type = nullptr;
+  if (left->kind == DOUBLE_TYPE || right->kind == DOUBLE_TYPE) {
+    type = Type::New(DOUBLE_TYPE);
+  } else if (left->kind == POINTER_TYPE || right->kind == POINTER_TYPE) {
+    if (left->kind == POINTER_TYPE) {
+      type = Type::Clone(left);
+    } else {
+      type = Type::Clone(right);
+    }
+  } else if (left->kind == INTEGER_TYPE || right->kind == INTEGER_TYPE) {
+    if (left->kind  == INTEGER_TYPE) {
+      type = Type::Clone(left);
+    }
+    if (right->kind  == INTEGER_TYPE) {
+      if (type == nullptr) {
+        type = Type::Clone(right);
+      } else if (type->size < right->size) {
+        type->size = right->size;
+      }
+    }
+  } else if (left->kind == BOOLEAN_TYPE || right->kind == BOOLEAN_TYPE) {
+    type = Type::New(BOOLEAN_TYPE);
+  }
+  assert(type != nullptr);
+  return type;
+}
+
 bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cache, Declaration* context, Expression* expr) {
   bool type_check_ok = true;
   
@@ -224,8 +252,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           Type* right_type = type_cache.expression_types[expr->right];
 
           if (types_are_algebraically_manipulable(symbol_cache, context, left_type, right_type)) {
-            Type* type = Type::Clone(left_type);
-            type_cache.expression_types[expr] = type;
+            type_cache.expression_types[expr] = decide_algebric_binop_type(left_type, right_type);
           } else {
             throw_types_cannot_be_algebraically_manipulated_error(file_db.expression_points[expr], context, left_type, right_type);
             type_check_ok = false;
@@ -237,7 +264,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           Type* right_type = type_cache.expression_types[expr->right];
 
           if (types_are_logically_manipulable(symbol_cache, context, left_type, right_type)) {
-            Type* type = Type::Clone(left_type);
+            Type* type = Type::New(type_t::BOOLEAN_TYPE);
             type_cache.expression_types[expr] = type;
           } else {
             throw_types_cannot_be_logically_manipulated_error(file_db.expression_points[expr], context, left_type, right_type);
@@ -290,7 +317,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 }
               } else if (is_logical_operator(expr->operator_)) {
                 if (type_is_logically_manipulable(symbol_cache, context, value_type)) {
-                  Type* type = Type::Clone(value_type);
+                  Type* type = Type::New(type_t::BOOLEAN_TYPE);
                   type_cache.expression_types[expr] = type;
                 } else {
                   throw_type_cannot_be_logically_manipulated_error(file_db.expression_points[expr], context, value_type);
