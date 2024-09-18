@@ -16,9 +16,9 @@ struct Type {
   std::vector<std::pair<std::string, Type*>> parameters;
 
   static Type* New(type_t kind);
-  static Type* Clone(Type* other);
-  static std::ostream& Print(std::ostream&, Type* type, uint64_t tabulation = 0);
+  static Type* Clone(const Type* other);
+  static std::ostream& Print(std::ostream&, const Type* type, uint64_t tabulation = 0);
   static void Delete(Type*& type);
-  static Type* ExtractField(Type* struct_type, Symbol& name);
+  static Type* ExtractField(const Type* struct_type, const Symbol& name);
 };
 #endif//LARTC_AST_TYPE

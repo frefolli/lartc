@@ -37,7 +37,7 @@ void Type::Delete(Type*& type) {
   }
 }
 
-Type* Type::Clone(Type* other) {
+Type* Type::Clone(const Type* other) {
   if (other == nullptr) {
     throw_internal_error(ATTEMPT_TO_CLONE_NULLPTR_AS_TYPE, MSG(""));
   }
@@ -57,7 +57,7 @@ Type* Type::Clone(Type* other) {
   return type;
 }
 
-std::ostream& Type::Print(std::ostream& out, Type* type, uint64_t tabulation) {
+std::ostream& Type::Print(std::ostream& out, const Type* type, uint64_t tabulation) {
   tabulate(out, tabulation);
   bool first;
   switch (type->kind) {
@@ -101,7 +101,7 @@ std::ostream& Type::Print(std::ostream& out, Type* type, uint64_t tabulation) {
   return out;
 }
 
-Type* Type::ExtractField(Type* struct_type, Symbol& name) {
+Type* Type::ExtractField(const Type* struct_type, const Symbol& name) {
   for (auto item : struct_type->fields) {
     if (item.first == name.identifiers.front()) {
       return item.second;

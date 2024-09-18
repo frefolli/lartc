@@ -5,6 +5,7 @@
 #include <lartc/ast/symbol.hh>
 #include <lartc/ast/expression.hh>
 #include <lartc/ast/type.hh>
+#include <lartc/ast/declaration.hh>
 #include <tree_sitter/api.h>
 
 struct FileDB {
@@ -27,12 +28,14 @@ struct FileDB {
   std::map<Symbol*, Point> symbol_points;
   std::map<Expression*, Point> expression_points;
   std::map<Type*, Point> type_points;
+  std::map<Declaration*, Point> declaration_points;
   std::vector<File> files;
 
   File* add_file(const char* filepath);
   void add_symbol(Symbol* symbol, TSNode& node);
   void add_expression(Expression* expression, TSNode& node);
   void add_type(Type* type, TSNode& node);
+  void add_declaration(Declaration* declaration, TSNode& node);
   inline File* current_file() {
     return &files.back();
   }

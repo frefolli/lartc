@@ -33,7 +33,7 @@ void Expression::Delete(Expression*& expr) {
   }
 }
 
-std::ostream& Expression::Print(std::ostream& out, Expression* expr, bool parenthesized) {
+std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool parenthesized) {
   if (parenthesized && (expr->kind == expression_t::MONARY_EXPR
                         || expr->kind == expression_t::BINARY_EXPR))
     out << "(";

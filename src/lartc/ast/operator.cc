@@ -1,4 +1,5 @@
 #include <lartc/ast/operator.hh>
+#include <cassert>
 
 void operator>>(std::string op, operator_t& operator_) {
   if (op == ".")
@@ -113,4 +114,6 @@ operator_category_t get_operator_category(operator_t operator_) {
     case ASS_OP:
       return ASSIGNMENT_OPC;
   }
+
+  assert(nullptr);
 }

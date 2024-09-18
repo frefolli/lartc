@@ -1,7 +1,7 @@
 project('lartc',
   ['c', 'cpp'],
   version : '0.1',
-  default_options : ['warning_level=3', 'cpp_std=c++20'])
+  default_options : ['warning_level=3', 'werror=true', 'cpp_std=c++20'])
 
 tree_sitter = dependency('tree-sitter')
 tree_sitter_lart = dependency('tree-sitter-lart')
@@ -23,6 +23,7 @@ executable('lartc', [
     'src/lartc/ast/statement.cc',
     'src/lartc/ast/declaration/variants.cc',
     'src/lartc/ast/declaration/parse.cc',
+    'src/lartc/ast/declaration/merge.cc',
     'src/lartc/ast/declaration.cc',
     'src/lartc/ast/symbol.cc',
     'src/lartc/ast/operator.cc',

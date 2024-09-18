@@ -1,4 +1,5 @@
 #include <lartc/ast/declaration/parse.hh>
+#include <lartc/ast/declaration/merge.hh>
 #include <lartc/ast/type/parse.hh>
 #include <lartc/ast/statement/parse.hh>
 #include <lartc/ast/parse.hh>
@@ -14,6 +15,13 @@ inline void parse_declaration_module_rest(Declaration* decl, TSContext& context,
     TSNode child_node = ts_node_named_child(node, child_index);
     Declaration* child_decl = parse_declaration(context, child_node);
     if (child_decl != nullptr) {
+      const std::string& decl_name = child_decl->name;
+      Declaration* older_decl = decl->find_child(decl_name);
+      if (older_decl != nullptr) {
+        decl->remove_child(older_decl);
+        child_decl = merge_declarations(context, older_decl, child_decl);
+      }
+
       child_decl->parent = decl;
       decl->children.push_back(child_decl);
     } else {
@@ -27,6 +35,7 @@ inline void parse_declaration_module_rest(Declaration* decl, TSContext& context,
 
 inline Declaration* parse_declaration_module(TSContext& context, TSNode& node) {
   Declaration* decl = Declaration::New(declaration_t::MODULE_DECL);
+  context.file_db->add_declaration(decl, node);
   
   TSNode name = ts_node_child_by_field_name(node, "name");
   decl->name = ts_node_source_code(name, context.source_code);
@@ -71,6 +80,7 @@ inline Declaration* parse_declaration_function(TSContext& context, TSNode& node)
     throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(symbol_name) << " inside a (function)"));
   }
   
+  context.file_db->add_declaration(decl, node);
   return decl;
 }
 
@@ -88,6 +98,7 @@ inline Declaration* parse_declaration_type(TSContext& context, TSNode& node) {
     throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(symbol_name) << " inside a (typedef)"));
   }
 
+  context.file_db->add_declaration(decl, node);
   return decl;
 }
 

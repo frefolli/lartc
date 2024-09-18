@@ -1,5 +1,6 @@
 #include <lartc/ast/declaration.hh>
 #include <lartc/internal_errors.hh>
+#include <algorithm>
 
 Declaration* Declaration::New(declaration_t kind) {
   return new Declaration {
@@ -30,12 +31,12 @@ void Declaration::Delete(Declaration*& decl) {
   }
 }
 
-std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t tabulation) {
+std::ostream& Declaration::Print(std::ostream& out, const Declaration* decl, uint64_t tabulation) {
   tabulate(out, tabulation);
   bool first;
   switch (decl->kind) {
     case declaration_t::MODULE_DECL:
-      out << "module";
+      out << "mod";
       if (!decl->name.empty())
         out << " " << decl->name;
       out<< " {" << std::endl;
@@ -65,7 +66,7 @@ std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t 
         return out << ";";
       }
     case declaration_t::TYPE_DECL:
-      out << "type";
+      out << "typedef";
       if (!decl->name.empty())
         out << " " << decl->name;
       Type::Print(out << " = ", decl->type);
@@ -74,7 +75,7 @@ std::ostream& Declaration::Print(std::ostream& out, Declaration* decl, uint64_t 
   return out;
 }
 
-std::string Declaration::QualifiedName(Declaration* decl) {
+std::string Declaration::QualifiedName(const Declaration* decl) {
   if (decl->parent != nullptr) {
     return decl->name;
   } else {
@@ -83,7 +84,7 @@ std::string Declaration::QualifiedName(Declaration* decl) {
   }
 }
 
-std::ostream& Declaration::PrintShort(std::ostream& out, Declaration* decl) {
+std::ostream& Declaration::PrintShort(std::ostream& out, const Declaration* decl) {
   bool first;
   switch (decl->kind) {
     case declaration_t::MODULE_DECL:
@@ -107,4 +108,20 @@ std::ostream& Declaration::PrintShort(std::ostream& out, Declaration* decl) {
       break;
   }
   return out;
+}
+
+Declaration* Declaration::find_child(const std::string& name) const {
+  for (Declaration* child : children) {
+    if (child->name == name) {
+      return child;
+    }
+  }
+  return nullptr;
+}
+
+void Declaration::remove_child(const Declaration* target) {
+  auto it = std::find(children.begin(), children.end(), target);
+  if (it != children.end()) {
+    children.erase(it);
+  }
 }

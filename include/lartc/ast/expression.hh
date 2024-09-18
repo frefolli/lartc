@@ -19,7 +19,7 @@ struct Expression {
   Expression* value;
 
   static Expression* New(expression_t kind);
-  static std::ostream& Print(std::ostream& out, Expression* decl, bool parenthesized = false);
+  static std::ostream& Print(std::ostream& out, const Expression* decl, bool parenthesized = false);
   static void Delete(Expression*& decl);
 };
 #endif//LARTC_AST_EXPRESSION

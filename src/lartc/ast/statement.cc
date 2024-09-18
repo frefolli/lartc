@@ -38,7 +38,7 @@ void Statement::Delete(Statement*& stmt) {
   }
 }
 
-std::ostream& Statement::Print(std::ostream& out, Statement* stmt, uint64_t tabulation) {
+std::ostream& Statement::Print(std::ostream& out, const Statement* stmt, uint64_t tabulation) {
   if (stmt->kind != statement_t::BLOCK_STMT)
     tabulate(out, tabulation);
   bool first = true;
@@ -106,7 +106,7 @@ std::ostream& Statement::Print(std::ostream& out, Statement* stmt, uint64_t tabu
   return out;
 }
 
-std::ostream& Statement::PrintShort(std::ostream& out, Statement* stmt) {
+std::ostream& Statement::PrintShort(std::ostream& out, const Statement* stmt) {
   switch (stmt->kind) {
     case statement_t::FOR_STMT:
       break;

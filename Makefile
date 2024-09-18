@@ -1,3 +1,5 @@
+FILE=../lart-examples/merging-declarations.lart
+
 @all: ./builddir/lartc
 
 ./builddir/lartc: ./builddir
@@ -11,3 +13,12 @@ clean:
 
 depclean: clean
 	rm -rf subprojects/tree-sitter-lart.git
+
+test: ./builddir/lartc
+	./test.sh
+
+edit:
+	nvim ${FILE}
+
+run: ./builddir/lartc
+	./builddir/lartc ${FILE}

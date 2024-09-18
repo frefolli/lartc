@@ -38,5 +38,6 @@ struct TSContext {
   const char* source_code;
   const char* filepath;
   FileDB* file_db;
+  bool ok;
 };
 #endif//LARTC_TREE_SITTER

@@ -57,6 +57,7 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
   #endif
 
   if (ast_ok) {
+    context.ok = true;
     #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
     printf("Parsing source file ... \n");
     #endif
@@ -64,6 +65,7 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
     #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
     printf("Parsing source file ... OK\n");
     #endif
+    ast_ok = context.ok;
   }
 
   ts_tree_delete(tree);
@@ -83,7 +85,8 @@ int main(int argc, char** args) {
     .language = language,
     .source_code = nullptr,
     .filepath = nullptr,
-    .file_db = &file_db
+    .file_db = &file_db,
+    .ok = true,
   };
   
   bool at_least_one_source_file = false;

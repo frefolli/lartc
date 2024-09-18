@@ -64,13 +64,27 @@ void FileDB::add_type(Type* type, TSNode& node) {
   };
 }
 
+void FileDB::add_declaration(Declaration* declaration, TSNode& node) {
+  File* file = current_file();
+  TSPoint point = ts_node_start_point(node);
+  uint64_t byte_start = ts_node_start_byte(node);
+  uint64_t byte_end = ts_node_end_byte(node);
+  declaration_points[declaration] = FileDB::Point {
+    .file = file,
+    .row = point.row,
+    .column = point.column,
+    .byte_start = byte_start,
+    .byte_end = byte_end
+  };
+}
+
 std::ostream& FileDB::File::Print(std::ostream& out, const FileDB::File& file) {
   out << file.filepath << " | " << (strlen(file.source_code)/1024) << " KB";
   return out;
 }
 
 std::ostream& FileDB::Point::Print(std::ostream& out, const FileDB::Point& point) {
-  out << point.file->filepath << ":" << point.row << ":" << point.column;
+  out << point.file->filepath << ":" << point.row+1 << ":" << point.column+1;
   return out;
 }
 
