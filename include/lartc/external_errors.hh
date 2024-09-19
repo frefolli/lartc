@@ -25,6 +25,9 @@ void throw_duplicate_function_declaration_return_type_doesnt_match(FileDB::Point
 void throw_duplicate_function_declaration_parameter_types_dont_match(FileDB::Point& older_point, FileDB::Point& latest_point);
 void throw_duplicate_function_declaration_wrong_parameter_number(FileDB::Point& older_point, FileDB::Point& latest_point);
 
+// Include Machanism
+void throw_unable_to_resolve_include_filepath(const FileDB::Point& point, const std::string& filepath);
+
 // Name Resolution
 void throw_name_resolution_error(FileDB::Point& point, Declaration* context, Symbol& symbol);
 

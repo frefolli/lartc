@@ -83,6 +83,13 @@ void throw_duplicate_function_declaration_wrong_parameter_number(FileDB::Point& 
   print_line_of_source_code_point(older_point.file->source_code, older_point, older_point.byte_start);
 }
 
+// Include Machanism
+void throw_unable_to_resolve_include_filepath(const FileDB::Point& point, const std::string& filepath) {
+  FileDB::Point::Print(std::cerr, point);
+  std::cerr << ": " << RED_TEXT << "include error" << NORMAL_TEXT << ": unable to find " << filepath << std::endl;
+  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+}
+
 // Name Resolution
 void throw_name_resolution_error(FileDB::Point& point, Declaration* context, Symbol& symbol) {
   FileDB::Point::Print(std::cerr, point);

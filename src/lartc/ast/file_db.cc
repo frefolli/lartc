@@ -1,6 +1,10 @@
+#include <iostream>
 #include <lartc/ast/file_db.hh>
 #include <cstring>
 #include <tree_sitter/api.h>
+#include <filesystem>
+#include <lartc/terminal.hh>
+#include <cassert>
 
 inline char* read_source_code(const char* filepath) {
     char* text = NULL;
@@ -14,6 +18,20 @@ inline char* read_source_code(const char* filepath) {
     return text;
 }
 
+FileDB::Point FileDB::Point::From(const FileDB* file_db, TSNode& ts_node) {
+  const File* file = file_db->current_file();
+  TSPoint point = ts_node_start_point(ts_node);
+  uint64_t byte_start = ts_node_start_byte(ts_node);
+  uint64_t byte_end = ts_node_end_byte(ts_node);
+  return FileDB::Point {
+    .file = file,
+    .row = point.row,
+    .column = point.column,
+    .byte_start = byte_start,
+    .byte_end = byte_end
+  };
+}
+
 FileDB::File* FileDB::add_file(const char* filepath) {
   files.push_back(FileDB::File {});
   FileDB::File* file = &files.back();
@@ -23,59 +41,19 @@ FileDB::File* FileDB::add_file(const char* filepath) {
 }
 
 void FileDB::add_symbol(Symbol* symbol, TSNode& node) {
-  File* file = current_file();
-  TSPoint point = ts_node_start_point(node);
-  uint64_t byte_start = ts_node_start_byte(node);
-  uint64_t byte_end = ts_node_end_byte(node);
-  symbol_points[symbol] = FileDB::Point {
-    .file = file,
-    .row = point.row,
-    .column = point.column,
-    .byte_start = byte_start,
-    .byte_end = byte_end
-  };
+  symbol_points[symbol] = FileDB::Point::From(this, node);
 }
 
 void FileDB::add_expression(Expression* expression, TSNode& node) {
-  File* file = current_file();
-  TSPoint point = ts_node_start_point(node);
-  uint64_t byte_start = ts_node_start_byte(node);
-  uint64_t byte_end = ts_node_end_byte(node);
-  expression_points[expression] = FileDB::Point {
-    .file = file,
-    .row = point.row,
-    .column = point.column,
-    .byte_start = byte_start,
-    .byte_end = byte_end
-  };
+  expression_points[expression] = FileDB::Point::From(this, node);
 }
 
 void FileDB::add_type(Type* type, TSNode& node) {
-  File* file = current_file();
-  TSPoint point = ts_node_start_point(node);
-  uint64_t byte_start = ts_node_start_byte(node);
-  uint64_t byte_end = ts_node_end_byte(node);
-  type_points[type] = FileDB::Point {
-    .file = file,
-    .row = point.row,
-    .column = point.column,
-    .byte_start = byte_start,
-    .byte_end = byte_end
-  };
+  type_points[type] = FileDB::Point::From(this, node);
 }
 
 void FileDB::add_declaration(Declaration* declaration, TSNode& node) {
-  File* file = current_file();
-  TSPoint point = ts_node_start_point(node);
-  uint64_t byte_start = ts_node_start_byte(node);
-  uint64_t byte_end = ts_node_end_byte(node);
-  declaration_points[declaration] = FileDB::Point {
-    .file = file,
-    .row = point.row,
-    .column = point.column,
-    .byte_start = byte_start,
-    .byte_end = byte_end
-  };
+  declaration_points[declaration] = FileDB::Point::From(this, node);
 }
 
 std::ostream& FileDB::File::Print(std::ostream& out, const FileDB::File& file) {
@@ -124,4 +102,34 @@ std::ostream& FileDB::Print(std::ostream& out, const FileDB& file_db) {
     out << std::endl;
   }
   return out;
+}
+
+std::string attempt_resolve(const std::filesystem::path& filepath, const std::filesystem::path& location) {
+  assert(std::filesystem::is_directory(location));
+  std::filesystem::path path = location/filepath;
+
+  if (std::filesystem::exists(path))
+    return path;
+
+  if (!path.has_extension()) {
+    path.replace_extension("lart");
+    if (std::filesystem::exists(path))
+      return path;
+  }
+  return "";
+}
+
+std::string FileDB::resolve_local(const std::string& filepath, const std::string& location) {
+  std::string path = attempt_resolve(filepath, std::filesystem::path(location).remove_filename());
+  if (path.empty())
+    path = resolve_global(filepath);
+  return path;
+}
+
+std::vector<std::string> INCLUDE_DIRECTORIES = {"/usr/include/", "/usr/local/include/"};
+std::string FileDB::resolve_global(const std::string& filepath) {
+  for (std::string basepath : INCLUDE_DIRECTORIES) {
+    std::string path = attempt_resolve(filepath, basepath);
+  }
+  return "";
 }

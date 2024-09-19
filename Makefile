@@ -1,4 +1,4 @@
-FILE=../lart-examples/merging-declarations.lart
+FILE=../lart-examples/include-files.lart
 
 @all: ./builddir/lartc
 

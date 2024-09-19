@@ -38,6 +38,7 @@ struct TSContext {
   const char* source_code;
   const char* filepath;
   FileDB* file_db;
+  std::vector<std::string> file_queue;
   bool ok;
 };
 #endif//LARTC_TREE_SITTER

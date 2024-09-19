@@ -72,6 +72,13 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
   return ast_ok;
 }
 
+char* strclone(const char* string) {
+  int len = strlen(string);
+  char* buf = (char*) malloc (len + 1);
+  strcpy(buf, string);
+  return buf;
+}
+
 int main(int argc, char** args) {
   TSParser* parser = ts_parser_new();
   const TSLanguage* language = tree_sitter_lart();
@@ -86,6 +93,7 @@ int main(int argc, char** args) {
     .source_code = nullptr,
     .filepath = nullptr,
     .file_db = &file_db,
+    .file_queue = {},
     .ok = true,
   };
   
@@ -93,8 +101,14 @@ int main(int argc, char** args) {
   bool no_errors_occurred = true;
 
   for (uint64_t arg_index = 1; arg_index < (uint64_t) argc; ++arg_index) {
-    context.filepath = args[arg_index];
+    context.file_queue.push_back(args[arg_index]);
     at_least_one_source_file = true;
+  }
+
+  while (!context.file_queue.empty()) {
+    context.filepath = strclone(context.file_queue.back().c_str());
+    context.file_queue.pop_back();
+
     if (std::filesystem::exists(context.filepath)) {
       no_errors_occurred &= parse_filepath(decl_tree, parser, context);
     } else {
