@@ -74,11 +74,11 @@ std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool 
       break;
     case expression_t::BINARY_EXPR:
       Expression::Print(out, expr->left, parenthesized || expr->operator_ != operator_t::ASS_OP);
-      if (expr->operator_ != operator_t::DOT_OP) {
+      if (expr->operator_ != operator_t::DOT_OP && expr->operator_ != operator_t::ARR_OP) {
         out << " ";
       }
       out << expr->operator_;
-      if (expr->operator_ != operator_t::DOT_OP) {
+      if (expr->operator_ != operator_t::DOT_OP && expr->operator_ != operator_t::ARR_OP) {
         out << " ";
       }
       Expression::Print(out, expr->right, parenthesized || expr->operator_ != operator_t::ASS_OP);

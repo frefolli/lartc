@@ -62,7 +62,7 @@ std::ostream& Type::Print(std::ostream& out, const Type* type, uint64_t tabulati
   bool first;
   switch (type->kind) {
     case type_t::INTEGER_TYPE:
-      return out << "int<" << type->size << "," << std::boolalpha << type->is_signed << std::noboolalpha << ">";
+      return out << "integer<" << type->size << "," << std::boolalpha << type->is_signed << std::noboolalpha << ">";
     case type_t::DOUBLE_TYPE:
       return out << "double<" << type->size << ">";
     case type_t::BOOLEAN_TYPE:

@@ -55,7 +55,7 @@ void operator>>(std::string op, operator_t& operator_) {
 std::ostream& operator<<(std::ostream& out, operator_t operator_) {
   switch (operator_) {
     case DOT_OP: return out << ".";
-    case ARR_OP: return out << ".";
+    case ARR_OP: return out << "->";
     case XOR_OP: return out << "^";
     case MUL_OP: return out << "*";
     case DIV_OP: return out << "/";

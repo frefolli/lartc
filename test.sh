@@ -8,7 +8,7 @@ NORMAL_TEXT="\x1b[0;39m"
 
 function esit_ok() {
   FILE=$1
-    echo -e " - $FILE ... $GREEN_TEXT" "Err" "$NORMAL_TEXT"
+    echo -e " - $FILE ... $GREEN_TEXT" "Ok" "$NORMAL_TEXT"
 }
 
 function esit_err() {

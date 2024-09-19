@@ -36,16 +36,21 @@ std::ostream& Declaration::Print(std::ostream& out, const Declaration* decl, uin
   bool first;
   switch (decl->kind) {
     case declaration_t::MODULE_DECL:
-      out << "mod";
-      if (!decl->name.empty())
+      if (!decl->name.empty()) {
+        out << "mod";
         out << " " << decl->name;
-      out<< " {" << std::endl;
+        out<< " {" << std::endl;
+        tabulation += 1;
+      }
       for (Declaration* child : decl->children) {
-        Declaration::Print(out, child, tabulation + 1);
+        Declaration::Print(out, child, tabulation);
         out << std::endl;
       }
-      tabulate(out, tabulation);
-      return out << "}";
+      if (!decl->name.empty()) {
+        tabulate(out, tabulation - 1);
+        out << "}";
+      }
+      return out;
     case declaration_t::FUNCTION_DECL:
       out << "fn " << decl->name << "(";
       first = true;
