@@ -36,8 +36,8 @@ function compare() {
   fi
 }
 
-LARTC_OUTPUT="tmp/decl_tree.txt"
-TMP_DIR="tmp/lartc.cycle.d"
+LARTC_OUTPUT="/tmp/decl_tree.txt"
+TMP_DIR="/tmp/lartc.cycle.d"
 PREVIOUS_PASS="$TMP_DIR/pass.lart"
 
 function inizialize() {

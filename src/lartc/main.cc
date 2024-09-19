@@ -11,6 +11,8 @@
 #include <lartc/typecheck/check_types.hh>
 #include <lartc/typecheck/size_cache.hh>
 #include <lartc/typecheck/check_declared_types.hh>
+#include <lartc/codegen/cg_context.hh>
+#include <lartc/codegen/emit_llvm.hh>
 
 #include <assert.h>
 #include <cstring>
@@ -80,6 +82,8 @@ char* strclone(const char* string) {
 }
 
 int main(int argc, char** args) {
+  std::filesystem::create_directories("tmp");
+
   TSParser* parser = ts_parser_new();
   const TSLanguage* language = tree_sitter_lart();
   ts_parser_set_language(parser, language);
@@ -168,8 +172,27 @@ int main(int argc, char** args) {
   if (!no_errors_occurred) {
     std::exit(2);
   }
+
+  /* CODE-GEN-PHASE */
+  CGContext codegen_context = {
+    .file_db = file_db,
+    .symbol_cache = symbol_cache,
+    .type_cache = type_cache
+  };
+  std::ofstream bucket ("tmp/bucket.ll");
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Emitting LLVM ... \n");
+  #endif
+  emit_llvm(bucket, codegen_context, decl_tree);
+  #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE
+  printf("Emitting LLVM ... OK\n");
+  #endif
+  bucket.close();
+
+  if (!no_errors_occurred) {
+    std::exit(2);
+  }
   
-  std::filesystem::create_directories("tmp");
   print_to_file(decl_tree, "tmp/decl_tree.txt");
   print_to_file(symbol_cache, "tmp/symbol_cache.txt");
   print_to_file(file_db, "tmp/file_db.txt");
