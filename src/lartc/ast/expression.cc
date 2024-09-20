@@ -5,7 +5,10 @@ Expression* Expression::New(expression_t kind) {
   return new Expression {
     .kind = kind,
     .symbol = {},
-    .literal = "",
+    .string_literal = "",
+    .boolean_literal = false,
+    .integer_literal = 0,
+    .decimal_literal = 0.0,
     .callable = nullptr,
     .arguments = {},
     .operator_ = (operator_t)-1,
@@ -19,7 +22,10 @@ Expression* Expression::New(expression_t kind) {
 void Expression::Delete(Expression*& expr) {
   if (expr != nullptr) {
     expr->symbol = {};
-    expr->literal.clear();
+    expr->string_literal = "";
+    expr->boolean_literal = false;
+    expr->integer_literal = 0;
+    expr->decimal_literal = 0.0;
     Expression::Delete(expr->callable);
     for (Expression*& child : expr->arguments) {
       Expression::Delete(child);
@@ -43,22 +49,26 @@ std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool 
       Symbol::Print(out, expr->symbol);
       break;
     case expression_t::INTEGER_EXPR:
-      out << expr->literal;
+      out << expr->integer_literal;
       break;
     case expression_t::DOUBLE_EXPR:
-      out << expr->literal;
+      out << expr->decimal_literal;
       break;
     case expression_t::BOOLEAN_EXPR:
-      out << expr->literal;
+      if (expr->boolean_literal) {
+        out << "true";
+      } else {
+        out << "false";
+      }
       break;
     case expression_t::NULLPTR_EXPR:
       out << "nullptr";
       break;
     case expression_t::CHARACTER_EXPR:
-      out << expr->literal;
+      out << expr->integer_literal;
       break;
     case expression_t::STRING_EXPR:
-      out << expr->literal;
+      out << expr->string_literal;
       break;
     case expression_t::CALL_EXPR:
       Expression::Print(out, expr->callable) << "(";

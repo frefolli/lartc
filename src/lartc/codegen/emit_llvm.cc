@@ -1,6 +1,9 @@
+#include <cstdlib>
+#include <iostream>
 #include <lartc/codegen/emit_llvm.hh>
 #include <lartc/codegen/markers.hh>
 #include <cassert>
+#include <lartc/terminal.hh>
 
 #define PRESERVE_MARKER_KEY(KEY) \
   int64_t preserved_##KEY = markers.save_key(KEY);
@@ -18,6 +21,7 @@ std::ostream& emit_marker(std::ostream& out, const std::string& marker) {
 }
 
 std::ostream& emit_decl_label(std::ostream& out, Declaration* decl) {
+  assert(decl != nullptr);
   if (decl->parent != nullptr && decl->parent->name != "") {
     emit_decl_label(out, decl->parent) << "__";
   }
@@ -55,7 +59,10 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
     case SYMBOL_TYPE:
       {
         // resolve
-        emit_decl_label(out << "%", context.symbol_cache.get_declaration(decl, type->symbol));
+        // is it possible that in this scope this symbol was never searched because its owned by a borrowed definition
+        Declaration* source = context.symbol_cache.get_or_find_declaration(decl, type->symbol);
+        assert(source != nullptr);
+        emit_decl_label(out << "%", source);
         break;
       }
     case VOID_TYPE:
@@ -105,26 +112,142 @@ std::ostream& emit_automatic_return_statement(std::ostream& out, CGContext& cont
   if (func->type->kind != VOID_TYPE) {
     std::string _implicit_var = markers.new_marker();
     std::string _implicit_rvalue = markers.new_marker();
-    out << "  " << _implicit_var << " = alloca ";
+    out << _implicit_var << " = alloca ";
     emit_type_specifier(out, context, func, func->type);
     out << ", align 8" << std::endl;
-    out << "  " << _implicit_rvalue << " = load ";
+    out << _implicit_rvalue << " = load ";
     emit_type_specifier(out, context, func, func->type);
     out << ", ptr " << _implicit_var << ", align 8" << std::endl;
-    out << "  ret ";
+    out << "ret ";
     emit_type_specifier(out, context, func, func->type);
     out << " " << _implicit_rvalue << std::endl;
   } else {
-    out << "  ret void" << std::endl;
+    out << "ret void" << std::endl;
+  }
+  return out;
+}
+
+std::ostream& emit_manual_return_statement(std::ostream& out, CGContext& context, Declaration* func, Markers& /*markers*/, const std::string& return_value_marker) {
+  if (func->type->kind != VOID_TYPE) {
+    out << "ret ";
+    emit_type_specifier(out, context, func, func->type);
+    out << " " << return_value_marker << std::endl;
+  } else {
+    out << "ret void" << std::endl;
   }
   return out;
 }
 
 std::ostream& emit_variable_allocation(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Statement* variable) {
-    std::string var = markers.get_var(variable);
-    out << "  " << var << " = alloca ";
-    emit_type_specifier(out, context, func, variable->type);
-    out << ", align 8" << std::endl;
+  std::string var = markers.get_var(variable);
+  out << var << " = alloca ";
+  emit_type_specifier(out, context, func, variable->type);
+  out << ", align 8" << std::endl;
+  return out;
+}
+
+std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
+  out << "; " << expression->kind << std::endl;
+  output_marker = markers.new_marker();
+  // BULLSHIT
+  
+  if (rand() % 2) {
+    emit_type_specifier(out << output_marker << " = add ", context, func, context.type_cache.expression_types[expression]) << " 1, 0" << std::endl;
+  } else {
+    emit_type_specifier(out << output_marker << " = add ", context, func, context.type_cache.expression_types[expression]) << " 0, 0" << std::endl;
+  }
+  // BULLSHIT
+  switch (expression->kind) {
+    case SYMBOL_EXPR:
+      {
+        break;
+      }
+    case INTEGER_EXPR:
+      {
+        std::string literal_marker = context.literal_store.get_int_literal(std::stoi(expression->literal));
+        break;
+      }
+    case DOUBLE_EXPR:
+      {
+        std::string literal_marker = context.literal_store.get_float_literal(std::stod(expression->literal));
+        break;
+      }
+    case BOOLEAN_EXPR:
+      {
+        std::string literal_marker = context.literal_store.get_int_literal(std::stoi(expression->literal));
+        break;
+      }
+    case NULLPTR_EXPR:
+      {
+        break;
+      }
+    case CHARACTER_EXPR:
+      {
+        std::string literal_marker = context.literal_store.get_int_literal(expression->literal[1]);
+        break;
+      }
+    case STRING_EXPR:
+      {
+        std::string literal_marker = context.literal_store.get_string_literal(expression->literal);
+        break;
+      }
+    case CALL_EXPR:
+      {
+        break;
+      }
+    case BINARY_EXPR:
+      {
+        break;
+      }
+    case MONARY_EXPR:
+      {
+        break;
+      }
+    case SIZEOF_EXPR:
+      {
+        break;
+      }
+    case CAST_EXPR:
+      {
+        break;
+      }
+    case BITCAST_EXPR:
+      {
+        break;
+      }
+  }
+  return out;
+}
+
+std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& /*context*/, Declaration* /*func*/, Markers& markers, Expression* expression, std::string& output_marker) {
+  out << "; " << expression->kind << std::endl;
+  output_marker = markers.new_marker();
+  switch (expression->kind) {
+    case SYMBOL_EXPR:
+      {
+        break;
+      }
+    case BINARY_EXPR:
+      {
+        break;
+      }
+    case MONARY_EXPR:
+      {
+        break;
+      }
+    case INTEGER_EXPR:
+    case DOUBLE_EXPR:
+    case BOOLEAN_EXPR:
+    case NULLPTR_EXPR:
+    case CHARACTER_EXPR:
+    case STRING_EXPR:
+    case CALL_EXPR:
+    case SIZEOF_EXPR:
+    case CAST_EXPR:
+    case BITCAST_EXPR:
+      assert(false);
+      break;
+  }
   return out;
 }
 
@@ -136,17 +259,29 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
         PRESERVE_MARKER_KEY(CONTINUE_MK);
         PRESERVE_MARKER_KEY(BREAK_MK);
 
-        /*
-         * -- INIT --
-         * BEFORE_CONDITION
-         * -- CONDITION --
-         * BEFORE_BODY
-         * -- BODY --
-         * AFTER_BODY (CONTINUE)
-         * -- STEP --
-         * END_FOR (BREAK)
-         * */
-        
+        std::string before_condition = markers.new_marker();
+        std::string before_body = markers.new_marker();
+        std::string after_body = markers.new_marker(CONTINUE_MK);
+        std::string end_for = markers.new_marker(BREAK_MK);
+
+        emit_statement(out, context, func, markers, statement->init);
+        out << "br label " << before_condition << std::endl;
+
+        emit_marker(out, before_condition) << std::endl;
+        std::string rvalue_marker;
+        emit_expression_as_rvalue(out, context, func, markers, statement->condition, rvalue_marker);
+        out << "br i1 " << rvalue_marker << ", label " << before_body << ", label " << end_for << std::endl;
+
+        emit_marker(out, before_body) << std::endl;
+        emit_statement(out, context, func, markers, statement->body);
+        out << "br label " << after_body << std::endl;
+
+        emit_marker(out, after_body) << std::endl;
+        emit_expression_as_rvalue(out, context, func, markers, statement->step, rvalue_marker);
+        out << "br label " << end_for << std::endl;
+
+        emit_marker(out, end_for) << std::endl;
+
         RESTORE_MARKER_KEY(CONTINUE_MK);
         RESTORE_MARKER_KEY(BREAK_MK);
         break;
@@ -155,7 +290,11 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
       {
         markers.add_var(statement);
         emit_variable_allocation(out, context, func, markers, statement);
-        // TODO: initialize with expr
+        if (statement->expr != nullptr) {
+          // TODO: initialize with expr
+          std::string rvalue_marker;
+          emit_expression_as_rvalue(out, context, func, markers, statement->expr, rvalue_marker);
+        }
         break;
       }
     case statement_t::BLOCK_STMT:
@@ -182,25 +321,33 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
         std::string after_body = markers.new_marker(BREAK_MK);
 
         out << "br label " << before_condition << std::endl;
+
         emit_marker(out, before_condition) << std::endl;
-        // TODO: compute condition
-        // out << "br label " << after_body << std::endl;
-        out << "br label " << before_body << std::endl;
-        //
+        std::string rvalue_marker;
+        emit_expression_as_rvalue(out, context, func, markers, statement->condition, rvalue_marker);
+        out << "br i1 " << rvalue_marker << ", label " << before_body << ", label " << after_body << std::endl;
+
         emit_marker(out, before_body) << std::endl;
         emit_statement(out, context, func, markers, statement->body);
         out << "br label " << before_condition << std::endl;
+
         emit_marker(out, after_body) << std::endl;
 
-        
         RESTORE_MARKER_KEY(CONTINUE_MK);
         RESTORE_MARKER_KEY(BREAK_MK);
         break;
       }
     case statement_t::RETURN_STMT:
       {
-        // TODO:
-        emit_automatic_return_statement(out, context, func, markers);
+        std::string rvalue_marker;
+        if (statement->expr != nullptr) {
+          emit_expression_as_rvalue(out, context, func, markers, statement->expr, rvalue_marker);
+          emit_manual_return_statement(out, context, func, markers, rvalue_marker);
+        } else {
+          // rvalue_marker is unused when return-type is Void
+          // TODO: enforce return-type match with function return type in type checking
+          emit_manual_return_statement(out, context, func, markers, rvalue_marker);
+        }
         markers.new_marker(); // consuming a marker for the sake of idk
         break;
       }
@@ -211,9 +358,9 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
           std::string before_else = markers.new_marker();
           std::string after_else = markers.new_marker();
 
-          // TODO: compute condition
-          out << "br label " << before_then << std::endl;
-          // out << "br label " << before_else << std::endl;
+          std::string rvalue_marker;
+          emit_expression_as_rvalue(out, context, func, markers, statement->condition, rvalue_marker);
+          out << "br i1 " << rvalue_marker << ", label " << before_then << ", label " << before_else << std::endl;
           emit_marker(out, before_then) << std::endl;
 
           emit_statement(out, context, func, markers, statement->then);
@@ -228,9 +375,9 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
           std::string before_then = markers.new_marker();
           std::string after_then = markers.new_marker();
 
-          // TODO: compute condition
-          out << "br label " << before_then << std::endl;
-          // out << "br label " << after_then << std::endl;
+          std::string rvalue_marker;
+          emit_expression_as_rvalue(out, context, func, markers, statement->condition, rvalue_marker);
+          out << "br i1 " << rvalue_marker << ", label " << before_then << ", label " << after_then << std::endl;
           emit_marker(out, before_then) << std::endl;
 
           emit_statement(out, context, func, markers, statement->then);
@@ -238,7 +385,7 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
 
           emit_marker(out, after_then) << std::endl;
         }
-        
+
         break;
       }
     case statement_t::CONTINUE_STMT:
@@ -250,6 +397,8 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
       }
     case statement_t::EXPRESSION_STMT:
       {
+        std::string rvalue_marker;
+        emit_expression_as_rvalue(out, context, func, markers, statement->expr, rvalue_marker);
         break;
       }
   }
@@ -302,25 +451,25 @@ std::ostream& emit_function_definition(std::ostream& out, CGContext& context, De
 void emit_llvm(std::ostream& out, CGContext& context, Declaration* decl) {
   switch (decl->kind) {
     case MODULE_DECL:
-    {
-      for (Declaration* child : decl->children) {
-        emit_llvm(out, context, child);
-      }
-      break;
-    };
+      {
+        for (Declaration* child : decl->children) {
+          emit_llvm(out, context, child);
+        }
+        break;
+      };
     case TYPE_DECL:
-    {
-      emit_type_specifier(emit_decl_label(out << "%", decl) << " = type ", context, decl, decl->type) << std::endl;
-      break;
-    };
+      {
+        emit_type_specifier(emit_decl_label(out << "%", decl) << " = type ", context, decl, decl->type) << std::endl;
+        break;
+      };
     case FUNCTION_DECL:
-    {
-      if (decl->body == nullptr) {
-        emit_function_declaration(out, context, decl);
-      } else {
-        emit_function_definition(out, context, decl);
-      }
-      break;
-    };
+      {
+        if (decl->body == nullptr) {
+          emit_function_declaration(out, context, decl);
+        } else {
+          emit_function_definition(out, context, decl);
+        }
+        break;
+      };
   }
 }

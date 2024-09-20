@@ -10,67 +10,24 @@ enum marker_key {
   CONTINUE_MK, BREAK_MK
 };
 struct Markers {
-
   uint64_t count = 2;
   std::unordered_map<marker_key, uint64_t> keyd;
   std::unordered_map<Statement*, uint64_t> vars;
 
   inline std::string serialize(uint64_t marker) {
-    return "%" + std::to_string(marker);
+    return "%_" + std::to_string(marker);
   }
 
-  std::string last_marker() {
-    return serialize(count);
-  }
+  std::string last_marker();
+  std::string new_marker(marker_key key = NONE_MK);
 
-  std::string new_marker(marker_key key = NONE_MK) {
-    uint64_t marker = count++;
-    if (key != NONE_MK) {
-      keyd[key] = marker;
-    }
-    return serialize(marker);
-  }
+  int64_t save_key(marker_key key);
+  void restore_key(marker_key key, uint64_t old_key);
+  std::string get_key(marker_key key);
+  void no_key(marker_key key);
 
-  int64_t save_key(marker_key key) {
-    if (keyd.contains(key)) {
-      return keyd[key];
-    }
-    return -1;
-  }
-
-  void restore_key(marker_key key, uint64_t old_key) {
-    keyd[key] = old_key;
-  }
-
-  std::string get_key(marker_key key) {
-    if (keyd.contains(key)) {
-      return serialize(keyd[key]);
-    }
-    return "";
-  }
-
-  void no_key(marker_key key) {
-    if (keyd.contains(key)) {
-      keyd.erase(key);
-    }
-  }
-
-  void add_var(Statement* var) {
-    uint64_t marker = count++;
-    vars[var] = marker;
-  }
-  
-  std::string get_var(Statement* var) {
-    if (vars.contains(var)) {
-      return serialize(vars[var]);
-    }
-    return "";
-  }
-  
-  void del_var(Statement* var) {
-    if (vars.contains(var)) {
-      vars.erase(var);
-    }
-  }
+  void add_var(Statement* var);
+  std::string get_var(Statement* var);
+  void del_var(Statement* var);
 };
 #endif//LARTC__CODEGEN__MARKERS

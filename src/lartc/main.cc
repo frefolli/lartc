@@ -174,10 +174,13 @@ int main(int argc, char** args) {
   }
 
   /* CODE-GEN-PHASE */
+  LiteralStore literal_store;
   CGContext codegen_context = {
     .file_db = file_db,
     .symbol_cache = symbol_cache,
-    .type_cache = type_cache
+    .type_cache = type_cache,
+    .size_cache = size_cache,
+    .literal_store = literal_store
   };
   std::ofstream bucket ("tmp/bucket.ll");
   #ifdef DEBUG_SEGFAULT_IDENTIFY_PHASE

@@ -4,12 +4,16 @@
 #include <lartc/ast/symbol.hh>
 #include <lartc/ast/type.hh>
 #include <lartc/ast/operator.hh>
+#include <cmath>
 #include <vector>
 
 struct Expression {
   expression_t kind;
   Symbol symbol;
-  std::string literal;
+  std::string string_literal;
+  bool boolean_literal;
+  int64_t integer_literal;
+  double_t decimal_literal;
   Expression* callable;
   std::vector<Expression*> arguments;
   operator_t operator_;
