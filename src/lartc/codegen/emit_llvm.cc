@@ -164,31 +164,32 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       }
     case INTEGER_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_int_literal(expression->integer_literal);
+        output_marker = context.literal_store.get_int_literal(expression->integer_literal);
         break;
       }
     case DOUBLE_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_float_literal(expression->decimal_literal);
+        output_marker = context.literal_store.get_float_literal(expression->decimal_literal);
         break;
       }
     case BOOLEAN_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_int_literal(expression->boolean_literal);
+        output_marker = context.literal_store.get_int_literal(expression->boolean_literal);
         break;
       }
     case NULLPTR_EXPR:
       {
+        output_marker = "null";
         break;
       }
     case CHARACTER_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_int_literal(expression->integer_literal);
+        output_marker = context.literal_store.get_int_literal(expression->integer_literal);
         break;
       }
     case STRING_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_string_literal(expression->string_literal);
+        output_marker = context.literal_store.get_string_literal(expression->string_literal);
         break;
       }
     case CALL_EXPR:
@@ -205,6 +206,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       }
     case SIZEOF_EXPR:
       {
+        output_marker = context.literal_store.get_int_literal(context.size_cache.compute_size_of(context.symbol_cache, func, expression->type));
         break;
       }
     case CAST_EXPR:
