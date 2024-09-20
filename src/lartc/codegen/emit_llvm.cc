@@ -1,5 +1,21 @@
 #include <lartc/codegen/emit_llvm.hh>
 #include <lartc/codegen/markers.hh>
+#include <cassert>
+
+#define PRESERVE_MARKER_KEY(KEY) \
+  int64_t preserved_##KEY = markers.save_key(KEY);
+
+#define RESTORE_MARKER_KEY(KEY) \
+  if (preserved_##KEY != 1) { \
+    markers.restore_key(KEY, preserved_##KEY); \
+  } else { \
+    markers.no_key(KEY); \
+  }
+
+std::ostream& emit_marker(std::ostream& out, const std::string& marker) {
+  // if marker is "%nn" i want to print "nn:"
+  return out << marker.substr(1) << ':';
+}
 
 std::ostream& emit_decl_label(std::ostream& out, Declaration* decl) {
   if (decl->parent != nullptr && decl->parent->name != "") {
@@ -104,6 +120,142 @@ std::ostream& emit_automatic_return_statement(std::ostream& out, CGContext& cont
   return out;
 }
 
+std::ostream& emit_variable_allocation(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Statement* variable) {
+    std::string var = markers.get_var(variable);
+    out << "  " << var << " = alloca ";
+    emit_type_specifier(out, context, func, func->type);
+    out << ", align 8" << std::endl;
+  return out;
+}
+
+std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Statement* statement) {
+  out << "; " << statement->kind << std::endl;
+  switch (statement->kind) {
+    case statement_t::FOR_STMT:
+      {
+        PRESERVE_MARKER_KEY(CONTINUE_MK);
+        PRESERVE_MARKER_KEY(BREAK_MK);
+
+        /*
+         * -- INIT --
+         * BEFORE_CONDITION
+         * -- CONDITION --
+         * BEFORE_BODY
+         * -- BODY --
+         * AFTER_BODY (CONTINUE)
+         * -- STEP --
+         * END_FOR (BREAK)
+         * */
+        
+        RESTORE_MARKER_KEY(CONTINUE_MK);
+        RESTORE_MARKER_KEY(BREAK_MK);
+        break;
+      }
+    case statement_t::LET_STMT:
+      {
+        markers.add_var(statement);
+        emit_variable_allocation(out, context, func, markers, statement);
+        // TODO: initialize with expr
+        break;
+      }
+    case statement_t::BLOCK_STMT:
+      {
+        for (Statement* child : statement->children) {
+          emit_statement(out, context, func, markers, child);
+        }
+        break;
+      }
+    case statement_t::BREAK_STMT:
+      {
+        std::string break_marker = markers.get_key(BREAK_MK);
+        assert(!break_marker.empty());
+        out << "br label " << break_marker << std::endl;
+        break;
+      }
+    case statement_t::WHILE_STMT:
+      {
+        PRESERVE_MARKER_KEY(CONTINUE_MK);
+        PRESERVE_MARKER_KEY(BREAK_MK);
+
+        std::string before_condition = markers.new_marker(CONTINUE_MK);
+        std::string before_body = markers.new_marker();
+        std::string after_body = markers.new_marker(BREAK_MK);
+
+        out << "br label " << before_condition << std::endl;
+        emit_marker(out, before_condition) << std::endl;
+        // TODO: compute condition
+        // out << "br label " << after_body << std::endl;
+        out << "br label " << before_body << std::endl;
+        //
+        emit_marker(out, before_body) << std::endl;
+        emit_statement(out, context, func, markers, statement->body);
+        out << "br label " << before_condition << std::endl;
+        emit_marker(out, after_body) << std::endl;
+
+        
+        RESTORE_MARKER_KEY(CONTINUE_MK);
+        RESTORE_MARKER_KEY(BREAK_MK);
+        break;
+      }
+    case statement_t::RETURN_STMT:
+      {
+        // TODO:
+        emit_automatic_return_statement(out, context, func, markers);
+        break;
+      }
+    case statement_t::IF_ELSE_STMT:
+      {
+        if (statement->else_ != nullptr) {
+          std::string before_then = markers.new_marker();
+          std::string before_else = markers.new_marker();
+          std::string after_else = markers.new_marker();
+
+          // TODO: compute condition
+          out << "br label " << before_then << std::endl;
+          // out << "br label " << before_else << std::endl;
+          emit_marker(out, before_then) << std::endl;
+
+          emit_statement(out, context, func, markers, statement->then);
+          out << "br label " << after_else << std::endl;
+
+          emit_marker(out, before_else) << std::endl;
+
+          emit_statement(out, context, func, markers, statement->else_);
+          out << "br label " << after_else << std::endl;
+          emit_marker(out, after_else) << std::endl;
+        } else {
+          std::string before_then = markers.new_marker();
+          std::string after_then = markers.new_marker();
+
+          // TODO: compute condition
+          out << "br label " << before_then << std::endl;
+          // out << "br label " << after_then << std::endl;
+          emit_marker(out, before_then) << std::endl;
+
+          emit_statement(out, context, func, markers, statement->then);
+          out << "br label " << after_then << std::endl;
+
+          emit_marker(out, after_then) << std::endl;
+        }
+        
+        break;
+      }
+    case statement_t::CONTINUE_STMT:
+      {
+        std::string continue_marker = markers.get_key(CONTINUE_MK);
+        assert(!continue_marker.empty());
+        out << "br label " << continue_marker << std::endl;
+        break;
+      }
+    case statement_t::EXPRESSION_STMT:
+      {
+        break;
+      }
+  }
+
+  return out;
+}
+
 std::ostream& emit_function_declaration(std::ostream& out, CGContext& context, Declaration* decl) {
   out << "declare ";
   emit_type_specifier(out, context, decl, decl->type);
@@ -140,6 +292,7 @@ std::ostream& emit_function_definition(std::ostream& out, CGContext& context, De
   }
   out << ") {" << std::endl;
   Markers markers;
+  emit_statement(out, context, decl, markers, decl->body);
   emit_automatic_return_statement(out, context, decl, markers);
   out << "}" << std::endl;
   return out;

@@ -90,8 +90,10 @@ std::ostream& Statement::Print(std::ostream& out, const Statement* stmt, uint64_
       Expression::Print(out, stmt->condition);
       out << ") ";
       Statement::Print(out, stmt->then, tabulation);
-      tabulate(out << std::endl, tabulation) << "else ";
-      Statement::Print(out, stmt->then, tabulation);
+      if (stmt->else_ != nullptr) {
+        tabulate(out << std::endl, tabulation) << "else ";
+        Statement::Print(out, stmt->else_, tabulation);
+      }
       break;
     case statement_t::WHILE_STMT:
       out << "while (";
