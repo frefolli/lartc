@@ -11,7 +11,7 @@ enum marker_key {
 };
 struct Markers {
 
-  uint64_t count = 0;
+  uint64_t count = 2;
   std::unordered_map<marker_key, uint64_t> keyd;
   std::unordered_map<Statement*, uint64_t> vars;
 
@@ -24,10 +24,11 @@ struct Markers {
   }
 
   std::string new_marker(marker_key key = NONE_MK) {
+    uint64_t marker = count++;
     if (key != NONE_MK) {
-      keyd[key] = count;
+      keyd[key] = marker;
     }
-    return serialize(++count);
+    return serialize(marker);
   }
 
   int64_t save_key(marker_key key) {
@@ -55,8 +56,8 @@ struct Markers {
   }
 
   void add_var(Statement* var) {
-    vars[var] = count;
-    ++count;
+    uint64_t marker = count++;
+    vars[var] = marker;
   }
   
   std::string get_var(Statement* var) {

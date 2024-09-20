@@ -123,7 +123,7 @@ std::ostream& emit_automatic_return_statement(std::ostream& out, CGContext& cont
 std::ostream& emit_variable_allocation(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Statement* variable) {
     std::string var = markers.get_var(variable);
     out << "  " << var << " = alloca ";
-    emit_type_specifier(out, context, func, func->type);
+    emit_type_specifier(out, context, func, variable->type);
     out << ", align 8" << std::endl;
   return out;
 }
@@ -201,6 +201,7 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
       {
         // TODO:
         emit_automatic_return_statement(out, context, func, markers);
+        markers.new_marker(); // consuming a marker for the sake of idk
         break;
       }
     case statement_t::IF_ELSE_STMT:
