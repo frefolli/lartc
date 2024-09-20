@@ -3,6 +3,7 @@
 #include <lartc/ast/parse.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/tree_sitter.hh>
+#include <lartc/serializations.hh>
 #include <cstring>
 #include <tree_sitter/api.h>
 #include <unordered_map>
@@ -16,19 +17,19 @@ Expression* parse_expression_symbol(TSContext& context, TSNode& node) {
 
 Expression* parse_expression_integer(TSContext& context, TSNode& node) {
   Expression* integer = Expression::New(INTEGER_EXPR);
-  integer->literal = ts_node_source_code(node, context.source_code);
+  integer->integer_literal = std::stoi(ts_node_source_code(node, context.source_code));
   return integer;
 }
 
 Expression* parse_expression_double(TSContext& context, TSNode& node) {
   Expression* double_ = Expression::New(DOUBLE_EXPR);
-  double_->literal = ts_node_source_code(node, context.source_code);
+  double_->decimal_literal = std::stod(ts_node_source_code(node, context.source_code));
   return double_;
 }
 
 Expression* parse_expression_boolean(TSContext& context, TSNode& node) {
   Expression* boolean = Expression::New(BOOLEAN_EXPR);
-  boolean->literal = ts_node_source_code(node, context.source_code);
+  boolean->boolean_literal = load_boolean(ts_node_source_code(node, context.source_code));
   return boolean;
 }
 
@@ -39,15 +40,13 @@ Expression* parse_expression_nullptr(TSContext& /*context*/, TSNode& /*node*/) {
 
 Expression* parse_expression_character(TSContext& context, TSNode& node) {
   Expression* character = Expression::New(CHARACTER_EXPR);
-  // TODO: Escape string
-  character->literal = ts_node_source_code(node, context.source_code);
+  character->integer_literal = load_escaped_char(ts_node_source_code(node, context.source_code));
   return character;
 }
 
 Expression* parse_expression_string(TSContext& context, TSNode& node) {
   Expression* string = Expression::New(STRING_EXPR);
-  // TODO: Escape string
-  string->literal = ts_node_source_code(node, context.source_code);
+  string->string_literal = load_escaped_string(ts_node_source_code(node, context.source_code));
   return string;
 }
 

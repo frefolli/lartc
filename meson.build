@@ -8,7 +8,7 @@ tree_sitter_lart = dependency('tree-sitter-lart')
 include = include_directories('./include')
 
 executable('lartc', [
-    'src/lartc/strings.cc',
+    'src/lartc/serializations.cc',
     'src/lartc/internal_errors.cc',
     'src/lartc/external_errors.cc',
     'src/lartc/ast/check.cc',

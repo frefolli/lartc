@@ -164,17 +164,17 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       }
     case INTEGER_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_int_literal(std::stoi(expression->literal));
+        std::string literal_marker = context.literal_store.get_int_literal(expression->integer_literal);
         break;
       }
     case DOUBLE_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_float_literal(std::stod(expression->literal));
+        std::string literal_marker = context.literal_store.get_float_literal(expression->decimal_literal);
         break;
       }
     case BOOLEAN_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_int_literal(std::stoi(expression->literal));
+        std::string literal_marker = context.literal_store.get_int_literal(expression->boolean_literal);
         break;
       }
     case NULLPTR_EXPR:
@@ -183,12 +183,12 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       }
     case CHARACTER_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_int_literal(expression->literal[1]);
+        std::string literal_marker = context.literal_store.get_int_literal(expression->integer_literal);
         break;
       }
     case STRING_EXPR:
       {
-        std::string literal_marker = context.literal_store.get_string_literal(expression->literal);
+        std::string literal_marker = context.literal_store.get_string_literal(expression->string_literal);
         break;
       }
     case CALL_EXPR:

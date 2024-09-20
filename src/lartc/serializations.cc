@@ -1,6 +1,8 @@
 #include <cctype>
 #include <cstdint>
-#include <lartc/strings.hh>
+#include <iostream>
+#include <lartc/serializations.hh>
+#include <lartc/terminal.hh>
 #include <cassert>
 
 int8_t hex2int(char c) {
@@ -31,6 +33,8 @@ char load_escaped_char(const std::string& string) {
   if (string[1] == '\\') {
     assert(string.size() > 3);
     switch (string[2]) {
+      case '0':
+        return '\0';
       case '\'':
         return '\'';
       case '"':
@@ -56,6 +60,7 @@ char load_escaped_char(const std::string& string) {
           return (h << 4) + l;
         };
       default:
+        std::cerr << RED_TEXT << string << NORMAL_TEXT << std::endl;
         assert(false);
     }
   } else {
@@ -64,6 +69,48 @@ char load_escaped_char(const std::string& string) {
 }
 
 std::string dump_unescaped_char(char c) {
+  std::string result = "\'";
+  if (isprint(c)) {
+    result += c;
+  } else {
+    switch (c) {
+      case '\0':
+        result += "\\0";
+        break;
+      case '\'':
+        result += "\\'";
+        break;
+      case '"':
+        result += "\\\"";
+        break;
+      case '\\':
+        result += "\\\\";
+        break;
+      case '\n':
+        result += "\\n";
+        break;
+      case '\r':
+        result += "\\r";
+        break;
+      case '\t':
+        result += "\\t";
+        break;
+      case '\b':
+        result += "\\b";
+        break;
+      case '\f':
+        result += "\\f";
+        break;
+      case '\v':
+        result += "\\v";
+        break;
+      default:
+        result += "\\x";
+        result += int2hex(c >> 4);
+        result += int2hex(c & 16);
+    }
+  }
+  return result + "\'";
 }
 
 std::string load_escaped_string(const std::string& string) {
@@ -76,6 +123,10 @@ std::string load_escaped_string(const std::string& string) {
     if (string[cursor] == '\\') {
       assert(cursor + 3 < length);
       switch (string[cursor + 1]) {
+        case '0':
+          result += '\0';
+          cursor += 2;
+          break;
         case '\'':
           result += '\'';
           cursor += 2;
@@ -118,6 +169,7 @@ std::string load_escaped_string(const std::string& string) {
             char h = hex2int(string[cursor + 2]), l = hex2int(string[cursor + 3]);
             result += (char)((h << 4) + l);
             cursor += 4;
+            break;
           };
         default:
           assert(false);
@@ -132,31 +184,64 @@ std::string load_escaped_string(const std::string& string) {
 
 std::string dump_unescaped_string(const std::string& string) {
   std::string result = "\"";
-  uint64_t cursor = 0, length = string.size();
   for (char c : string) {
     if (isprint(c)) {
+      result += c;
     } else {
       switch (c) {
+        case '\0':
+          result += "\\0";
+          break;
         case '\'':
-          result += '\'';
+          result += "\\'";
+          break;
         case '"':
-          result += '\"';
+          result += "\\\"";
+          break;
         case '\\':
-          result += '\\';
-        case 'n':
-          result += '\n';
-        case 'r':
-          result += '\r';
-        case 't':
-          result += '\t';
-        case 'b':
-          result += '\b';
-        case 'f':
-          result += '\f';
-        case 'v':
-          result += '\v';
+          result += "\\\\";
+          break;
+        case '\n':
+          result += "\\n";
+          break;
+        case '\r':
+          result += "\\r";
+          break;
+        case '\t':
+          result += "\\t";
+          break;
+        case '\b':
+          result += "\\b";
+          break;
+        case '\f':
+          result += "\\f";
+          break;
+        case '\v':
+          result += "\\v";
+          break;
+        default:
+          result += "\\x";
+          result += int2hex(c >> 4);
+          result += int2hex(c & 16);
       }
     }
   }
   return result + "\"";
+}
+
+bool load_boolean(const std::string& string) {
+  if (string == "true") {
+    return true;
+  } else if (string == "false") {
+    return false;
+  }
+  assert(false);
+}
+
+std::string dump_boolean(bool value) {
+  if (value) {
+    return "true";
+  } else {
+    return "false";
+  }
 }

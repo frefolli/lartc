@@ -1,5 +1,5 @@
-#ifndef LARTC_STRINGS
-#define LARTC_STRINGS
+#ifndef LARTC_SERIALIZATIONS
+#define LARTC_SERIALIZATIONS
 #include <string>
 
 char load_escaped_char(const std::string& string);
@@ -7,4 +7,7 @@ std::string dump_unescaped_char(char c);
 
 std::string load_escaped_string(const std::string& string);
 std::string dump_unescaped_string(const std::string& string);
-#endif//LARTC_STRINGS
+
+bool load_boolean(const std::string& string);
+std::string dump_boolean(bool value);
+#endif//LARTC_SERIALIZATIONS

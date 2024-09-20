@@ -1,5 +1,6 @@
 #include <lartc/ast/expression.hh>
 #include <lartc/internal_errors.hh>
+#include <lartc/serializations.hh>
 
 Expression* Expression::New(expression_t kind) {
   return new Expression {
@@ -55,20 +56,16 @@ std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool 
       out << expr->decimal_literal;
       break;
     case expression_t::BOOLEAN_EXPR:
-      if (expr->boolean_literal) {
-        out << "true";
-      } else {
-        out << "false";
-      }
+      out << dump_boolean(expr->boolean_literal);
       break;
     case expression_t::NULLPTR_EXPR:
       out << "nullptr";
       break;
     case expression_t::CHARACTER_EXPR:
-      out << expr->integer_literal;
+      out << dump_unescaped_char(expr->integer_literal);
       break;
     case expression_t::STRING_EXPR:
-      out << expr->string_literal;
+      out << dump_unescaped_string(expr->string_literal);
       break;
     case expression_t::CALL_EXPR:
       Expression::Print(out, expr->callable) << "(";

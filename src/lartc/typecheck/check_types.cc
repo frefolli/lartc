@@ -6,8 +6,7 @@
 #include <iostream>
 #include <cmath>
 
-uint64_t compute_minimum_size_for(std::string& literal) {
-  int64_t value = std::stol(literal);
+uint64_t compute_minimum_size_for(int64_t value) {
   if (value < 0) {
     value = -value;
   }
@@ -94,7 +93,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
     case expression_t::INTEGER_EXPR:
       {
         Type* type = Type::New(type_t::INTEGER_TYPE);
-        type->size = compute_minimum_size_for(expr->literal);
+        type->size = compute_minimum_size_for(expr->integer_literal);
         type->is_signed = true;
         type_cache.expression_types[expr] = type;
       }
