@@ -4,6 +4,7 @@
 #include <lartc/codegen/markers.hh>
 #include <cassert>
 #include <lartc/terminal.hh>
+#include <lartc/serializations.hh>
 
 #define PRESERVE_MARKER_KEY(KEY) \
   int64_t preserved_##KEY = markers.save_key(KEY);
@@ -148,18 +149,11 @@ std::ostream& emit_variable_allocation(std::ostream& out, CGContext& context, De
 
 std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
   out << "; " << expression->kind << std::endl;
-  output_marker = markers.new_marker();
-  // BULLSHIT
-  
-  if (rand() % 2) {
-    emit_type_specifier(out << output_marker << " = add ", context, func, context.type_cache.expression_types[expression]) << " 1, 0" << std::endl;
-  } else {
-    emit_type_specifier(out << output_marker << " = add ", context, func, context.type_cache.expression_types[expression]) << " 0, 0" << std::endl;
-  }
-  // BULLSHIT
   switch (expression->kind) {
     case SYMBOL_EXPR:
       {
+        // TODO:
+        output_marker = markers.new_marker();
         break;
       }
     case INTEGER_EXPR:
@@ -194,14 +188,20 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       }
     case CALL_EXPR:
       {
+        // TODO:
+        output_marker = markers.new_marker();
         break;
       }
     case BINARY_EXPR:
       {
+        // TODO:
+        output_marker = markers.new_marker();
         break;
       }
     case MONARY_EXPR:
       {
+        // TODO:
+        output_marker = markers.new_marker();
         break;
       }
     case SIZEOF_EXPR:
@@ -209,12 +209,16 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         output_marker = context.literal_store.get_int_literal(context.size_cache.compute_size_of(context.symbol_cache, func, expression->type));
         break;
       }
-    case CAST_EXPR:
-      {
-        break;
-      }
+    case CAST_EXPR: // TODO:
     case BITCAST_EXPR:
       {
+        std::string value_marker;
+        emit_expression_as_rvalue(out, context, func, markers, expression->value, value_marker);
+        output_marker = markers.new_marker();
+        out << output_marker << " = bitcast ";
+        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->value]);
+        out << " " << value_marker << " to ";
+        emit_type_specifier(out, context, func, expression->type);
         break;
       }
   }
@@ -450,12 +454,12 @@ std::ostream& emit_function_definition(std::ostream& out, CGContext& context, De
   return out;
 }
 
-void emit_llvm(std::ostream& out, CGContext& context, Declaration* decl) {
+void emit_declaration(std::ostream& out, CGContext& context, Declaration* decl) {
   switch (decl->kind) {
     case MODULE_DECL:
       {
         for (Declaration* child : decl->children) {
-          emit_llvm(out, context, child);
+          emit_declaration(out, context, child);
         }
         break;
       };
@@ -474,4 +478,21 @@ void emit_llvm(std::ostream& out, CGContext& context, Declaration* decl) {
         break;
       };
   }
+}
+
+void emit_literal_store(std::ostream& out, CGContext& context) {
+  for (auto item : context.literal_store.string_literals) {
+    out << context.literal_store.serialize(item.second) << " = private constant [" << item.first.size() + 1 << " x i8] c" << dump_unescaped_string(item.first, true) << ", align 1" << std::endl;
+  }
+  for (auto item : context.literal_store.int_literals) {
+    out << context.literal_store.serialize(item.second) << " = private constant i64 " << item.first << ", align 1" << std::endl;
+  }
+  for (auto item : context.literal_store.float_literals) {
+    out << context.literal_store.serialize(item.second) << " = private constant double " << item.first << ", align 1" << std::endl;
+  }
+}
+
+void emit_llvm(std::ostream& out, CGContext& context, Declaration* decl_tree) {
+  emit_declaration(out, context, decl_tree);
+  emit_literal_store(out, context);
 }

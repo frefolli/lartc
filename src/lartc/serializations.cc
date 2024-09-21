@@ -182,7 +182,7 @@ std::string load_escaped_string(const std::string& string) {
   return result;
 }
 
-std::string dump_unescaped_string(const std::string& string) {
+std::string dump_unescaped_string(const std::string& string, bool null_terminated) {
   std::string result = "\"";
   for (char c : string) {
     if (isprint(c)) {
@@ -225,6 +225,9 @@ std::string dump_unescaped_string(const std::string& string) {
           result += int2hex(c & 16);
       }
     }
+  }
+  if (null_terminated) {
+    result += "\\0";
   }
   return result + "\"";
 }
