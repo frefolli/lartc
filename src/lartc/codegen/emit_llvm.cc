@@ -183,6 +183,96 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
   return out;
 }
 
+std::ostream& cast_operands_to_expression_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker, Type* type) {
+  uint64_t left_type_size = context.size_cache.compute_size_of(context.symbol_cache, func, left_type);
+  uint64_t right_type_size = context.size_cache.compute_size_of(context.symbol_cache, func, right_type);
+  uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, type);
+  if (left_type_size > type_size) {
+    std::string output_marker = markers.new_marker();
+    emit_type_specifier(emit_type_specifier(out << output_marker << " = trunc ", context, func, left_type) << " " << left_marker << " to ", context, func, right_type) << std::endl;
+    left_marker = output_marker;
+  } else if (left_type_size < type_size) {
+    std::string output_marker = markers.new_marker();
+    emit_type_specifier(emit_type_specifier(out << output_marker << " = zext ", context, func, left_type) << " " << left_marker << " to ", context, func, right_type) << std::endl;
+    left_marker = output_marker;
+  }
+  if (right_type_size > type_size) {
+    std::string output_marker = markers.new_marker();
+    emit_type_specifier(emit_type_specifier(out << output_marker << " = trunc ", context, func, right_type) << " " << right_marker << " to ", context, func, right_type) << std::endl;
+    right_marker = output_marker;
+  } else if (right_type_size < type_size) {
+    std::string output_marker = markers.new_marker();
+    emit_type_specifier(emit_type_specifier(out << output_marker << " = zext ", context, func, right_type) << " " << right_marker << " to ", context, func, right_type) << std::endl;
+    right_marker = output_marker;
+  }
+  return out;
+}
+
+Type* decide_logic_operand_type(CGContext& context, Declaration* decl, Type* left, Type* right) {
+  Declaration* left_decl = decl;
+  while (left->kind == SYMBOL_TYPE) {
+    Declaration* source = context.symbol_cache.get_or_find_declaration(left_decl, left->symbol);
+    assert(source != nullptr);
+    left_decl = source;
+    left = left_decl->type;
+  }
+  Declaration* right_decl = decl;
+  while (right->kind == SYMBOL_TYPE) {
+    Declaration* source = context.symbol_cache.get_or_find_declaration(right_decl, right->symbol);
+    assert(source != nullptr);
+    right_decl = source;
+    right = right_decl->type;
+  }
+
+  Type* type = nullptr;
+  if (left->kind == DOUBLE_TYPE || right->kind == DOUBLE_TYPE) {
+    type = Type::New(DOUBLE_TYPE);
+  } else if (left->kind == POINTER_TYPE || right->kind == POINTER_TYPE) {
+    if (left->kind == POINTER_TYPE) {
+      type = Type::Clone(left);
+    } else {
+      type = Type::Clone(right);
+    }
+  } else if (left->kind == INTEGER_TYPE || right->kind == INTEGER_TYPE) {
+    if (left->kind  == INTEGER_TYPE) {
+      type = Type::Clone(left);
+    }
+    if (right->kind  == INTEGER_TYPE) {
+      if (type == nullptr) {
+        type = Type::Clone(right);
+      } else if (type->size < right->size) {
+        type->size = right->size;
+      }
+    }
+  } else if (left->kind == BOOLEAN_TYPE || right->kind == BOOLEAN_TYPE) {
+    type = Type::New(BOOLEAN_TYPE);
+  }
+  assert(type != nullptr);
+  return type;
+}
+
+std::ostream& cast_operands_to_biggest_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker) {
+  return cast_operands_to_expression_type(out, context, markers, func, left_type, left_marker, right_type, right_marker, decide_logic_operand_type(context, func, left_type, right_type));
+}
+
+std::ostream& emit_simple_binary_operation(std::ostream& out, CGContext& context, Declaration* func, const std::string& output_marker, const std::string& left_marker, const std::string& right_marker, Type* type, std::string integer_op, std::string double_op) {
+  if (type_is_integer(context, func, type)) {
+    emit_type_specifier(out << output_marker << " = " << integer_op << " ", context, func, type) << " " << left_marker << ", " << right_marker << std::endl;
+  } else if (type_is_double(context, func, type)) {
+    emit_type_specifier(out << output_marker << " = " << double_op << " ", context, func, type) << " " << left_marker << ", " << right_marker << std::endl;
+  }
+  return out;
+}
+
+std::ostream& emit_integer_only_binary_operation(std::ostream& out, CGContext& context, Declaration* func, const std::string& output_marker, const std::string& left_marker, const std::string& right_marker, Type* type, std::string integer_op) {
+  if (type_is_integer(context, func, type)) {
+    emit_type_specifier(out << output_marker << " = " << integer_op << " ", context, func, type) << " " << left_marker << ", " << right_marker << std::endl;
+  } else if (type_is_double(context, func, type)) {
+    assert(false);
+  }
+  return out;
+}
+
 std::ostream& emit_automatic_return_statement(std::ostream& out, CGContext& context, Declaration* func, Markers& markers) {
   if (func->type->kind != VOID_TYPE) {
     std::string _implicit_var = markers.new_marker();
@@ -334,7 +424,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           emit_expression_as_rvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
           argument_markers.push_back(argument_marker);
         }
-        
+
         Type* callable_subtype = extract_subtype(context, func, callable_type);
         if (callable_subtype->kind == VOID_TYPE) {
           out << output_marker << "call void";
@@ -357,164 +447,217 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
     case BINARY_EXPR:
       {
         // TODO:
-        switch(expression->operator_) {
-          case ARR_OP:
-            {
-              break;
-            }
-          case DOT_OP:
-            {
-              break;
-            }
-          case ASS_OP:
-            {
-              break;
-            }
-          default:
-            {
-              std::string right_value;
-              emit_expression_as_rvalue(out, context, func, markers, expression->right, right_value);
-              std::string left_value;
-              emit_expression_as_rvalue(out, context, func, markers, expression->left, left_value);
-              output_marker = markers.new_marker();
-              switch (expression->operator_) {
-                case MUL_OP:
-                  {
-                    if (type_is_pointer(context, func, context.type_cache.expression_types[expression]))
-                      assert(false);
-                    if (type_is_integer(context, func, context.type_cache.expression_types[expression])) {
-                      emit_type_specifier(out << output_marker << " = mul ", context, func, context.type_cache.expression_types[expression]) << " " << left_value << ", " << right_value << std::endl;
-                    } else if (type_is_double(context, func, context.type_cache.expression_types[expression])) {
-                      emit_type_specifier(out << output_marker << " = fmul ", context, func, context.type_cache.expression_types[expression]) << " " << left_value << ", " << right_value << std::endl;
-                    }
-                    break;
-                  }
-                case DIV_OP:
-                  {
-                    if (type_is_pointer(context, func, context.type_cache.expression_types[expression]))
-                      assert(false);
-                    if (type_is_integer(context, func, context.type_cache.expression_types[expression])) {
-                      emit_type_specifier(out << output_marker << " = sdiv ", context, func, context.type_cache.expression_types[expression]) << " " << left_value << ", " << right_value << std::endl;
-                    } else if (type_is_double(context, func, context.type_cache.expression_types[expression])) {
-                      emit_type_specifier(out << output_marker << " = fdiv ", context, func, context.type_cache.expression_types[expression]) << " " << left_value << ", " << right_value << std::endl;
-                    }
-                    break;
-                  }
-                case ADD_OP:
-                  {
-                    if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
-                      Type* subtype = extract_subtype(context, func, context.type_cache.expression_types[expression]);
-                      if (type_is_pointer(context, func, context.type_cache.expression_types[expression->right])) {
-                        emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
-                        out << " " << right_value << ", ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
-                        out << " " << left_value << ")" << std::endl;
-                      } else {
-                        emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
-                        out << " " << left_value << ", ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
-                        out << " " << right_value << ")" << std::endl;
-                      }
-                    } else if (type_is_integer(context, func, context.type_cache.expression_types[expression])) {
-                      emit_type_specifier(out << output_marker << " = add ", context, func, context.type_cache.expression_types[expression]) << " " << left_value << ", " << right_value << std::endl;
-                    } else if (type_is_double(context, func, context.type_cache.expression_types[expression])) {
-                      emit_type_specifier(out << output_marker << " = fadd ", context, func, context.type_cache.expression_types[expression]) << " " << left_value << ", " << right_value << std::endl;
-                    }
-                    break;
-                  }
-                case SUB_OP:
-                  {
-                    if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
-                      Type* subtype = extract_subtype(context, func, context.type_cache.expression_types[expression]);
-                      if (type_is_pointer(context, func, context.type_cache.expression_types[expression->right])) {
-                        std::string inverted_offset = markers.new_marker();
-                        out << inverted_offset << " = mul ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
-                        out << " " << left_value << ", -1" << std::endl;
+        if (expression->operator_ == ARR_OP) {
+        } else if (expression->operator_ == DOT_OP) {
+        } else if (expression->operator_ == ASS_OP) {
+        } else {
+          std::string right_value;
+          emit_expression_as_rvalue(out, context, func, markers, expression->right, right_value);
+          std::string left_value;
+          emit_expression_as_rvalue(out, context, func, markers, expression->left, left_value);
+          output_marker = markers.new_marker();
 
-                        emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
-                        out << " " << right_value << ", ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
-                        out << " " << inverted_offset << ")" << std::endl;
-                      } else {
-                        std::string inverted_offset = markers.new_marker();
-                        out << inverted_offset << " = mul ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
-                        out << " " << right_value << ", -1" << std::endl;
+          if (is_algebraic_operator(expression->operator_)) {
+            cast_operands_to_expression_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value, context.type_cache.expression_types[expression]);
+          } else if (is_logical_operator(expression->operator_)) {
+            cast_operands_to_biggest_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value);
+          } else {
+            assert(false);
+          }
 
-                        emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
-                        out << " " << left_value << ", ";
-                        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
-                        out << " " << right_value << ")" << std::endl;
-                      }
-                    } else if (type_is_integer(context, func, context.type_cache.expression_types[expression])) {
-                      emit_type_specifier(out << output_marker << " = add ", context, func, context.type_cache.expression_types[expression]) << " " << left_value << ", " << right_value << std::endl;
-                    } else if (type_is_double(context, func, context.type_cache.expression_types[expression])) {
-                      emit_type_specifier(out << output_marker << " = fadd ", context, func, context.type_cache.expression_types[expression]) << " " << left_value << ", " << right_value << std::endl;
-                    }
-                    break;
-                  }
-                case XOR_OP:
-                  {
-                    break;
-                  }
-                case GE_OP:
-                  {
-                    break;
-                  }
-                case LE_OP:
-                  {
-                    break;
-                  }
-                case SCA_OP:
-                  {
-                    break;
-                  }
-                case SCO_OP:
-                  {
-                    break;
-                  }
-                case EQ_OP:
-                  {
-                    break;
-                  }
-                case NE_OP:
-                  {
-                    break;
-                  }
-                case LROT_OP:
-                  {
-                    break;
-                  }
-                case RROT_OP:
-                  {
-                    break;
-                  }
-                case GR_OP:
-                  {
-                    break;
-                  }
-                case LR_OP:
-                  {
-                    break;
-                  }
-                case AND_OP:
-                  {
-                    break;
-                  }
-                case OR_OP:
-                  {
-                    break;
-                  }
-                default:
+          switch (expression->operator_) {
+            case MUL_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
                   assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "mul", "fmul");
+                }
               }
               break;
-            }
+            case DIV_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "udiv", "fdiv");
+                }
+                break;
+              }
+            case ADD_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  Type* subtype = extract_subtype(context, func, context.type_cache.expression_types[expression]);
+                  if (type_is_pointer(context, func, context.type_cache.expression_types[expression->right])) {
+                    emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
+                    out << " " << right_value << ", ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
+                    out << " " << left_value << ")" << std::endl;
+                  } else {
+                    emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
+                    out << " " << left_value << ", ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
+                    out << " " << right_value << ")" << std::endl;
+                  }
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "add", "fadd");
+                }
+                break;
+              }
+            case SUB_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  Type* subtype = extract_subtype(context, func, context.type_cache.expression_types[expression]);
+                  if (type_is_pointer(context, func, context.type_cache.expression_types[expression->right])) {
+                    std::string inverted_offset = markers.new_marker();
+                    out << inverted_offset << " = mul ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
+                    out << " " << left_value << ", -1" << std::endl;
+
+                    emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
+                    out << " " << right_value << ", ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
+                    out << " " << inverted_offset << ")" << std::endl;
+                  } else {
+                    std::string inverted_offset = markers.new_marker();
+                    out << inverted_offset << " = mul ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
+                    out << " " << right_value << ", -1" << std::endl;
+
+                    emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
+                    out << " " << left_value << ", ";
+                    emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
+                    out << " " << right_value << ")" << std::endl;
+                  }
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "sub", "fsub");
+                }
+                break;
+              }
+            case XOR_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "xor");
+                }
+                break;
+              }
+            case AND_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "and");
+                }
+                break;
+              }
+            case OR_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "or");
+                }
+                break;
+              }
+            case LROT_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "shl");
+                }
+                break;
+              }
+            case RROT_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "lshr");
+                }
+                break;
+              }
+            case SCA_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "and");
+                }
+                break;
+              }
+            case SCO_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "or");
+                }
+                break;
+              }
+            case GE_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp sge", "fcmp sge");
+                }
+                break;
+              }
+            case LE_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp sle", "fcmp sle");
+                }
+                break;
+              }
+            case EQ_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp eq", "fcmp eq");
+                }
+                break;
+              }
+            case NE_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp ne", "fcmp ne");
+                }
+                break;
+              }
+            case GR_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp sgt", "fcmp sgt");
+                }
+                break;
+              }
+            case LR_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp slt", "fcmp slt");
+                }
+                break;
+              }
+            default:
+              assert(false);
+          }
         }
         break;
       }
@@ -766,7 +909,7 @@ std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& ma
   for (auto param : func->parameters) {
     markers.add_param(&param);
     std::string param_marker = markers.get_param(&param);
-    
+
     out << param_marker << " = alloca ";
     emit_type_specifier(out, context, func, param.second);
     out << ", align 8" << std::endl;
