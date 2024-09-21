@@ -21,12 +21,18 @@ std::ostream& emit_marker(std::ostream& out, const std::string& marker) {
   return out << marker.substr(1) << ':';
 }
 
-std::ostream& emit_decl_label(std::ostream& out, Declaration* decl) {
+std::string craft_decl_label(Declaration* decl) {
   assert(decl != nullptr);
+  std::string result;
   if (decl->parent != nullptr && decl->parent->name != "") {
-    emit_decl_label(out, decl->parent) << "__";
+    result += craft_decl_label(decl->parent) + "__";
   }
-  return out << decl->name;
+  result += decl->name;
+  return result;
+}
+
+std::ostream& emit_decl_label(std::ostream& out, Declaration* decl) {
+  return out << craft_decl_label(decl);
 }
 
 std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declaration* decl, Type* type, bool first_level = true) {
@@ -147,6 +153,52 @@ std::ostream& emit_variable_allocation(std::ostream& out, CGContext& context, De
   return out;
 }
 
+std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
+  out << "; " << expression->kind << std::endl;
+  switch (expression->kind) {
+    case SYMBOL_EXPR:
+      {
+        if (Declaration* decl = context.symbol_cache.get_declaration(func, expression->symbol)) {
+          output_marker = "@" + craft_decl_label(decl);
+        } else if (Statement* var = context.symbol_cache.get_statement(expression)) {
+          output_marker = markers.get_var(var);
+        } else if (std::pair<std::string, Type*>* param = context.symbol_cache.get_parameter(expression)) {
+          output_marker = markers.get_param(param);
+        } else {
+          assert(false);
+        }
+        break;
+      }
+    case BINARY_EXPR:
+      {
+        output_marker = markers.new_marker();
+        break;
+      }
+    case MONARY_EXPR:
+      {
+        output_marker = markers.new_marker();
+        break;
+      }
+    case CAST_EXPR:
+      {
+        output_marker = markers.new_marker();
+        break;
+      }
+    case INTEGER_EXPR:
+    case DOUBLE_EXPR:
+    case BOOLEAN_EXPR:
+    case NULLPTR_EXPR:
+    case CHARACTER_EXPR:
+    case STRING_EXPR:
+    case CALL_EXPR:
+    case SIZEOF_EXPR:
+    case BITCAST_EXPR:
+      assert(false);
+      break;
+  }
+  return out;
+}
+
 std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
   out << "; " << expression->kind << std::endl;
   switch (expression->kind) {
@@ -200,8 +252,33 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       }
     case CALL_EXPR:
       {
-        // TODO:
-        output_marker = markers.new_marker();
+        std::string callable_marker;
+        emit_expression_as_lvalue(out, context, func, markers, expression->callable, callable_marker);
+        Type* callable_type = context.type_cache.expression_types[expression->callable];
+
+        std::vector<std::string> argument_markers = {};
+        for (uint64_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
+          std::string argument_marker;
+          emit_expression_as_rvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
+          argument_markers.push_back(argument_marker);
+        }
+        
+        if (callable_type->subtype->kind == VOID_TYPE) {
+          out << output_marker << "call void";
+        } else {
+          output_marker = markers.new_marker();
+          out << output_marker << " = call ";
+          emit_type_specifier(out, context, func, callable_type->subtype);
+        }
+        out << " " << callable_marker << "(";
+        for (uint64_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
+          if (arg_index > 0) {
+            out << ", ";
+          }
+          Type* arg_type = context.type_cache.expression_types[expression->arguments[arg_index]];
+          emit_type_specifier(out, context, func, arg_type) << " " << argument_markers[arg_index];
+        }
+        out << ")" << std::endl;
         break;
       }
     case BINARY_EXPR:
@@ -233,38 +310,6 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         emit_type_specifier(out, context, func, expression->type);
         break;
       }
-  }
-  return out;
-}
-
-std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& /*context*/, Declaration* /*func*/, Markers& markers, Expression* expression, std::string& output_marker) {
-  out << "; " << expression->kind << std::endl;
-  output_marker = markers.new_marker();
-  switch (expression->kind) {
-    case SYMBOL_EXPR:
-      {
-        break;
-      }
-    case BINARY_EXPR:
-      {
-        break;
-      }
-    case MONARY_EXPR:
-      {
-        break;
-      }
-    case INTEGER_EXPR:
-    case DOUBLE_EXPR:
-    case BOOLEAN_EXPR:
-    case NULLPTR_EXPR:
-    case CHARACTER_EXPR:
-    case STRING_EXPR:
-    case CALL_EXPR:
-    case SIZEOF_EXPR:
-    case CAST_EXPR:
-    case BITCAST_EXPR:
-      assert(false);
-      break;
   }
   return out;
 }
@@ -452,9 +497,9 @@ std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& ma
     emit_type_specifier(out, context, func, param.second);
     out << ", align 8" << std::endl;
 
-    out << param_marker << " = load ";
+    out << "store ";
     emit_type_specifier(out, context, func, param.second);
-    out << ", ptr %" << param.first << ", align 8" << std::endl;
+    out << " %" << param.first << ", ptr " << param_marker << std::endl;
   }
   return out;
 }
