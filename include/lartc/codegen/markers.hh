@@ -13,6 +13,7 @@ struct Markers {
   uint64_t count = 2;
   std::unordered_map<marker_key, uint64_t> keyd;
   std::unordered_map<Statement*, uint64_t> vars;
+  std::unordered_map<std::pair<std::string, Type*>*, uint64_t> params;
 
   inline std::string serialize(uint64_t marker) {
     return "%_" + std::to_string(marker);
@@ -29,5 +30,9 @@ struct Markers {
   void add_var(Statement* var);
   std::string get_var(Statement* var);
   void del_var(Statement* var);
+
+  void add_param(std::pair<std::string, Type*>* param);
+  std::string get_param(std::pair<std::string, Type*>* param);
+  void clear_params();
 };
 #endif//LARTC__CODEGEN__MARKERS

@@ -152,8 +152,20 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
   switch (expression->kind) {
     case SYMBOL_EXPR:
       {
-        // TODO:
         output_marker = markers.new_marker();
+        out << output_marker << " = load ";
+        if (Declaration* decl = context.symbol_cache.get_declaration(func, expression->symbol)) {
+          emit_type_specifier(out, context, decl, decl->type);
+          emit_decl_label(out << ", ptr ", decl) << ", align 8" << std::endl;
+        } else if (Statement* var = context.symbol_cache.get_statement(expression)) {
+          emit_type_specifier(out, context, func, var->type);
+          out << ", ptr " << markers.get_var(var) << ", align 8" << std::endl;
+        } else if (std::pair<std::string, Type*>* param = context.symbol_cache.get_parameter(expression)) {
+          emit_type_specifier(out, context, func, param->second);
+          out << ", ptr " << markers.get_param(param) << ", align 8" << std::endl;
+        } else {
+          assert(false);
+        }
         break;
       }
     case INTEGER_EXPR:
@@ -431,6 +443,22 @@ std::ostream& emit_function_declaration(std::ostream& out, CGContext& context, D
   return out;
 }
 
+std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& markers, Declaration* func) {
+  for (auto param : func->parameters) {
+    markers.add_param(&param);
+    std::string param_marker = markers.get_param(&param);
+    
+    out << param_marker << " = alloca ";
+    emit_type_specifier(out, context, func, param.second);
+    out << ", align 8" << std::endl;
+
+    out << param_marker << " = load ";
+    emit_type_specifier(out, context, func, param.second);
+    out << ", ptr %" << param.first << ", align 8" << std::endl;
+  }
+  return out;
+}
+
 std::ostream& emit_function_definition(std::ostream& out, CGContext& context, Declaration* decl) {
   out << "define ";
   emit_type_specifier(out, context, decl, decl->type);
@@ -438,16 +466,18 @@ std::ostream& emit_function_definition(std::ostream& out, CGContext& context, De
   emit_decl_label(out, decl);
   out  << "(";
   bool first = true;
-  for (auto field : decl->parameters) {
+  for (auto param : decl->parameters) {
     if (first) {
       first = false;
     } else {
       out << ", ";
     }
-    emit_type_specifier(out, context, decl, field.second);
+    emit_type_specifier(out, context, decl, param.second);
+    out << " %" << param.first;
   }
   out << ") {" << std::endl;
   Markers markers;
+  emit_parameters(out, context, markers, decl);
   emit_statement(out, context, decl, markers, decl->body);
   emit_automatic_return_statement(out, context, decl, markers);
   out << "}" << std::endl;
