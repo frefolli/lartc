@@ -6,6 +6,7 @@
 #include <cassert>
 #include <lartc/terminal.hh>
 #include <lartc/serializations.hh>
+#include <unordered_map>
 
 #define PRESERVE_MARKER_KEY(KEY) \
   int64_t preserved_##KEY = markers.save_key(KEY);
@@ -1114,7 +1115,7 @@ void emit_declaration(std::ostream& out, CGContext& context, Declaration* decl) 
       };
     case TYPE_DECL:
       {
-        emit_type_specifier(emit_decl_label(out << "%", decl) << " = type ", context, decl, decl->type) << std::endl;
+        // already compiled with emit_type_declarations
         break;
       };
     case FUNCTION_DECL:
@@ -1141,7 +1142,68 @@ void emit_literal_store(std::ostream& out, CGContext& context) {
   }
 }
 
+void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* decl, std::unordered_map<Declaration*, bool>& processed_types);
+
+void emit_dependencies_of_type_declarations(std::ostream& out, CGContext& context, Declaration* decl, std::unordered_map<Declaration*, bool>& processed_types, Type* type) {
+  switch (type->kind) {
+    case POINTER_TYPE:
+      {
+        emit_dependencies_of_type_declarations(out, context, decl, processed_types, type->subtype);
+        break;
+      }
+    case SYMBOL_TYPE:
+      {
+        Declaration* dependency = context.symbol_cache.get_declaration(decl, type->symbol);
+        emit_type_declarations(out, context, dependency, processed_types);
+        break;
+      }
+    case STRUCT_TYPE:
+      {
+        for (auto item : type->fields) {
+          emit_dependencies_of_type_declarations(out, context, decl, processed_types, item.second);
+        }
+        break;
+      }
+    case FUNCTION_TYPE:
+      {
+        for (auto item : type->parameters) {
+          emit_dependencies_of_type_declarations(out, context, decl, processed_types, item.second);
+        }
+        emit_dependencies_of_type_declarations(out, context, decl, processed_types, type->subtype);
+        break;
+      }
+    default:
+      {}
+  }
+}
+
+void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* decl, std::unordered_map<Declaration*, bool>& processed_types) {
+  switch (decl->kind) {
+    case MODULE_DECL:
+      {
+        for (Declaration* child : decl->children) {
+          emit_type_declarations(out, context, child, processed_types);
+        }
+        break;
+      };
+    case TYPE_DECL:
+      {
+        if (!processed_types[decl]) {
+          processed_types[decl] = true;
+          emit_type_specifier(emit_decl_label(out << "%", decl) << " = type ", context, decl, decl->type) << std::endl;
+        }
+        break;
+      };
+    case FUNCTION_DECL:
+      {
+        break;
+      };
+  }
+}
+
 void emit_llvm(std::ostream& out, CGContext& context, Declaration* decl_tree) {
+  std::unordered_map<Declaration*, bool> processed_types;
+  emit_type_declarations(out, context, decl_tree, processed_types);
   emit_declaration(out, context, decl_tree);
   emit_literal_store(out, context);
 }
