@@ -13,7 +13,7 @@ else
   echo "compiled capi.o"
 fi
 
-make run
+#make run
 llc $LLVM_IN -o $AS_IN
 echo "generated $AS_IN"
 as $AS_IN -o $LD_IN

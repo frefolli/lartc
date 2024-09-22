@@ -1,5 +1,4 @@
-#FILE=../lart-examples/hello.lart
-FILE=../lart-examples/chatgpt.lart
+FILE=../lart-examples/hello.lart
 
 @all: ./builddir/lartc
 

@@ -91,15 +91,28 @@ std::vector<std::pair<std::string, Type*>>* extract_fields(CGContext& context, D
   }
 }
 
-bool type_is_pointer(CGContext& /*context*/, Declaration* /*decl*/, Type* type) {
+std::pair<Declaration*, Type*> resolve_type_if_symbol(CGContext& context, Declaration* decl, Type* type) {
+  while (type->kind == SYMBOL_TYPE) {
+    Declaration* source = context.symbol_cache.get_or_find_declaration(decl, type->symbol);
+    assert(source != nullptr);
+    decl = source;
+    type = decl->type;
+  }
+  return {decl, type};
+}
+
+bool type_is_pointer(CGContext& context, Declaration* decl, Type* type) {
+  std::pair<Declaration*, Type*> {decl, type} = resolve_type_if_symbol(context, decl, type);
   return type->kind == POINTER_TYPE;
 }
 
-bool type_is_integer(CGContext& /*context*/, Declaration* /*decl*/, Type* type) {
-  return type->kind == INTEGER_TYPE;
+bool type_is_integer(CGContext& context, Declaration* decl, Type* type) {
+  std::pair<Declaration*, Type*> {decl, type} = resolve_type_if_symbol(context, decl, type);
+  return type->kind == INTEGER_TYPE || type->kind == BOOLEAN_TYPE;
 }
 
-bool type_is_double(CGContext& /*context*/, Declaration* /*decl*/, Type* type) {
+bool type_is_double(CGContext& context, Declaration* decl, Type* type) {
+  std::pair<Declaration*, Type*> {decl, type} = resolve_type_if_symbol(context, decl, type);
   return type->kind == DOUBLE_TYPE;
 }
 
@@ -183,26 +196,38 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
   return out;
 }
 
+void emit_type_truncation(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker) {
+  emit_type_specifier(emit_type_specifier(out << dst_marker << " = trunc ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
+}
+
+void emit_type_extension(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker) {
+  emit_type_specifier(emit_type_specifier(out << dst_marker << " = zext ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
+}
+
+void emit_type_bitcast(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker) {
+  emit_type_specifier(emit_type_specifier(out << dst_marker << " = bitcast ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
+}
+
 Type* cast_operands_to_expression_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker, Type* type) {
   uint64_t left_type_size = context.size_cache.compute_size_of(context.symbol_cache, func, left_type);
   uint64_t right_type_size = context.size_cache.compute_size_of(context.symbol_cache, func, right_type);
   uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, type);
   if (left_type_size > type_size) {
     std::string output_marker = markers.new_marker();
-    emit_type_specifier(emit_type_specifier(out << output_marker << " = trunc ", context, func, left_type) << " " << left_marker << " to ", context, func, type) << std::endl;
+    emit_type_truncation(out, context, func, left_type, left_marker, type, output_marker);
     left_marker = output_marker;
   } else if (left_type_size < type_size) {
     std::string output_marker = markers.new_marker();
-    emit_type_specifier(emit_type_specifier(out << output_marker << " = zext ", context, func, left_type) << " " << left_marker << " to ", context, func, type) << std::endl;
+    emit_type_extension(out, context, func, left_type, left_marker, type, output_marker);
     left_marker = output_marker;
   }
   if (right_type_size > type_size) {
     std::string output_marker = markers.new_marker();
-    emit_type_specifier(emit_type_specifier(out << output_marker << " = trunc ", context, func, right_type) << " " << right_marker << " to ", context, func, type) << std::endl;
+    emit_type_truncation(out, context, func, right_type, right_marker, type, output_marker);
     right_marker = output_marker;
   } else if (right_type_size < type_size) {
     std::string output_marker = markers.new_marker();
-    emit_type_specifier(emit_type_specifier(out << output_marker << " = zext ", context, func, right_type) << " " << right_marker << " to ", context, func, type) << std::endl;
+    emit_type_extension(out, context, func, right_type, right_marker, type, output_marker);
     right_marker = output_marker;
   }
   return type;
@@ -270,6 +295,8 @@ std::ostream& emit_integer_only_binary_operation(std::ostream& out, CGContext& c
   if (type_is_integer(context, func, type)) {
     emit_type_specifier(out << output_marker << " = " << integer_op << " ", context, func, type) << " " << left_marker << ", " << right_marker << std::endl;
   } else if (type_is_double(context, func, type)) {
+    assert(false);
+  } else {
     assert(false);
   }
   return out;
@@ -385,15 +412,50 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
       }
     case CALL_EXPR:
       {
-        output_marker = "call_expr";
-        // output_marker = markers.new_marker();
+        emit_expression_as_rvalue(out, context, func, markers, expression, output_marker);
         break;
       }
     case BITCAST_EXPR:
     case CAST_EXPR:
       {
-        output_marker = "cast_expr";
-        // output_marker = markers.new_marker();
+        std::string value_marker;
+        emit_expression_as_lvalue(out, context, func, markers, expression->value, value_marker);
+
+        Type* value_type = context.type_cache.expression_types[expression->value];
+        Type* type = context.type_cache.expression_types[expression];
+        uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
+        uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, type);
+
+        if (value_size < type_size) {
+          std::string first_step_marker = markers.new_marker();
+          Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
+          int_of_equal_size->size = value_size;
+          int_of_equal_size->is_signed = false;
+          emit_type_bitcast(out, context, func, value_type, value_marker, int_of_equal_size, first_step_marker);
+
+          std::string second_step_marker = markers.new_marker();
+          Type* int_of_greater_size = Type::New(type_t::INTEGER_TYPE);
+          int_of_greater_size->size = type_size;
+          int_of_greater_size->is_signed = false;
+          emit_type_extension(out, context, func, int_of_equal_size, first_step_marker, int_of_greater_size, second_step_marker);
+          value_marker = second_step_marker;
+        } else if (value_size > type_size) {
+          std::string first_step_marker = markers.new_marker();
+          Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
+          int_of_equal_size->size = value_size;
+          int_of_equal_size->is_signed = false;
+          emit_type_bitcast(out, context, func, value_type, value_marker, int_of_equal_size, first_step_marker);
+
+          std::string second_step_marker = markers.new_marker();
+          Type* int_of_lower_size = Type::New(type_t::INTEGER_TYPE);
+          int_of_lower_size->size = type_size;
+          int_of_lower_size->is_signed = false;
+          emit_type_truncation(out, context, func, int_of_equal_size, first_step_marker, int_of_lower_size, second_step_marker);
+          value_marker = second_step_marker;
+        }
+
+        output_marker = markers.new_marker();
+        emit_type_bitcast(out, context, func, value_type, value_marker, type, output_marker);
         break;
       }
     case INTEGER_EXPR:
@@ -405,6 +467,11 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
     case SIZEOF_EXPR:
       assert(false);
       break;
+  }
+  if (output_marker.empty()) {
+    std::cerr << RED_TEXT << expression->kind << std::endl;
+    Expression::Print(std::cerr << AZURE_TEXT, expression) << NORMAL_TEXT << std::endl;
+    assert(output_marker != "");
   }
   return out;
 }
@@ -479,7 +546,8 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
 
         Type* callable_subtype = extract_subtype(context, func, callable_type);
         if (callable_subtype->kind == VOID_TYPE) {
-          out << output_marker << "call void";
+          output_marker = "if_you_read_this_you_are_operating_on_a_void_returning_function";
+          out << "call void";
         } else {
           output_marker = markers.new_marker();
           out << output_marker << " = call ";
@@ -769,16 +837,51 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
     case CAST_EXPR: // TODO:
     case BITCAST_EXPR:
       {
-        assert(false);
         std::string value_marker;
         emit_expression_as_rvalue(out, context, func, markers, expression->value, value_marker);
+
+        Type* value_type = context.type_cache.expression_types[expression->value];
+        Type* type = context.type_cache.expression_types[expression];
+        uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
+        uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, type);
+
+        if (value_size < type_size) {
+          std::string first_step_marker = markers.new_marker();
+          Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
+          int_of_equal_size->size = value_size;
+          int_of_equal_size->is_signed = false;
+          emit_type_bitcast(out, context, func, value_type, value_marker, int_of_equal_size, first_step_marker);
+
+          std::string second_step_marker = markers.new_marker();
+          Type* int_of_greater_size = Type::New(type_t::INTEGER_TYPE);
+          int_of_greater_size->size = type_size;
+          int_of_greater_size->is_signed = false;
+          emit_type_extension(out, context, func, int_of_equal_size, first_step_marker, int_of_greater_size, second_step_marker);
+          value_marker = second_step_marker;
+        } else if (value_size > type_size) {
+          std::string first_step_marker = markers.new_marker();
+          Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
+          int_of_equal_size->size = value_size;
+          int_of_equal_size->is_signed = false;
+          emit_type_bitcast(out, context, func, value_type, value_marker, int_of_equal_size, first_step_marker);
+
+          std::string second_step_marker = markers.new_marker();
+          Type* int_of_lower_size = Type::New(type_t::INTEGER_TYPE);
+          int_of_lower_size->size = type_size;
+          int_of_lower_size->is_signed = false;
+          emit_type_truncation(out, context, func, int_of_equal_size, first_step_marker, int_of_lower_size, second_step_marker);
+          value_marker = second_step_marker;
+        }
+
         output_marker = markers.new_marker();
-        out << output_marker << " = bitcast ";
-        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->value]);
-        out << " " << value_marker << " to ";
-        emit_type_specifier(out, context, func, expression->type);
+        emit_type_bitcast(out, context, func, value_type, value_marker, type, output_marker);
         break;
       }
+  }
+  if (output_marker.empty()) {
+    std::cerr << RED_TEXT << expression->kind << std::endl;
+    Expression::Print(std::cerr << AZURE_TEXT, expression) << NORMAL_TEXT << std::endl;
+    assert(output_marker != "");
   }
   return out;
 }
