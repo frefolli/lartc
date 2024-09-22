@@ -1,63 +1,54 @@
 # LartC - Compiler for Lart Programming Language
 
-Example from [lart-examples](github.com:frefolli/lart-examples):
+Static typed prototype programming language made in a two month journey.
+Checkout [lart-examples](github.com:frefolli/lart-examples) repository for examples of usage of both the compiler and the language.
 
-```tree.lart
-typedef u64 = integer<64, false>;
+# Help
 
-fn malloc(size: u64) -> &void;
-fn free(ptr: &void);
+```
+Usage: lartc [options] file...
+Options:
+  --help                   Display this information.
+  --version                Display compiler version information.
 
-typedef Node = struct {
-  left: &Node,
-  right: &Node
-};
+  -v                       Display the programs invoked by the compiler.
+  -E                       Preprocess only; do not compile, assemble or link.
+  -S                       Compile only; do not assemble or link.
+  -c                       Compile and assemble, but do not link.
+  -o <file>                Place the output into <file>.
 
-typedef Tree = struct {
-  root: &Node
-};
+  -d                       Dumps debug information to stdout and to './tmp' directory.
 
-fn new_node(left: &Node, right: &Node) -> &Node {
-  let node: &Node = cast<&Node>(malloc(sizeof<Node>));
-  node->left = left;
-  node->right = right;
-  return node;
-}
+For bug reporting, please see:
+<https://github.com/frefolli/lartc/issues>.
+```
 
-fn new_tree(root: &Node) -> &Tree {
-  let tree: &Tree = cast<&Tree>(malloc(sizeof<Tree>));
-  tree->root = root;
-  return tree;
-}
+# Example usage
 
-fn delete_node(node: &Node) {
-  if (node != nullptr) {
-    delete_node(node->left);
-    delete_node(node->right);
-    free(cast<&void>(node));
-  }
-}
+`./builddir/lartc ../lart-examples/hello.lart -o main.exe`
 
-fn delete_tree(tree: &Tree) {
-  if (tree != nullptr) {
-    delete_node(tree->root);
-    free(cast<&void>(tree));
-  }
-}
+Will produce an executable which output is:
 
-fn main() {
-  let tree: &Tree = new_tree(
-    new_node(
-      new_node(
-        new_node(nullptr, nullptr),
-        new_node(nullptr, nullptr)
-        ),
-      new_node(
-        new_node(nullptr, nullptr),
-        new_node(nullptr, nullptr)
-        )
-    )
-  );
-  delete_tree(tree);
-}
+```
+00000000000000000000000000000001
+00000000000000000000000000000010
+00000000000000000000000000000110
+00000000000000000000000000001010
+00000000000000000000000000011110
+00000000000000000000000000100010
+00000000000000000000000001100110
+00000000000000000000000010101010
+00000000000000000000000111111110
+00000000000000000000001000000010
+00000000000000000000011000000110
+00000000000000000000101000001010
+00000000000000000001111000011110
+00000000000000000010001000100010
+00000000000000000110011001100110
+00000000000000001010101010101010
+00000000000000011111111111111110
+00000000000000100000000000000010
+00000000000001100000000000000110
+00000000000010100000000000001010
+00000000000111100000000000011110
 ```

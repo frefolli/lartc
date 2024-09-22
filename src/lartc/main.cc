@@ -12,6 +12,24 @@
 #include <cstring>
 #include <iostream>
 
+void print_help() {
+  std::cout << "Usage: lartc [options] file..." << std::endl;
+  std::cout << "Options:" << std::endl;
+  std::cout << "  --help                   Display this information." << std::endl;
+  std::cout << "  --version                Display compiler version information." << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "  -v                       Display the programs invoked by the compiler." << std::endl;
+  std::cout << "  -E                       Preprocess only; do not compile, assemble or link." << std::endl;
+  std::cout << "  -S                       Compile only; do not assemble or link." << std::endl;
+  std::cout << "  -c                       Compile and assemble, but do not link." << std::endl;
+  std::cout << "  -o <file>                Place the output into <file>." << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "  -d                       Dumps debug information to stdout and to './tmp' directory." << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "For bug reporting, please see:" << std::endl;
+  std::cout << "<https://github.com/frefolli/lartc/issues>." << std::endl;
+}
+
 int main(int argc, char** args) {
   std::vector<std::string> lart_files = {};
   std::vector<std::string> llvm_ir_files = {};
@@ -41,7 +59,8 @@ int main(int argc, char** args) {
     } else if (arg == "-v" || arg == "--verbose") {
       API::ECHO_SYSTEM_COMMANDS = true;
     } else if (arg == "-h" || arg == "--help") {
-      // TODO: print help
+      print_help();
+      std::exit(0);
     } else if (arg == "-E") {
       workflow = Workflow::DONT_COMPILE;
     } else if (arg == "-S") {
