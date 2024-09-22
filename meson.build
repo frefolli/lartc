@@ -40,6 +40,12 @@ executable('lartc', [
     'src/lartc/codegen/emit_llvm.cc',
     'src/lartc/codegen/markers.cc',
     'src/lartc/codegen/literal_store.cc',
+    'src/lartc/api/config.cc',
+    'src/lartc/api/utils.cc',
+    'src/lartc/api/lpp.cc',
+    'src/lartc/api/llc.cc',
+    'src/lartc/api/ld.cc',
+    'src/lartc/api/as.cc',
     'src/lartc/main.cc'
   ], dependencies: [tree_sitter, tree_sitter_lart],
   include_directories: include)

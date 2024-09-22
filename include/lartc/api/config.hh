@@ -1,0 +1,9 @@
+#ifndef LARTC_API_CONFIG
+#define LARTC_API_CONFIG
+
+namespace API {
+  extern bool DEBUG_SEGFAULT_IDENTIFY_PHASE;
+  extern bool DUMP_DEBUG_INFO_FOR_STRUCS;
+  extern bool ECHO_SYSTEM_COMMANDS;
+}
+#endif//LARTC_API_CONFIG
