@@ -1,4 +1,4 @@
-FILE=../lart-examples/hello.lart
+FILE=hello_world.lart
 
 @all: ./builddir/lartc
 

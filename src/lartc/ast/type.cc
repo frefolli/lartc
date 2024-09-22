@@ -102,10 +102,17 @@ std::ostream& Type::Print(std::ostream& out, const Type* type, uint64_t tabulati
 }
 
 Type* Type::ExtractField(const Type* struct_type, const Symbol& name) {
-  for (auto item : struct_type->fields) {
-    if (item.first == name.identifiers.front()) {
-      return item.second;
+  int64_t index = ExtractFieldIndex(struct_type, name);
+  if (index != -1)
+    return struct_type->fields[index].second;
+  return nullptr;
+}
+
+int64_t Type::ExtractFieldIndex(const Type* struct_type, const Symbol& name) {
+  for (uint64_t index = 0; index < struct_type->fields.size(); ++index) {
+    if (struct_type->fields[index].first == name.identifiers.front()) {
+      return index;
     }
   }
-  return nullptr;
+  return -1;
 }

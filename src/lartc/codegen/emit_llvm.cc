@@ -273,6 +273,17 @@ std::ostream& emit_integer_only_binary_operation(std::ostream& out, CGContext& c
   return out;
 }
 
+uint64_t compute_field_index(CGContext& context, Declaration* decl, Type* left_type, Expression* right) {
+  Declaration* left_decl = decl;
+  while (left_type->kind == SYMBOL_TYPE) {
+    Declaration* source = context.symbol_cache.get_or_find_declaration(left_decl, left_type->symbol);
+    assert(source != nullptr);
+    left_decl = source;
+    left_type = left_decl->type;
+  }
+  return Type::ExtractFieldIndex(left_type, right->symbol);
+}
+
 std::ostream& emit_automatic_return_statement(std::ostream& out, CGContext& context, Declaration* func, Markers& markers) {
   if (func->type->kind != VOID_TYPE) {
     std::string _implicit_var = markers.new_marker();
@@ -311,8 +322,11 @@ std::ostream& emit_variable_allocation(std::ostream& out, CGContext& context, De
   return out;
 }
 
+std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker);
+std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker);
+
 std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
-  out << "; " << expression->kind << std::endl;
+  // out << "; " << expression->kind << std::endl;
   switch (expression->kind) {
     case SYMBOL_EXPR:
       {
@@ -320,8 +334,10 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
           output_marker = "@" + craft_decl_label(decl);
         } else if (Statement* var = context.symbol_cache.get_statement(expression)) {
           output_marker = markers.get_var(var);
+          assert(!output_marker.empty());
         } else if (std::pair<std::string, Type*>* param = context.symbol_cache.get_parameter(expression)) {
           output_marker = markers.get_param(param);
+          assert(!output_marker.empty());
         } else {
           assert(false);
         }
@@ -329,23 +345,46 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
       }
     case BINARY_EXPR:
       {
-        output_marker = markers.new_marker();
+        if (expression->operator_ == ARR_OP) {
+          std::string left_value;
+          emit_expression_as_rvalue(out, context, func, markers, expression->left, left_value);
+          Type* left_type = extract_subtype(context, func, context.type_cache.expression_types[expression->left]);
+          output_marker = markers.new_marker();
+
+          emit_type_specifier(out << output_marker << " = getelementptr ", context, func, left_type) << ", ptr " << left_value;
+          uint64_t field_index = compute_field_index(context, func, left_type, expression->right);
+          out << ", i64 0, i32 " << field_index << std::endl;
+        } else if (expression->operator_ == DOT_OP) {
+          std::string left_value;
+          emit_expression_as_lvalue(out, context, func, markers, expression->left, left_value);
+          Type* left_type = context.type_cache.expression_types[expression->left];
+          output_marker = markers.new_marker();
+
+          emit_type_specifier(out << output_marker << " = getelementptr ", context, func, left_type) << ", ptr " << left_value;
+          uint64_t field_index = compute_field_index(context, func, left_type, expression->right);
+          out << ", i64 0, i32 " << field_index << std::endl;
+        } else {
+          assert(false);
+        }
         break;
       }
     case MONARY_EXPR:
       {
-        output_marker = markers.new_marker();
+        output_marker = "monary_expr";
+        // output_marker = markers.new_marker();
         break;
       }
     case CALL_EXPR:
       {
-        output_marker = markers.new_marker();
+        output_marker = "call_expr";
+        // output_marker = markers.new_marker();
         break;
       }
     case BITCAST_EXPR:
     case CAST_EXPR:
       {
-        output_marker = markers.new_marker();
+        output_marker = "cast_expr";
+        // output_marker = markers.new_marker();
         break;
       }
     case INTEGER_EXPR:
@@ -362,7 +401,7 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
 }
 
 std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
-  out << "; " << expression->kind << std::endl;
+  // out << "; " << expression->kind << std::endl;
   switch (expression->kind) {
     case SYMBOL_EXPR:
       {
@@ -373,10 +412,14 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           emit_decl_label(out << ", ptr ", decl) << ", align 8" << std::endl;
         } else if (Statement* var = context.symbol_cache.get_statement(expression)) {
           emit_type_specifier(out, context, func, var->type);
-          out << ", ptr " << markers.get_var(var) << ", align 8" << std::endl;
+          std::string marker = markers.get_var(var);
+          assert(!marker.empty());
+          out << ", ptr " << marker << ", align 8" << std::endl;
         } else if (std::pair<std::string, Type*>* param = context.symbol_cache.get_parameter(expression)) {
           emit_type_specifier(out, context, func, param->second);
-          out << ", ptr " << markers.get_param(param) << ", align 8" << std::endl;
+          std::string marker = markers.get_param(param);
+          assert(!marker.empty());
+          out << ", ptr " << marker << ", align 8" << std::endl;
         } else {
           assert(false);
         }
@@ -446,10 +489,29 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       }
     case BINARY_EXPR:
       {
-        // TODO:
         if (expression->operator_ == ARR_OP) {
+          std::string referenced;
+          emit_expression_as_lvalue(out, context, func, markers, expression, referenced);
+          Type* type = context.type_cache.expression_types[expression];
+          output_marker = markers.new_marker();
+          emit_type_specifier(out << output_marker << " = load ", context, func, type) << ", ptr " << referenced << ", align 8" << std::endl;
         } else if (expression->operator_ == DOT_OP) {
+          std::string referenced;
+          emit_expression_as_lvalue(out, context, func, markers, expression, referenced);
+          Type* type = context.type_cache.expression_types[expression];
+          output_marker = markers.new_marker();
+          emit_type_specifier(out << output_marker << " = load ", context, func, type) << ", ptr " << referenced << ", align 8" << std::endl;
         } else if (expression->operator_ == ASS_OP) {
+          std::string right_value;
+          emit_expression_as_rvalue(out, context, func, markers, expression->right, right_value);
+          Type* right_type = context.type_cache.expression_types[expression->right];
+          std::string left_value;
+          emit_expression_as_lvalue(out, context, func, markers, expression->left, left_value);
+          Type* left_type = context.type_cache.expression_types[expression->left];
+          output_marker = markers.new_marker();
+
+          emit_type_specifier(out << "store ", context, func, right_type) << " " << right_value << ", ptr " << left_value << std::endl;
+          emit_type_specifier(out << output_marker << " = load ", context, func, left_type) << ", ptr " << left_value << ", align 8" << std::endl;
         } else {
           std::string right_value;
           emit_expression_as_rvalue(out, context, func, markers, expression->right, right_value);
@@ -707,7 +769,6 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
               }
             }
         }
-        output_marker = markers.new_marker();
         break;
       }
     case SIZEOF_EXPR:
@@ -732,7 +793,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
 }
 
 std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Statement* statement) {
-  out << "; " << statement->kind << std::endl;
+  // out << "; " << statement->kind << std::endl;
   switch (statement->kind) {
     case statement_t::FOR_STMT:
       {
@@ -906,17 +967,18 @@ std::ostream& emit_function_declaration(std::ostream& out, CGContext& context, D
 }
 
 std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& markers, Declaration* func) {
-  for (auto param : func->parameters) {
-    markers.add_param(&param);
-    std::string param_marker = markers.get_param(&param);
+  for (uint64_t param_index = 0; param_index < func->parameters.size(); ++param_index) {
+    std::pair<std::string, Type*>* param = func->parameters.data() + param_index;
+    markers.add_param(param);
+    std::string param_marker = markers.get_param(param);
 
     out << param_marker << " = alloca ";
-    emit_type_specifier(out, context, func, param.second);
+    emit_type_specifier(out, context, func, param->second);
     out << ", align 8" << std::endl;
 
     out << "store ";
-    emit_type_specifier(out, context, func, param.second);
-    out << " %" << param.first << ", ptr " << param_marker << std::endl;
+    emit_type_specifier(out, context, func, param->second);
+    out << " %" << param->first << ", ptr " << param_marker << std::endl;
   }
   return out;
 }

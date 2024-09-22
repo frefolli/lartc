@@ -20,5 +20,6 @@ struct Type {
   static std::ostream& Print(std::ostream&, const Type* type, uint64_t tabulation = 0);
   static void Delete(Type*& type);
   static Type* ExtractField(const Type* struct_type, const Symbol& name);
+  static int64_t ExtractFieldIndex(const Type* struct_type, const Symbol& name);
 };
 #endif//LARTC_AST_TYPE

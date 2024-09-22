@@ -21,7 +21,7 @@ char int2hex(int8_t v) {
   if (v < 10) {
     return '0' + v;
   } else if (v < 16) {
-    return 'a' + v;
+    return 'a' + (v - 10);
   } else {
     assert(false);
   }
@@ -60,7 +60,6 @@ char load_escaped_char(const std::string& string) {
           return (h << 4) + l;
         };
       default:
-        std::cerr << RED_TEXT << string << NORMAL_TEXT << std::endl;
         assert(false);
     }
   } else {
@@ -107,7 +106,7 @@ std::string dump_unescaped_char(char c) {
       default:
         result += "\\x";
         result += int2hex(c >> 4);
-        result += int2hex(c & 16);
+        result += int2hex(c & 15);
     }
   }
   return result + "\'";
@@ -121,7 +120,6 @@ std::string load_escaped_string(const std::string& string) {
 
   while (cursor < length - 1) {
     if (string[cursor] == '\\') {
-      assert(cursor + 3 < length);
       switch (string[cursor + 1]) {
         case '0':
           result += '\0';
@@ -188,46 +186,15 @@ std::string dump_unescaped_string(const std::string& string, bool null_terminate
     if (isprint(c)) {
       result += c;
     } else {
-      switch (c) {
-        case '\0':
-          result += "\\0";
-          break;
-        case '\'':
-          result += "\\'";
-          break;
-        case '"':
-          result += "\\\"";
-          break;
-        case '\\':
-          result += "\\\\";
-          break;
-        case '\n':
-          result += "\\n";
-          break;
-        case '\r':
-          result += "\\r";
-          break;
-        case '\t':
-          result += "\\t";
-          break;
-        case '\b':
-          result += "\\b";
-          break;
-        case '\f':
-          result += "\\f";
-          break;
-        case '\v':
-          result += "\\v";
-          break;
-        default:
-          result += "\\x";
-          result += int2hex(c >> 4);
-          result += int2hex(c & 16);
-      }
+      char h = int2hex(c >> 4);
+      char l = int2hex(c & 15);
+      result += "\\";
+      result += h;
+      result += l;
     }
   }
   if (null_terminated) {
-    result += "\\0";
+    result += "\\00";
   }
   return result + "\"";
 }
