@@ -10,4 +10,4 @@ fi
 
 file="../lart-examples/$NAME.lart"
 echo "./builddir/lartc $file"
-./builddir/lartc $file
+./builddir/lartc -c $file
