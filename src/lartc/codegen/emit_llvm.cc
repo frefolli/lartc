@@ -183,29 +183,29 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
   return out;
 }
 
-std::ostream& cast_operands_to_expression_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker, Type* type) {
+Type* cast_operands_to_expression_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker, Type* type) {
   uint64_t left_type_size = context.size_cache.compute_size_of(context.symbol_cache, func, left_type);
   uint64_t right_type_size = context.size_cache.compute_size_of(context.symbol_cache, func, right_type);
   uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, type);
   if (left_type_size > type_size) {
     std::string output_marker = markers.new_marker();
-    emit_type_specifier(emit_type_specifier(out << output_marker << " = trunc ", context, func, left_type) << " " << left_marker << " to ", context, func, right_type) << std::endl;
+    emit_type_specifier(emit_type_specifier(out << output_marker << " = trunc ", context, func, left_type) << " " << left_marker << " to ", context, func, type) << std::endl;
     left_marker = output_marker;
   } else if (left_type_size < type_size) {
     std::string output_marker = markers.new_marker();
-    emit_type_specifier(emit_type_specifier(out << output_marker << " = zext ", context, func, left_type) << " " << left_marker << " to ", context, func, right_type) << std::endl;
+    emit_type_specifier(emit_type_specifier(out << output_marker << " = zext ", context, func, left_type) << " " << left_marker << " to ", context, func, type) << std::endl;
     left_marker = output_marker;
   }
   if (right_type_size > type_size) {
     std::string output_marker = markers.new_marker();
-    emit_type_specifier(emit_type_specifier(out << output_marker << " = trunc ", context, func, right_type) << " " << right_marker << " to ", context, func, right_type) << std::endl;
+    emit_type_specifier(emit_type_specifier(out << output_marker << " = trunc ", context, func, right_type) << " " << right_marker << " to ", context, func, type) << std::endl;
     right_marker = output_marker;
   } else if (right_type_size < type_size) {
     std::string output_marker = markers.new_marker();
-    emit_type_specifier(emit_type_specifier(out << output_marker << " = zext ", context, func, right_type) << " " << right_marker << " to ", context, func, right_type) << std::endl;
+    emit_type_specifier(emit_type_specifier(out << output_marker << " = zext ", context, func, right_type) << " " << right_marker << " to ", context, func, type) << std::endl;
     right_marker = output_marker;
   }
-  return out;
+  return type;
 }
 
 Type* decide_logic_operand_type(CGContext& context, Declaration* decl, Type* left, Type* right) {
@@ -251,7 +251,7 @@ Type* decide_logic_operand_type(CGContext& context, Declaration* decl, Type* lef
   return type;
 }
 
-std::ostream& cast_operands_to_biggest_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker) {
+Type* cast_operands_to_biggest_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker) {
   return cast_operands_to_expression_type(out, context, markers, func, left_type, left_marker, right_type, right_marker, decide_logic_operand_type(context, func, left_type, right_type));
 }
 
@@ -260,6 +260,8 @@ std::ostream& emit_simple_binary_operation(std::ostream& out, CGContext& context
     emit_type_specifier(out << output_marker << " = " << integer_op << " ", context, func, type) << " " << left_marker << ", " << right_marker << std::endl;
   } else if (type_is_double(context, func, type)) {
     emit_type_specifier(out << output_marker << " = " << double_op << " ", context, func, type) << " " << left_marker << ", " << right_marker << std::endl;
+  } else {
+    emit_type_specifier(out << output_marker << " = " << integer_op << " ", context, func, type) << " " << left_marker << ", " << right_marker << std::endl;
   }
   return out;
 }
@@ -370,8 +372,15 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
       }
     case MONARY_EXPR:
       {
-        output_marker = "monary_expr";
-        // output_marker = markers.new_marker();
+        switch (expression->operator_) {
+          case MUL_OP: //*
+            {
+              emit_expression_as_rvalue(out, context, func, markers, expression->value, output_marker);
+              break;
+            }
+          default:
+            assert(false);
+        }
         break;
       }
     case CALL_EXPR:
@@ -401,7 +410,7 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
 }
 
 std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
-  // out << "; " << expression->kind << std::endl;
+  Expression::Print(out << "; ", expression) << std::endl;
   switch (expression->kind) {
     case SYMBOL_EXPR:
       {
@@ -519,10 +528,11 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           emit_expression_as_rvalue(out, context, func, markers, expression->left, left_value);
           output_marker = markers.new_marker();
 
+          Type* master_operand_type;
           if (is_algebraic_operator(expression->operator_)) {
-            cast_operands_to_expression_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value, context.type_cache.expression_types[expression]);
+            master_operand_type = cast_operands_to_expression_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value, context.type_cache.expression_types[expression]);
           } else if (is_logical_operator(expression->operator_)) {
-            cast_operands_to_biggest_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value);
+            master_operand_type = cast_operands_to_biggest_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value);
           } else {
             assert(false);
           }
@@ -551,17 +561,17 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                 if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
                   Type* subtype = extract_subtype(context, func, context.type_cache.expression_types[expression]);
                   if (type_is_pointer(context, func, context.type_cache.expression_types[expression->right])) {
-                    emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
+                    emit_type_specifier(out << output_marker << " = getelementptr ", context, func, subtype) << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
                     out << " " << right_value << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
-                    out << " " << left_value << ")" << std::endl;
+                    out << " " << left_value << std::endl;
                   } else {
-                    emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
+                    emit_type_specifier(out << output_marker << " = getelementptr ", context, func, subtype) << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
                     out << " " << left_value << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
-                    out << " " << right_value << ")" << std::endl;
+                    out << " " << right_value << std::endl;
                   }
                 } else {
                   emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "add", "fadd");
@@ -578,22 +588,22 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
                     out << " " << left_value << ", -1" << std::endl;
 
-                    emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
+                    emit_type_specifier(out << output_marker << " = getelementptr ", context, func, subtype) << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
                     out << " " << right_value << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
-                    out << " " << inverted_offset << ")" << std::endl;
+                    out << " " << inverted_offset << std::endl;
                   } else {
                     std::string inverted_offset = markers.new_marker();
                     out << inverted_offset << " = mul ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
                     out << " " << right_value << ", -1" << std::endl;
 
-                    emit_type_specifier(out << output_marker << " = getelementptr (", context, func, subtype) << ", ";
+                    emit_type_specifier(out << output_marker << " = getelementptr ", context, func, subtype) << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
                     out << " " << left_value << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
-                    out << " " << right_value << ")" << std::endl;
+                    out << " " << right_value << std::endl;
                   }
                 } else {
                   emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "sub", "fsub");
@@ -605,116 +615,96 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                 if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
                   assert(false);
                 } else {
-                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "xor");
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "xor");
                 }
                 break;
               }
             case AND_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                if (type_is_pointer(context, func, master_operand_type)) {
                   assert(false);
                 } else {
-                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "and");
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "and");
                 }
                 break;
               }
             case OR_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                if (type_is_pointer(context, func, master_operand_type)) {
                   assert(false);
                 } else {
-                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "or");
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "or");
                 }
                 break;
               }
             case LROT_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                if (type_is_pointer(context, func, master_operand_type)) {
                   assert(false);
                 } else {
-                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "shl");
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "shl");
                 }
                 break;
               }
             case RROT_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                if (type_is_pointer(context, func, master_operand_type)) {
                   assert(false);
                 } else {
-                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "lshr");
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "lshr");
                 }
                 break;
               }
             case SCA_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                if (type_is_pointer(context, func, master_operand_type)) {
                   assert(false);
                 } else {
-                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "and");
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "and");
                 }
                 break;
               }
             case SCO_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                if (type_is_pointer(context, func, master_operand_type)) {
                   assert(false);
                 } else {
-                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "or");
+                  emit_integer_only_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "or");
                 }
                 break;
               }
             case GE_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                if (type_is_pointer(context, func, master_operand_type)) {
                   assert(false);
                 } else {
-                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp sge", "fcmp sge");
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sge", "fcmp sge");
                 }
                 break;
               }
             case LE_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
-                  assert(false);
-                } else {
-                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp sle", "fcmp sle");
-                }
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sle", "fcmp sle");
                 break;
               }
             case EQ_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
-                  assert(false);
-                } else {
-                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp eq", "fcmp eq");
-                }
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp eq", "fcmp eq");
                 break;
               }
             case NE_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
-                  assert(false);
-                } else {
-                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp ne", "fcmp ne");
-                }
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp ne", "fcmp ne");
                 break;
               }
             case GR_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
-                  assert(false);
-                } else {
-                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp sgt", "fcmp sgt");
-                }
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sgt", "fcmp sgt");
                 break;
               }
             case LR_OP:
               {
-                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
-                  assert(false);
-                } else {
-                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "icmp slt", "fcmp slt");
-                }
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp slt", "fcmp slt");
                 break;
               }
             default:
@@ -819,7 +809,7 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
 
         emit_marker(out, after_body) << std::endl;
         emit_expression_as_rvalue(out, context, func, markers, statement->step, rvalue_marker);
-        out << "br label " << end_for << std::endl;
+        out << "br label " << before_condition << std::endl;
 
         emit_marker(out, end_for) << std::endl;
 
@@ -832,9 +822,10 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
         markers.add_var(statement);
         emit_variable_allocation(out, context, func, markers, statement);
         if (statement->expr != nullptr) {
-          // TODO: initialize with expr
           std::string rvalue_marker;
           emit_expression_as_rvalue(out, context, func, markers, statement->expr, rvalue_marker);
+          Type* rvalue_type = context.type_cache.expression_types[statement->expr];
+          emit_type_specifier(out << "store ", context, func, rvalue_type) << " " << rvalue_marker << ", ptr " << markers.get_var(statement) << std::endl;
         }
         break;
       }

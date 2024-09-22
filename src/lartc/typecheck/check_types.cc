@@ -93,7 +93,8 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
     case expression_t::INTEGER_EXPR:
       {
         Type* type = Type::New(type_t::INTEGER_TYPE);
-        type->size = compute_minimum_size_for(expr->integer_literal);
+        // type->size = compute_minimum_size_for(expr->integer_literal);
+        type->size = 64;
         type->is_signed = true;
         type_cache.expression_types[expr] = type;
       }
