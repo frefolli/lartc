@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 LLVM_IN=tmp/bucket.ll
 AS_IN=tmp/bucket.s

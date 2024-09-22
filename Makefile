@@ -1,4 +1,5 @@
-FILE=../lart-examples/hello.lart
+#FILE=../lart-examples/hello.lart
+FILE=../lart-examples/chatgpt.lart
 
 @all: ./builddir/lartc
 
@@ -22,3 +23,6 @@ edit:
 
 run: ./builddir/lartc
 	./builddir/lartc ${FILE}
+
+inspect:
+	nvim tmp/bucket.ll

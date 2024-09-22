@@ -187,6 +187,25 @@ bool types_are_structurally_compatible(SymbolCache& symbol_cache, Declaration* c
 }
 
 bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* context, Type* src, Type* dst) {
+  Declaration* context_src = context;
+  if (src->kind == type_t::SYMBOL_TYPE) {
+    auto solved = resolve_symbol_type(symbol_cache, context_src, src);
+    src = solved.first;
+    context_src = solved.second;
+  }
+  Declaration* context_dst = context;
+  if (dst->kind == type_t::SYMBOL_TYPE) {
+    auto solved = resolve_symbol_type(symbol_cache, context_dst, dst);
+    dst = solved.first;
+    context_dst = solved.second;
+  }
+
+  if (src == dst) {
+    // resolved to the same definition;
+    // are equal by definition
+    return true;
+  }
+
   bool implicitly_castable = true;
   switch (dst->kind) {
     case type_t::POINTER_TYPE:

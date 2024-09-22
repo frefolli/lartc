@@ -769,6 +769,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
     case CAST_EXPR: // TODO:
     case BITCAST_EXPR:
       {
+        assert(false);
         std::string value_marker;
         emit_expression_as_rvalue(out, context, func, markers, expression->value, value_marker);
         output_marker = markers.new_marker();
