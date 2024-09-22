@@ -25,17 +25,17 @@
 
 extern "C" const TSLanguage *tree_sitter_lart(void);
 
-template<typename T>
-void print_to_file(T& object, const char* filepath) {
+template<typename T, typename ... ExtraArgs>
+void print_to_file(T& object, const char* filepath, ExtraArgs ... extra_args) {
   std::ofstream out (filepath);
-  T::Print(out, object);
+  T::Print(out, extra_args ..., object);
   out.close();
 }
 
-template<typename T>
-void print_to_file(T* object, const char* filepath) {
+template<typename T, typename ... ExtraArgs>
+void print_to_file(T* object, const char* filepath, ExtraArgs ... extra_args) {
   std::ofstream out (filepath);
-  T::Print(out, object);
+  T::Print(out, extra_args ..., object);
   out.close();
 }
 
@@ -197,7 +197,7 @@ int main(int argc, char** args) {
   }
   
   print_to_file(decl_tree, "tmp/decl_tree.txt");
-  print_to_file(symbol_cache, "tmp/symbol_cache.txt");
+  print_to_file(symbol_cache, "tmp/symbol_cache.txt", file_db);
   print_to_file(file_db, "tmp/file_db.txt");
   print_to_file(type_cache, "tmp/type_cache.txt");
   print_to_file(size_cache, "tmp/size_cache.txt");

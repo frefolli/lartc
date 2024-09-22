@@ -1,6 +1,6 @@
 #include <lartc/resolve/symbol_cache.hh>
 
-std::ostream& SymbolCache::Print(std::ostream& out, SymbolCache& symbol_cache) {
+std::ostream& SymbolCache::Print(std::ostream& out, FileDB& file_db, SymbolCache& symbol_cache) {
   out << "# Symbol Cache" << std::endl << std::endl;
   out << "## Globals" << std::endl << std::endl;
   for (auto decl : symbol_cache.globals) {
@@ -14,7 +14,10 @@ std::ostream& SymbolCache::Print(std::ostream& out, SymbolCache& symbol_cache) {
 
   out << "## Locals" << std::endl << std::endl;
   for (auto solved : symbol_cache.locals) {
-    Expression::Print(out << " - ", solved.first) << " -> ";
+    out << " - ";
+    FileDB::Point::Print(out, file_db.expression_points[solved.first]) << " ";
+    Expression::Print(out, solved.first) << " -> ";
+    FileDB::Point::Print(out, file_db.var_decl_points[solved.second]) << " ";
     Statement::PrintShort(out, solved.second) << std::endl;
   }
   out << std::endl;

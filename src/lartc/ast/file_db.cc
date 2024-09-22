@@ -56,6 +56,10 @@ void FileDB::add_declaration(Declaration* declaration, TSNode& node) {
   declaration_points[declaration] = FileDB::Point::From(this, node);
 }
 
+void FileDB::add_var(Statement* var_decl, TSNode& node) {
+  var_decl_points[var_decl] = FileDB::Point::From(this, node);
+}
+
 std::ostream& FileDB::File::Print(std::ostream& out, const FileDB::File& file) {
   out << file.filepath << " | " << (strlen(file.source_code)/1024) << " KB";
   return out;
@@ -99,6 +103,15 @@ std::ostream& FileDB::Print(std::ostream& out, const FileDB& file_db) {
     Type::Print(out, type_point.first);
     out << " -> ";
     FileDB::Point::Print(out, type_point.second);
+    out << std::endl;
+  }
+
+  out << "## Var Decl Points" << std::endl << std::endl;
+  for (const auto& var_decl_point : file_db.var_decl_points) {
+    out << " - ";
+    Statement::PrintShort(out, var_decl_point.first);
+    out << " -> ";
+    FileDB::Point::Print(out, var_decl_point.second);
     out << std::endl;
   }
   return out;

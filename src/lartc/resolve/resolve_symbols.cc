@@ -1,3 +1,4 @@
+#include <iostream>
 #include <lartc/resolve/resolve_symbols.hh>
 #include <lartc/external_errors.hh>
 #include <cassert>
@@ -139,7 +140,7 @@ bool resolve_symbols(FileDB& file_db, SymbolCache &symbol_cache, SymbolStack& sy
       if (stmt->expr != nullptr) {
         resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, stmt->expr);
       }
-      symbol_stack.set(stmt->name, stmt);
+      assert(symbol_stack.set(stmt->name, stmt));
       break;
     case statement_t::RETURN_STMT:
       if (stmt->expr != nullptr) {

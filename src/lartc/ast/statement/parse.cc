@@ -45,6 +45,8 @@ inline Statement* parse_statement_let(TSContext& context, TSNode& node) {
     let->expr = parse_expression(context, value);
     ts_validate_parsing(context.language, value, "let:value", let->expr);
   }
+
+  context.file_db->add_var(let, node);
   return let;
 }
 

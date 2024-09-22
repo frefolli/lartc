@@ -9,7 +9,7 @@ void SymbolStack::close_scope() {
 }
 
 bool SymbolStack::set(std::string name, Statement* statement) {
-  std::map<std::string, Statement*>& frame = stack.front();
+  std::map<std::string, Statement*>& frame = stack.back();
   auto it = frame.find(name);
   if (it != frame.end()) {
     return false;

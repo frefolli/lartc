@@ -4,6 +4,7 @@
 #include <lartc/ast/statement.hh>
 #include <lartc/ast/symbol.hh>
 #include <lartc/resolve/symbol_stack.hh>
+#include <lartc/ast/file_db.hh>
 #include <map>
 
 struct SymbolCache {
@@ -25,6 +26,6 @@ struct SymbolCache {
   // Here context is the symbol
   std::pair<std::string, Type*>* get_parameter(Expression* context) const;
 
-  static std::ostream& Print(std::ostream& out, SymbolCache& symbol_cache);
+  static std::ostream& Print(std::ostream& out, FileDB& file_db, SymbolCache& symbol_cache);
 };
 #endif//LARTC_RESOLVE_SYMBOL_CACHE
