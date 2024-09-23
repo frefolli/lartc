@@ -5,6 +5,7 @@ project('lartc',
 
 tree_sitter = dependency('tree-sitter')
 tree_sitter_lart = dependency('tree-sitter-lart')
+tree_sitter_c = dependency('tree-sitter-c')
 include = include_directories('./include')
 
 executable('lartc', [
@@ -43,9 +44,10 @@ executable('lartc', [
     'src/lartc/api/config.cc',
     'src/lartc/api/utils.cc',
     'src/lartc/api/lpp.cc',
+    'src/lartc/api/cpp.cc',
     'src/lartc/api/llc.cc',
     'src/lartc/api/ld.cc',
     'src/lartc/api/as.cc',
     'src/lartc/main.cc'
-  ], dependencies: [tree_sitter, tree_sitter_lart],
+  ], dependencies: [tree_sitter, tree_sitter_lart, tree_sitter_c],
   include_directories: include)

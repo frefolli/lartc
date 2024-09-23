@@ -1,5 +1,6 @@
 #include <lartc/terminal.hh>
 #include <lartc/api/lpp.hh>
+#include <lartc/api/cpp.hh>
 #include <lartc/api/llc.hh>
 #include <lartc/api/as.hh>
 #include <lartc/api/ld.hh>
@@ -15,14 +16,14 @@
 void print_help() {
   std::cout << "Usage: lartc [options] file..." << std::endl;
   std::cout << "Options:" << std::endl;
-  std::cout << "  --help                   Display this information." << std::endl;
-  std::cout << "  --version                Display compiler version information." << std::endl;
+  std::cout << "  -h/--help                Display this information." << std::endl;
+  std::cout << "  -V/--version             Display compiler version information." << std::endl;
   std::cout << "" << std::endl;
   std::cout << "  -v                       Display the programs invoked by the compiler." << std::endl;
   std::cout << "  -E                       Preprocess only; do not compile, assemble or link." << std::endl;
   std::cout << "  -S                       Compile only; do not assemble or link." << std::endl;
   std::cout << "  -c                       Compile and assemble, but do not link." << std::endl;
-  std::cout << "  -o <file>                Place the output into <file>." << std::endl;
+  std::cout << "  -o/--output <file>       Place the output into <file>." << std::endl;
   std::cout << "" << std::endl;
   std::cout << "  -d                       Dumps debug information to stdout and to './tmp' directory." << std::endl;
   std::cout << "" << std::endl;
@@ -35,6 +36,7 @@ int main(int argc, char** args) {
   std::vector<std::string> llvm_ir_files = {};
   std::vector<std::string> asm_files = {};
   std::vector<std::string> object_files = {};
+  std::vector<std::string> c_files = {};
 
   std::string object_file;
   std::string asm_file;
@@ -61,6 +63,8 @@ int main(int argc, char** args) {
     } else if (arg == "-h" || arg == "--help") {
       print_help();
       std::exit(0);
+    } else if (arg == "-V" || arg == "--version") {
+      std::exit(0);
     } else if (arg == "-E") {
       workflow = Workflow::DONT_COMPILE;
     } else if (arg == "-S") {
@@ -83,6 +87,8 @@ int main(int argc, char** args) {
         llvm_ir_files.push_back(arg);
       } else if (ext == ".s") {
         asm_files.push_back(arg);
+      } else if (ext == ".h") {
+        c_files.push_back(arg);
       } else if (ext == ".o") {
         object_files.push_back(arg);
       } else {
@@ -90,6 +96,10 @@ int main(int argc, char** args) {
         std::exit(1);
       }
     }
+  }
+
+  if (c_files.size() > 0) {
+    API::cpp(c_files);
   }
 
   if (lart_files.size() > 0) {
@@ -103,7 +113,6 @@ int main(int argc, char** args) {
     API::lpp(lart_files, llvm_ir_file);
     llvm_ir_files.push_back(llvm_ir_file);
   }
-
 
   if (workflow != Workflow::DONT_COMPILE) {
     if (llvm_ir_files.size() > 0) {
