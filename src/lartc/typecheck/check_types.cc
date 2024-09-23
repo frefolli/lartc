@@ -20,7 +20,18 @@ uint64_t compute_minimum_size_for(int64_t value) {
   return bitlength;
 }
 
-Type* decide_algebric_binop_type(Type* left, Type* right) {
+Type* decide_algebric_binop_type(SymbolCache& symbol_cache, Declaration* context, Type* left, Type* right) {
+  Declaration* left_decl = context;
+  while (left->kind == SYMBOL_TYPE) {
+    left_decl = symbol_cache.get_declaration(left_decl, left->symbol);
+    left = left_decl->type;
+  }
+  Declaration* right_decl = context;
+  while (right->kind == SYMBOL_TYPE) {
+    right_decl = symbol_cache.get_declaration(right_decl, right->symbol);
+    right = right_decl->type;
+  }
+
   Type* type = nullptr;
   if (left->kind == DOUBLE_TYPE || right->kind == DOUBLE_TYPE) {
     type = Type::New(DOUBLE_TYPE);
@@ -43,6 +54,9 @@ Type* decide_algebric_binop_type(Type* left, Type* right) {
     }
   } else if (left->kind == BOOLEAN_TYPE || right->kind == BOOLEAN_TYPE) {
     type = Type::New(BOOLEAN_TYPE);
+  }
+  if (type == nullptr) {
+    Type::Print(Type::Print(std::cerr << RED_TEXT, left) << NORMAL_TEXT << " and " << RED_TEXT, right) << NORMAL_TEXT << std::endl;
   }
   assert(type != nullptr);
   return type;
@@ -252,7 +266,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           Type* right_type = type_cache.expression_types[expr->right];
 
           if (types_are_algebraically_manipulable(symbol_cache, context, left_type, right_type)) {
-            type_cache.expression_types[expr] = decide_algebric_binop_type(left_type, right_type);
+            type_cache.expression_types[expr] = decide_algebric_binop_type(symbol_cache, context, left_type, right_type);
           } else {
             throw_types_cannot_be_algebraically_manipulated_error(file_db.expression_points[expr], context, left_type, right_type);
             type_check_ok = false;

@@ -136,6 +136,30 @@ inline Expression* parse_expression_parenthesized(TSContext& context, TSNode& no
   return parse_expression(context, inner_expr);
 }
 
+Expression* parse_array_access_expression(TSContext& context, TSNode& node) {
+  TSNode pointer_node = ts_node_child_by_field_name(node, "pointer");
+  Expression* pointer_expression = parse_expression(context, pointer_node);
+  ts_validate_parsing(context.language, pointer_node, "array_access_expr:pointer", pointer_expression);
+
+  TSNode offset_node = ts_node_child_by_field_name(node, "offset");
+  Expression* offset_expression = parse_expression(context, offset_node);
+  ts_validate_parsing(context.language, offset_node, "array_access_expr:offset", offset_expression);
+
+  Expression* sum = Expression::New(BINARY_EXPR);
+  sum->left = pointer_expression;
+  sum->right = offset_expression;
+  sum->operator_ = ADD_OP;
+
+  // I'm adding `sum` to FileDB since only `dereference` would be added by `parse_expression` to FileDB
+  context.file_db->add_expression(sum, node);
+
+  Expression* dereference = Expression::New(MONARY_EXPR);
+  dereference->operator_ = MUL_OP;
+  dereference->value = sum;
+
+  return dereference;
+}
+
 typedef Expression*(*expression_parser)(TSContext& context, TSNode& node);
 std::unordered_map<std::string, expression_parser> expression_parsers = {
   {"identifier", parse_expression_symbol},
@@ -154,6 +178,7 @@ std::unordered_map<std::string, expression_parser> expression_parsers = {
   {"cast_expression", parse_expression_cast},
   {"bitcast_expression", parse_expression_bitcast},
   {"parenthesized_expression", parse_expression_parenthesized},
+  {"array_access_expression", parse_array_access_expression}
 };
 
 Expression* parse_expression(TSContext& context, TSNode& node) {

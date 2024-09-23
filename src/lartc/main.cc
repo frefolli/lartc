@@ -55,7 +55,7 @@ int main(int argc, char** args) {
     std::string arg = args[i];
     if (arg == "-d" || arg == "--debug") {
       API::DUMP_DEBUG_INFO_FOR_STRUCS = true;
-      API::DEBUG_SEGFAULT_IDENTIFY_PHASE = false;
+      API::DEBUG_SEGFAULT_IDENTIFY_PHASE = true;
     } else if (arg == "-v" || arg == "--verbose") {
       API::ECHO_SYSTEM_COMMANDS = true;
     } else if (arg == "-h" || arg == "--help") {

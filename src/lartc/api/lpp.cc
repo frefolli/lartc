@@ -150,6 +150,15 @@ void API::lpp(const std::vector<std::string>& lart_files, std::string& output_fi
     printf("Checking declared types ... OK\n");
   }
 
+  /* END-PHASE */
+  if (API::DUMP_DEBUG_INFO_FOR_STRUCS) {
+    std::filesystem::create_directories("tmp");
+    print_to_file(decl_tree, "tmp/decl_tree.txt");
+    print_to_file(symbol_cache, "tmp/symbol_cache.txt", file_db);
+    print_to_file(file_db, "tmp/file_db.txt");
+    print_to_file(size_cache, "tmp/size_cache.txt");
+  }
+
   if (!no_errors_occurred) {
     std::exit(2);
   }
