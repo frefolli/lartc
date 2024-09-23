@@ -141,6 +141,12 @@ Type* interpret_as_struct_specifier(const TSLanguage* language, const char* sour
       TSNode declarator_node = ts_node_child_by_field_name(field_node, "declarator");
       assert(declarator_node.id != nullptr);
       Type* type = interpret_as_type(language, source_code, scope, type_node);
+      while (strcmp(ts_language_symbol_name(language, ts_node_symbol(declarator_node)), "pointer_declarator") == 0) {
+        Type* ptr = Type::New(POINTER_TYPE);
+        ptr->subtype = type;
+        type = ptr;
+        declarator_node = ts_node_child_by_field_name(declarator_node, "declarator");
+      }
       std::string name = ts_node_source_code(declarator_node, source_code);
       struct_type->fields.push_back({name, type});
     }
@@ -206,6 +212,12 @@ void explore_as_type_definition(const TSLanguage* language, const char* source_c
   TSNode declarator_node = ts_node_child_by_field_name(node, "declarator");
   assert(declarator_node.id != nullptr);
   Type* type = interpret_as_type(language, source_code, scope, type_node);
+  while (strcmp(ts_language_symbol_name(language, ts_node_symbol(declarator_node)), "pointer_declarator") == 0) {
+    Type* ptr = Type::New(POINTER_TYPE);
+    ptr->subtype = type;
+    type = ptr;
+    declarator_node = ts_node_child_by_field_name(declarator_node, "declarator");
+  }
   std::string name = ts_node_source_code(declarator_node, source_code);
   Declaration* type_decl = Declaration::New(TYPE_DECL);
   type_decl->type = type;
@@ -244,9 +256,21 @@ void explore_as_function_declaration(const TSLanguage* language, const char* sou
       assert(type_node.id != nullptr);
       TSNode declarator_node = ts_node_child_by_field_name(parameter_node, "declarator");
       Type* type = interpret_as_type(language, source_code, scope, type_node);
-      std::string name;
+      std::string name = "_";
       if (declarator_node.id != nullptr) {
-        name = ts_node_source_code(declarator_node, source_code);
+        if (strcmp(ts_language_symbol_name(language, ts_node_symbol(declarator_node)), "abstract_pointer_declarator") == 0) {
+          Type* ptr = Type::New(POINTER_TYPE);
+          ptr->subtype = type;
+          type = ptr;
+        } else {
+          while (strcmp(ts_language_symbol_name(language, ts_node_symbol(declarator_node)), "pointer_declarator") == 0) {
+            Type* ptr = Type::New(POINTER_TYPE);
+            ptr->subtype = type;
+            type = ptr;
+            declarator_node = ts_node_child_by_field_name(declarator_node, "declarator");
+          }
+          name = ts_node_source_code(declarator_node, source_code);
+        }
       }
       func_decl->parameters.push_back({name, type});
     }
@@ -254,50 +278,6 @@ void explore_as_function_declaration(const TSLanguage* language, const char* sou
   } else {
     std::string symbol_name = ts_language_symbol_name(language, ts_node_symbol(node));
     crash_on_node(node, source_code, symbol_name, "unable to explore as function declaration");
-  }
-}
-
-void explore_as_function_definition(const TSLanguage* language, const char* source_code, Declaration* scope, TSNode& node) {
-  TSNode type_node = ts_node_child_by_field_name(node, "type");
-  assert(type_node.id != nullptr);
-  TSNode function_declarator_node = ts_node_child_by_field_name(node, "declarator");
-  assert(function_declarator_node.id != nullptr);
-  TSNode declarator_node = ts_node_child_by_field_name(function_declarator_node, "declarator");
-  assert(declarator_node.id != nullptr);
-
-  Type* type = interpret_as_type(language, source_code, scope, type_node);
-  Declaration* func_decl = Declaration::New(FUNCTION_DECL);
-  func_decl->type = type;
-
-  while (strcmp(ts_language_symbol_name(language, ts_node_symbol(function_declarator_node)), "pointer_declarator") == 0) {
-    Type* ptr = Type::New(POINTER_TYPE);
-    ptr->subtype = func_decl->type;
-    func_decl->type = ptr;
-    function_declarator_node = ts_node_child_by_field_name(function_declarator_node, "declarator");
-    declarator_node = ts_node_child_by_field_name(function_declarator_node, "declarator");
-  }
-  std::string name = ts_node_source_code(declarator_node, source_code);
-  func_decl->name = name;
-
-  TSNode parameters = ts_node_child_by_field_name(function_declarator_node, "parameters");
-  if (parameters.id != nullptr) {
-    uint64_t length = ts_node_named_child_count(parameters);
-    for (uint64_t i = 0; i < length; ++i) {
-      TSNode parameter_node = ts_node_named_child(parameters, i);
-      TSNode type_node = ts_node_child_by_field_name(parameter_node, "type");
-      assert(type_node.id != nullptr);
-      TSNode declarator_node = ts_node_child_by_field_name(parameter_node, "declarator");
-      Type* type = interpret_as_type(language, source_code, scope, type_node);
-      std::string name;
-      if (declarator_node.id != nullptr) {
-        name = ts_node_source_code(declarator_node, source_code);
-      }
-      func_decl->parameters.push_back({name, type});
-    }
-    scope->children.push_back(func_decl);
-  } else {
-    std::string symbol_name = ts_language_symbol_name(language, ts_node_symbol(node));
-    crash_on_node(node, source_code, symbol_name, "unable to explore as function definition");
   }
 }
  
@@ -324,7 +304,7 @@ std::unordered_map<std::string, explorer> explorers = {
   {"translation_unit", explore_as_scope},
   {"type_definition", explore_as_type_definition},
   {"declaration", explore_as_function_declaration},
-  {"function_definition", explore_as_function_definition},
+  {"function_definition", explore_as_function_declaration},
   {"struct_specifier", explore_as_struct_specifier},
   {"enum_specifier", explore_as_enum_specifier},
   {"union_specifier", explore_as_struct_specifier}
