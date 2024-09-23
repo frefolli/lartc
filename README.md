@@ -1,7 +1,7 @@
 # LartC - Compiler for Lart Programming Language
 
 Static typed prototype programming language made in a two month journey.
-Checkout [lart-examples](github.com:frefolli/lart-examples) repository for examples of usage of both the compiler and the language.
+Checkout [lart-examples](https://github.com/frefolli/lart-examples) repository for examples of usage of both the compiler and the language.
 
 # Help
 
