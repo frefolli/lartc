@@ -57,5 +57,7 @@ should_succ_on_file include-files
 should_succ_on_file array_access
 should_succ_on_file strucs-as-rvalue
 should_succ_on_file strucs
-should_succ_on_file ts
 should_succ_on_file function-pointer
+should_succ_on_file types
+should_succ_on_file ts
+should_succ_on_file raylib
