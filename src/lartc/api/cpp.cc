@@ -331,7 +331,7 @@ bool parse_source_code(TSParser* parser, const TSLanguage* language, const char*
   return true;
 }
 
-void API::cpp(const std::vector<std::string>& c_files) {
+API::Result API::cpp(const std::vector<std::string>& c_files) {
   TSParser* parser = ts_parser_new();
   const TSLanguage* language = tree_sitter_c();
   ts_parser_set_language(parser, language);
@@ -344,4 +344,5 @@ void API::cpp(const std::vector<std::string>& c_files) {
   }
 
   ts_parser_delete(parser);
+  return Result::OK;
 }

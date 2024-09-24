@@ -59,12 +59,86 @@ std::string read_next_arg(char** args, uint64_t n_of_args, uint64_t& arg_index, 
   assert(false);
 }
 
+void print_error(API::Result error) {
+  switch(error) {
+    case API::Result::OK:
+      {
+        assert(false);
+      }
+    case API::Result::ERR:
+      {
+        std::cerr << RED_TEXT << "generic error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::NO_SOURCE_FILE_SPECIFIED:
+      {
+        std::cerr << RED_TEXT << "no source file specified" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::PARSING_ERROR:
+      {
+        std::cerr << RED_TEXT << "parsing error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::SYMBOL_RESOLUTION_ERROR:
+      {
+        std::cerr << RED_TEXT << "symbol resolution error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::DECLARED_TYPE_CHECKING_ERROR:
+      {
+        std::cerr << RED_TEXT << "declared type checking error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::TYPE_CHECKING_ERROR:
+      {
+        std::cerr << RED_TEXT << "type checking error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::LLVM_IR_GENERATION_ERROR:
+      {
+        std::cerr << RED_TEXT << "llvm ir generation error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::ASM_GENERATION_ERROR:
+      {
+        std::cerr << RED_TEXT << "asm generation error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::ASSEMBLING_ERROR:
+      {
+        std::cerr << RED_TEXT << "assembling error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+    case API::Result::LINKING_ERROR:
+      {
+        std::cerr << RED_TEXT << "linking error" << NORMAL_TEXT << std::endl;
+        break;
+      }
+  }
+}
+
+void ensure_success(API::Result result) {
+  if (result != API::Result::OK) {
+    std::cerr << "cause of exit: ";
+    print_error(result);
+    std::exit(1);
+  }
+}
+
 int main(int argc, char** args) {
   std::vector<std::string> lart_files = {};
   std::vector<std::string> llvm_ir_files = {};
   std::vector<std::string> asm_files = {};
   std::vector<std::string> object_files = {};
   std::vector<std::string> c_files = {};
+
+  std::vector<std::string> generator_options = {};
+  std::vector<std::string> generator_args = {};
+  std::vector<std::string> assembler_options = {};
+  std::vector<std::string> assembler_args = {};
+  std::vector<std::string> linker_options = {};
+  std::vector<std::string> linker_args = {};
 
   std::string object_file;
   std::string asm_file;
@@ -101,30 +175,27 @@ int main(int argc, char** args) {
       workflow = Workflow::DONT_LINK;
     } else if (arg.starts_with("-Wg")) {
       std::string options = read_next_arg(args, n_of_args, i, "-Wg");
-      std::clog << "options := " << options << std::endl;
+      generator_options.push_back(options);
     } else if (arg.starts_with("-Wa")) {
       std::string options = read_next_arg(args, n_of_args, i, "-Wa");
-      std::clog << "options := " << options << std::endl;
+      assembler_options.push_back(options);
     } else if (arg.starts_with("-Wl")) {
       std::string options = read_next_arg(args, n_of_args, i, "-Wl");
-      std::clog << "options := " << options << std::endl;
+      linker_options.push_back(options);
     } else if (arg == "-Xgenerator") {
-      std::string options = read_next_arg(args, n_of_args, i);
-      std::clog << "options := " << options << std::endl;
+      std::string argument = read_next_arg(args, n_of_args, i);
+      generator_args.push_back(argument);
     } else if (arg == "-Wassembler") {
-      std::string options = read_next_arg(args, n_of_args, i);
-      std::clog << "options := " << options << std::endl;
+      std::string argument = read_next_arg(args, n_of_args, i);
+      assembler_args.push_back(argument);
     } else if (arg == "-Xlinker") {
-      std::string options = read_next_arg(args, n_of_args, i);
-      std::clog << "options := " << options << std::endl;
+      std::string argument = read_next_arg(args, n_of_args, i);
+      linker_args.push_back(argument);
     } else if (arg == "-o" || arg == "--output") {
       output = read_next_arg(args, n_of_args, i);
-    } else if (arg == "-l" || arg == "--link") {
+    } else if (arg.starts_with("-l") || arg == "--link") {
       std::string library = ("-l" + read_next_arg(args, n_of_args, i, "-l"));
-      std::clog << "options := " << library << std::endl;
-    } else if (arg == "-l" || arg == "--link") {
-      std::string library = ("-l" + read_next_arg(args, n_of_args, i, "-l"));
-      std::clog << "options := " << library << std::endl;
+      linker_args.push_back(library);
     } else {
       std::string ext = std::filesystem::path(arg).extension();
       if (ext == ".lart") {
@@ -149,7 +220,7 @@ int main(int argc, char** args) {
   }
 
   if (c_files.size() > 0) {
-    API::cpp(c_files);
+    ensure_success(API::cpp(c_files));
     std::exit(0);
   }
 
@@ -161,7 +232,7 @@ int main(int argc, char** args) {
       llvm_ir_file = output;
     }
 
-    API::lpp(lart_files, llvm_ir_file);
+    ensure_success(API::lpp(lart_files, llvm_ir_file));
     llvm_ir_files.push_back(llvm_ir_file);
   }
 
@@ -174,7 +245,7 @@ int main(int argc, char** args) {
         asm_file = output;
       }
 
-      API::llc(llvm_ir_files, asm_file);
+      ensure_success(API::llc(llvm_ir_files, generator_args, generator_options, asm_file));
       asm_files.push_back(asm_file);
     }
 
@@ -186,7 +257,7 @@ int main(int argc, char** args) {
           }
           object_file = output;
         }
-        API::as(asm_files, object_file);
+        ensure_success(API::as(asm_files, assembler_args, assembler_options, object_file));
         object_files.push_back(object_file);
       }
 
@@ -196,7 +267,7 @@ int main(int argc, char** args) {
         }
         linked_file = output;
         if (object_files.size() > 0) {
-          API::ld(object_files, linked_file);
+          ensure_success(API::ld(object_files, linker_args, linker_options, linked_file));
         }
       }
     }

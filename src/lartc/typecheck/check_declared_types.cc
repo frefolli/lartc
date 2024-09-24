@@ -1,12 +1,13 @@
 #include <lartc/typecheck/check_declared_types.hh>
 #include <lartc/external_errors.hh>
+#include <lartc/api/config.hh>
 
 std::pair<bool, uint64_t> check_declared_types(FileDB& file_db, SymbolCache& symbol_cache, SizeCache& size_cache, Declaration* context, Type* type) {
   bool declared_types_ok = true;
   uint64_t size = 0;
   switch (type->kind) {
     case type_t::POINTER_TYPE:
-      size = 64;
+      size = API::POINTER_SIZE;
       break;
     case type_t::VOID_TYPE:
       break;
@@ -48,7 +49,7 @@ std::pair<bool, uint64_t> check_declared_types(FileDB& file_db, SymbolCache& sym
       size = 1;
       break;
     case type_t::FUNCTION_TYPE:
-      size = 64;
+      size = API::POINTER_SIZE;
       break;
   }
   return {declared_types_ok, size};

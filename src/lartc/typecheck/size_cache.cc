@@ -1,4 +1,5 @@
 #include <lartc/typecheck/size_cache.hh>
+#include <lartc/api/config.hh>
   
 std::ostream& SizeCache::Print(std::ostream& out, SizeCache& size_cache) {
   out << "# Size Cache" << std::endl << std::endl;
@@ -28,7 +29,7 @@ uint64_t SizeCache::compute_size_of(SymbolCache& symbol_cache, Declaration* scop
       }
     case POINTER_TYPE:
       {
-        size += 64;
+        size += API::POINTER_SIZE;
         break;
       }
     case SYMBOL_TYPE:
@@ -50,7 +51,7 @@ uint64_t SizeCache::compute_size_of(SymbolCache& symbol_cache, Declaration* scop
       }
     case FUNCTION_TYPE:
       {
-        size += 64;
+        size += API::POINTER_SIZE;
         break;
       }
   }

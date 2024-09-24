@@ -22,18 +22,27 @@
 #include <cstring>
 #include <tree_sitter/api.h>
 
-void API::ld(const std::vector<std::string>& object_files, std::string& output_file) {
+API::Result API::ld(const std::vector<std::string>& object_files, const std::vector<std::string>& arguments, const std::vector<std::string>& options, std::string& output_file) {
   if (output_file.empty()) {
     output_file = generate_temp_file(".exe");
   }
 
   std::ostringstream cmd ("");
-  // cmd << "/usr/bin/ld --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 /usr/bin/../lib/gcc/x86_64-redhat-linux/14/../../../../lib64/crt1.o /usr/bin/../lib/gcc/x86_64-redhat-linux/14/../../../../lib64/crti.o /usr/bin/../lib/gcc/x86_64-redhat-linux/14/crtbegin.o -L/usr/bin/../lib/clang/18/lib/x86_64-redhat-linux-gnu -L/usr/bin/../lib/gcc/x86_64-redhat-linux/14 -L/usr/bin/../lib/gcc/x86_64-redhat-linux/14/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib/gcc/x86_64-redhat-linux/14/crtend.o /usr/bin/../lib/gcc/x86_64-redhat-linux/14/../../../../lib64/crtn.o";
   cmd << "clang";
   for (std::string object_file : object_files) {
     cmd << " " << object_file;
   }
+  for (const std::string& argument : arguments) {
+    cmd << " " << argument;
+  }
+  // i threw away -Wl but i feel safer to pass it to clang
+  for (const std::string& option : options) {
+    cmd << " -Wl" << option;
+  }
   cmd << " -o " << output_file;
   
-  assert(execute_command_line(cmd.str()) == API::Result::OK);
+  if (execute_command_line(cmd.str()) == Result::OK) {
+    return Result::OK;
+  }
+  return Result::LINKING_ERROR;
 }

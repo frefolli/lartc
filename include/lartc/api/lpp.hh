@@ -5,6 +5,6 @@
 #include <string>
 
 namespace API {
-  void lpp(const std::vector<std::string>& lart_files, std::string& output_file);
+  Result lpp(const std::vector<std::string>& lart_files, std::string& output_file);
 }
 #endif//LARTC_API_LPP

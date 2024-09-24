@@ -22,7 +22,7 @@
 #include <cstring>
 #include <tree_sitter/api.h>
 
-void API::as(const std::vector<std::string>& asm_files, std::string& output_file) {
+API::Result API::as(const std::vector<std::string>& asm_files, const std::vector<std::string>& arguments, const std::vector<std::string>& options, std::string& output_file) {
   if (output_file.empty()) {
     output_file = generate_temp_file(".o");
   }
@@ -32,7 +32,16 @@ void API::as(const std::vector<std::string>& asm_files, std::string& output_file
   for (std::string asm_file : asm_files) {
     cmd << " " << asm_file;
   }
+  for (const std::string& argument : arguments) {
+    cmd << " " << argument;
+  }
+  for (const std::string& option : options) {
+    cmd << " " << option;
+  }
   cmd << " -o " << output_file;
   
-  assert(execute_command_line(cmd.str()) == API::Result::OK);
+  if (execute_command_line(cmd.str()) == Result::OK) {
+    return Result::OK;
+  }
+  return Result::ASSEMBLING_ERROR;
 }

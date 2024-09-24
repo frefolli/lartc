@@ -8,16 +8,26 @@ Checkout [lart-examples](https://github.com/frefolli/lart-examples) repository f
 ```
 Usage: lartc [options] file...
 Options:
-  --help                   Display this information.
-  --version                Display compiler version information.
+  -h/--help                Display this information.
+  -V/--version             Display compiler version information.
 
   -v                       Display the programs invoked by the compiler.
   -E                       Preprocess only; do not compile, assemble or link.
   -S                       Compile only; do not assemble or link.
   -c                       Compile and assemble, but do not link.
-  -o <file>                Place the output into <file>.
+  -o/--output <file>       Place the output into <file>.
 
   -d                       Dumps debug information to stdout and to './tmp' directory.
+
+  -Wg,<options>            Pass comma-separated <options> on to the generator.
+  -Wa,<options>            Pass comma-separated <options> on to the assembler.
+  -Wl,<options>            Pass comma-separated <options> on to the linker.
+  -Xgenerator <arg>        Pass <arg> on to the generator.
+  -Xassembler <arg>        Pass <arg> on to the assembler.
+  -Xlinker <arg>           Pass <arg> on to the linker.
+
+  Passing *.lart, *.ll, *.s, *.o, *.a, *.so files will cause them to be included in the correct phase of the compilation.
+  As an experimental feature, passing *.h files will cause the compiler to parse those C-files and try to convert them to LART code (intended for headers). The result is printed to stdout, then the execution terminates.
 
 For bug reporting, please see:
 <https://github.com/frefolli/lartc/issues>.

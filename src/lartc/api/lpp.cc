@@ -78,7 +78,7 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
   return ast_ok;
 }
 
-void API::lpp(const std::vector<std::string>& lart_files, std::string& output_file) {
+API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& output_file) {
   if (output_file.empty()) {
     output_file = generate_temp_file(".ll");
   }
@@ -119,11 +119,11 @@ void API::lpp(const std::vector<std::string>& lart_files, std::string& output_fi
 
   if (!at_least_one_source_file) {
     std::cerr << RED_TEXT << "error" << NORMAL_TEXT << ": not source file specified" << std::endl;
-    std::exit(1);
+    return Result::NO_SOURCE_FILE_SPECIFIED;
   }
 
   if (!no_errors_occurred) {
-    std::exit(2);
+    return Result::PARSING_ERROR;
   }
 
   /* RESOLVE-PHASE */
@@ -137,7 +137,7 @@ void API::lpp(const std::vector<std::string>& lart_files, std::string& output_fi
   }
 
   if (!no_errors_occurred) {
-    std::exit(2);
+    return Result::SYMBOL_RESOLUTION_ERROR;
   }
 
   /* DECL-TYPE-CHECK-PHASE */
@@ -151,7 +151,7 @@ void API::lpp(const std::vector<std::string>& lart_files, std::string& output_fi
   }
 
   if (!no_errors_occurred) {
-    std::exit(2);
+    return Result::DECLARED_TYPE_CHECKING_ERROR;
   }
 
   /* TYPE-CHECK-PHASE */
@@ -164,17 +164,8 @@ void API::lpp(const std::vector<std::string>& lart_files, std::string& output_fi
     printf("Checking types ... OK\n");
   }
 
-  /* END-PHASE */
-  if (API::DUMP_DEBUG_INFO_FOR_STRUCS) {
-    std::filesystem::create_directories("tmp");
-    print_to_file(decl_tree, "tmp/decl_tree.txt");
-    print_to_file(symbol_cache, "tmp/symbol_cache.txt", file_db);
-    print_to_file(file_db, "tmp/file_db.txt");
-    print_to_file(size_cache, "tmp/size_cache.txt");
-  }
-
   if (!no_errors_occurred) {
-    std::exit(2);
+    return Result::TYPE_CHECKING_ERROR;
   }
 
   /* CODE-GEN-PHASE */
@@ -197,7 +188,7 @@ void API::lpp(const std::vector<std::string>& lart_files, std::string& output_fi
   bucket.close();
 
   if (!no_errors_occurred) {
-    std::exit(2);
+    return Result::LLVM_IR_GENERATION_ERROR;
   }
 
   /* END-PHASE */
@@ -212,4 +203,6 @@ void API::lpp(const std::vector<std::string>& lart_files, std::string& output_fi
 
   Declaration::Delete(decl_tree);
   ts_parser_delete(parser);
+
+  return Result::OK;
 }

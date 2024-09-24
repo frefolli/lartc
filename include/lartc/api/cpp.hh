@@ -5,6 +5,6 @@
 #include <string>
 
 namespace API {
-  void cpp(const std::vector<std::string>& c_files);
+  Result cpp(const std::vector<std::string>& c_files);
 }
 #endif//LARTC_API_CPP
