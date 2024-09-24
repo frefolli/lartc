@@ -157,7 +157,11 @@ bool types_are_structurally_compatible(SymbolCache& symbol_cache, Declaration* c
       compatibles &= Src->size <= Dst->size;
       break;
     case type_t::INTEGER_TYPE:
-      compatibles &= Src->size <= Dst->size;
+      if (Src->is_signed && !Dst->is_signed) {
+        compatibles &= Src->size <= (Dst->size * 2);
+      } else {
+        compatibles &= Src->size <= Dst->size;
+      }
       // compatibles &= A->is_signed == Dst->is_signed;
       break;
     case type_t::STRUCT_TYPE:
@@ -236,8 +240,11 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
         if (src->kind == type_t::DOUBLE_TYPE) {
           implicitly_castable &= src->size <= dst->size;
         } else if (src->kind == type_t::INTEGER_TYPE) {
-          // implicitly_castable &= src->is_signed == dst->is_signed;
-          implicitly_castable &= src->size <= dst->size;
+          if (src->is_signed && !dst->is_signed) {
+            implicitly_castable &= src->size <= (dst->size * 2);
+          } else {
+            implicitly_castable &= src->size <= dst->size;
+          }
         } else if (src->kind == type_t::BOOLEAN_TYPE) {
           // yes
         } else {
