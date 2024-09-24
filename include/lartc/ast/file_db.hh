@@ -16,13 +16,13 @@ struct FileDB {
     static std::ostream& Print(std::ostream& out, const File& file);
   };
   struct Point {
-    const File* file;
+    uint64_t file;
     uint64_t row;
     uint64_t column;
     uint64_t byte_start;
     uint64_t byte_end;
 
-    static std::ostream& Print(std::ostream& out, const Point& point);
+    static std::ostream& Print(std::ostream& out, const FileDB& file_db, const Point& point);
     
     static Point From(const FileDB* file_db, TSNode& ts_node);
   };
@@ -40,8 +40,11 @@ struct FileDB {
   void add_type(Type* type, TSNode& node);
   void add_declaration(Declaration* declaration, TSNode& node);
   void add_var(Statement* var_decl, TSNode& node);
-  inline const File* current_file() const {
-    return &files.back();
+  inline uint64_t current_file_index() const {
+    return files.size() - 1;
+  }
+  inline File* current_file() {
+    return files.data() + current_file_index();
   }
 
   static std::string resolve_local(const std::string& filepath, const std::string& location);

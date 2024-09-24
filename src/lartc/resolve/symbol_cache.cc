@@ -15,9 +15,9 @@ std::ostream& SymbolCache::Print(std::ostream& out, FileDB& file_db, SymbolCache
   out << "## Locals" << std::endl << std::endl;
   for (auto solved : symbol_cache.locals) {
     out << " - ";
-    FileDB::Point::Print(out, file_db.expression_points[solved.first]) << " ";
+    FileDB::Point::Print(out, file_db, file_db.expression_points[solved.first]) << " ";
     Expression::Print(out, solved.first) << " -> ";
-    FileDB::Point::Print(out, file_db.var_decl_points[solved.second]) << " ";
+    FileDB::Point::Print(out, file_db, file_db.var_decl_points[solved.second]) << " ";
     Statement::PrintShort(out, solved.second) << std::endl;
   }
   out << std::endl;

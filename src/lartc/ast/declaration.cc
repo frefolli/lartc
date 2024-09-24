@@ -1,3 +1,4 @@
+#include <cassert>
 #include <lartc/ast/declaration.hh>
 #include <lartc/internal_errors.hh>
 #include <algorithm>
@@ -32,6 +33,7 @@ void Declaration::Delete(Declaration*& decl) {
 }
 
 std::ostream& Declaration::Print(std::ostream& out, const Declaration* decl, uint64_t tabulation) {
+  assert(decl != nullptr);
   tabulate(out, tabulation);
   bool first;
   switch (decl->kind) {
@@ -76,20 +78,26 @@ std::ostream& Declaration::Print(std::ostream& out, const Declaration* decl, uin
         out << " " << decl->name;
       Type::Print(out << " = ", decl->type);
       return out << ";";
+    default:
+      assert(false);
   }
   return out;
 }
 
 std::string Declaration::QualifiedName(const Declaration* decl) {
-  if (decl->parent != nullptr) {
+  if (decl->parent == nullptr) {
     return decl->name;
   } else {
     std::string parent_name = Declaration::QualifiedName(decl->parent);
-    return parent_name + "::" + decl->name;
+    if (parent_name.size() > 0) {
+      return parent_name + "::" + decl->name;
+    }
+    return decl->name;
   }
 }
 
 std::ostream& Declaration::PrintShort(std::ostream& out, const Declaration* decl) {
+  assert(decl != nullptr);
   bool first;
   switch (decl->kind) {
     case declaration_t::MODULE_DECL:

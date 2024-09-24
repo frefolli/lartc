@@ -1,3 +1,4 @@
+#include <cassert>
 #include <lartc/ast/type.hh>
 #include <lartc/internal_errors.hh>
 #include <ios>
@@ -58,6 +59,7 @@ Type* Type::Clone(const Type* other) {
 }
 
 std::ostream& Type::Print(std::ostream& out, const Type* type, uint64_t tabulation) {
+  assert(type != nullptr);
   tabulate(out, tabulation);
   bool first;
   switch (type->kind) {
@@ -97,6 +99,8 @@ std::ostream& Type::Print(std::ostream& out, const Type* type, uint64_t tabulati
         Type::Print(out << item.first << ": ", item.second);
       }
       return Type::Print(out << ") -> ", type->subtype, 0);
+    default:
+      assert(false);
   }
   return out;
 }

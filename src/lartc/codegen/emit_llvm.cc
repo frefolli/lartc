@@ -1,12 +1,14 @@
-#include "lartc/ast/operator.hh"
+#include <lartc/ast/operator.hh>
 #include <cstdlib>
 #include <iostream>
 #include <lartc/codegen/emit_llvm.hh>
 #include <lartc/codegen/markers.hh>
+#include <lartc/typecheck/casting.hh>
 #include <cassert>
 #include <lartc/terminal.hh>
 #include <lartc/serializations.hh>
 #include <unordered_map>
+#include <lartc/api/config.hh>
 
 #define PRESERVE_MARKER_KEY(KEY) \
   int64_t preserved_##KEY = markers.save_key(KEY);
@@ -35,6 +37,23 @@ std::string craft_decl_label(Declaration* decl) {
 
 std::ostream& emit_decl_label(std::ostream& out, Declaration* decl) {
   return out << craft_decl_label(decl);
+}
+
+Type* extract_callable_type(CGContext& context, Declaration* decl, Type* type) {
+  switch (type->kind) {
+    case FUNCTION_TYPE:
+      {
+        return type;
+      }
+    case SYMBOL_TYPE:
+      {
+        Declaration* source = context.symbol_cache.get_or_find_declaration(decl, type->symbol);
+        assert(source != nullptr);
+        return extract_callable_type(context, source, source->type);
+      }
+    default:
+      assert(false);
+  }
 }
 
 Type* extract_subtype(CGContext& context, Declaration* decl, Type* type) {
@@ -214,29 +233,68 @@ void emit_type_bitcast(std::ostream& out, CGContext& context, Declaration* func,
   emit_type_specifier(emit_type_specifier(out << dst_marker << " = bitcast ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
 }
 
-Type* cast_operands_to_expression_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker, Type* type) {
-  uint64_t left_type_size = context.size_cache.compute_size_of(context.symbol_cache, func, left_type);
-  uint64_t right_type_size = context.size_cache.compute_size_of(context.symbol_cache, func, right_type);
-  uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, type);
-  if (left_type_size > type_size) {
-    std::string output_marker = markers.new_marker();
-    emit_type_truncation(out, context, func, left_type, left_marker, type, output_marker);
-    left_marker = output_marker;
-  } else if (left_type_size < type_size) {
-    std::string output_marker = markers.new_marker();
-    emit_type_extension(out, context, func, left_type, left_marker, type, output_marker);
-    left_marker = output_marker;
+void cast_value_to_requested_type(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
+  if (types_are_namely_equal(context.symbol_cache, func, value_type, func, requested_type)) {
+    output_marker = value_marker;
+    return;
   }
-  if (right_type_size > type_size) {
-    std::string output_marker = markers.new_marker();
-    emit_type_truncation(out, context, func, right_type, right_marker, type, output_marker);
-    right_marker = output_marker;
-  } else if (right_type_size < type_size) {
-    std::string output_marker = markers.new_marker();
-    emit_type_extension(out, context, func, right_type, right_marker, type, output_marker);
-    right_marker = output_marker;
+
+  // Type* value_type = context.type_cache.expression_types[expression->value];
+  // Type* type = context.type_cache.expression_types[expression];
+  uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
+  uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
+  std::string temporary_marker = value_marker;
+
+  if (type_size == 0) {
+    Type::Print(std::cerr << RED_TEXT, requested_type) << NORMAL_TEXT << std::endl;
+    assert(false);
   }
-  return type;
+
+  if (value_size < type_size) {
+    std::string first_step_marker = markers.new_marker();
+    Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
+    int_of_equal_size->size = value_size;
+    int_of_equal_size->is_signed = false;
+    emit_type_bitcast(out, context, func, value_type, temporary_marker, int_of_equal_size, first_step_marker);
+
+    std::string second_step_marker = markers.new_marker();
+    Type* int_of_greater_size = Type::New(type_t::INTEGER_TYPE);
+    int_of_greater_size->size = type_size;
+    int_of_greater_size->is_signed = false;
+    emit_type_extension(out, context, func, int_of_equal_size, first_step_marker, int_of_greater_size, second_step_marker);
+    temporary_marker = second_step_marker;
+    value_type = int_of_greater_size;
+  } else if (value_size > type_size) {
+    std::string first_step_marker = markers.new_marker();
+    Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
+    int_of_equal_size->size = value_size;
+    int_of_equal_size->is_signed = false;
+    emit_type_bitcast(out, context, func, value_type, temporary_marker, int_of_equal_size, first_step_marker);
+
+    std::string second_step_marker = markers.new_marker();
+    Type* int_of_lower_size = Type::New(type_t::INTEGER_TYPE);
+    int_of_lower_size->size = type_size;
+    int_of_lower_size->is_signed = false;
+    emit_type_truncation(out, context, func, int_of_equal_size, first_step_marker, int_of_lower_size, second_step_marker);
+    temporary_marker = second_step_marker;
+    value_type = int_of_lower_size;
+  }
+
+  if (types_are_namely_equal(context.symbol_cache, func, value_type, func, requested_type)) {
+    output_marker = temporary_marker;
+    return;
+  }
+
+  output_marker = markers.new_marker();
+  emit_type_bitcast(out, context, func, value_type, temporary_marker, requested_type, output_marker);
+}
+
+Type* cast_operands_to_expression_type(std::ostream& out, CGContext& context, Markers& markers, Declaration* func, Type* left_type, std::string& left_marker, Type* right_type, std::string& right_marker, Type* requested_type) {
+  std::string left_value = left_marker;
+  cast_value_to_requested_type(out, context, func, markers, left_value, left_type, requested_type, left_marker);
+  std::string right_value = right_marker;
+  cast_value_to_requested_type(out, context, func, markers, right_value, right_type, requested_type, right_marker);
+  return requested_type;
 }
 
 Type* decide_logic_operand_type(CGContext& context, Declaration* decl, Type* left, Type* right) {
@@ -426,42 +484,9 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
       {
         std::string value_marker;
         emit_expression_as_lvalue(out, context, func, markers, expression->value, value_marker);
-
         Type* value_type = context.type_cache.expression_types[expression->value];
-        Type* type = context.type_cache.expression_types[expression];
-        uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
-        uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, type);
-
-        if (value_size < type_size) {
-          std::string first_step_marker = markers.new_marker();
-          Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
-          int_of_equal_size->size = value_size;
-          int_of_equal_size->is_signed = false;
-          emit_type_bitcast(out, context, func, value_type, value_marker, int_of_equal_size, first_step_marker);
-
-          std::string second_step_marker = markers.new_marker();
-          Type* int_of_greater_size = Type::New(type_t::INTEGER_TYPE);
-          int_of_greater_size->size = type_size;
-          int_of_greater_size->is_signed = false;
-          emit_type_extension(out, context, func, int_of_equal_size, first_step_marker, int_of_greater_size, second_step_marker);
-          value_marker = second_step_marker;
-        } else if (value_size > type_size) {
-          std::string first_step_marker = markers.new_marker();
-          Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
-          int_of_equal_size->size = value_size;
-          int_of_equal_size->is_signed = false;
-          emit_type_bitcast(out, context, func, value_type, value_marker, int_of_equal_size, first_step_marker);
-
-          std::string second_step_marker = markers.new_marker();
-          Type* int_of_lower_size = Type::New(type_t::INTEGER_TYPE);
-          int_of_lower_size->size = type_size;
-          int_of_lower_size->is_signed = false;
-          emit_type_truncation(out, context, func, int_of_equal_size, first_step_marker, int_of_lower_size, second_step_marker);
-          value_marker = second_step_marker;
-        }
-
-        output_marker = markers.new_marker();
-        emit_type_bitcast(out, context, func, value_type, value_marker, type, output_marker);
+        Type* requested_type = context.type_cache.expression_types[expression];
+        cast_value_to_requested_type(out, context, func, markers, value_marker, value_type, requested_type, output_marker);
         break;
       }
     case INTEGER_EXPR:
@@ -542,7 +567,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       {
         std::string callable_marker;
         emit_expression_as_lvalue(out, context, func, markers, expression->callable, callable_marker);
-        Type* callable_type = context.type_cache.expression_types[expression->callable];
+        Type* callable_type = extract_callable_type(context, func, context.type_cache.expression_types[expression->callable]);
 
         if (!callable_marker.starts_with("@")) {
           // it's an lvalue from stack
@@ -556,10 +581,14 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         for (uint64_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
           std::string argument_marker;
           Type* arg_type = context.type_cache.expression_types[expression->arguments[arg_index]];
-          if (type_is_struct(context, func, arg_type)) {
+          Type* param_type = callable_type->parameters[arg_index].second;
+          if (type_is_struct(context, func, param_type) && context.size_cache.compute_size_of(context.symbol_cache, func, param_type) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
             emit_expression_as_lvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
           } else {
             emit_expression_as_rvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
+            std::string casted_marker;
+            cast_value_to_requested_type(out, context, func, markers, argument_marker, arg_type, param_type, casted_marker);
+            argument_marker = casted_marker;
           }
           argument_markers.push_back(argument_marker);
         }
@@ -578,11 +607,11 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           if (arg_index > 0) {
             out << ", ";
           }
-          Type* arg_type = context.type_cache.expression_types[expression->arguments[arg_index]];
-          if (type_is_struct(context, func, arg_type)) {
-            emit_type_specifier(out << "ptr byval(", context, func, arg_type) << ") align 8 " << argument_markers[arg_index];
+          Type* param_type = callable_type->parameters[arg_index].second;
+          if (type_is_struct(context, func, param_type) && context.size_cache.compute_size_of(context.symbol_cache, func, param_type) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
+            emit_type_specifier(out << "ptr byval(", context, func, param_type) << ") align 8 " << argument_markers[arg_index];
           } else {
-            emit_type_specifier(out, context, func, arg_type) << " " << argument_markers[arg_index];
+            emit_type_specifier(out, context, func, param_type) << " " << argument_markers[arg_index];
           }
         }
         out << ")" << std::endl;
@@ -606,12 +635,17 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           std::string right_value;
           emit_expression_as_rvalue(out, context, func, markers, expression->right, right_value);
           Type* right_type = context.type_cache.expression_types[expression->right];
+
           std::string left_value;
           emit_expression_as_lvalue(out, context, func, markers, expression->left, left_value);
           Type* left_type = context.type_cache.expression_types[expression->left];
           output_marker = markers.new_marker();
 
-          emit_type_specifier(out << "store ", context, func, right_type) << " " << right_value << ", ptr " << left_value << std::endl;
+          std::string right_marker;
+          cast_value_to_requested_type(out, context, func, markers, right_value, right_type, left_type, right_marker);
+          right_value = right_marker;
+
+          emit_type_specifier(out << "store ", context, func, left_type) << " " << right_value << ", ptr " << left_value << std::endl;
           emit_type_specifier(out << output_marker << " = load ", context, func, left_type) << ", ptr " << left_value << ", align 8" << std::endl;
         } else {
           std::string right_value;
@@ -621,12 +655,16 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           output_marker = markers.new_marker();
 
           Type* master_operand_type;
-          if (is_algebraic_operator(expression->operator_)) {
-            master_operand_type = cast_operands_to_expression_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value, context.type_cache.expression_types[expression]);
-          } else if (is_logical_operator(expression->operator_)) {
-            master_operand_type = cast_operands_to_biggest_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value);
+          if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+            master_operand_type = context.type_cache.expression_types[expression];
           } else {
-            assert(false);
+            if (is_algebraic_operator(expression->operator_)) {
+              master_operand_type = cast_operands_to_expression_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value, context.type_cache.expression_types[expression]);
+            } else if (is_logical_operator(expression->operator_)) {
+              master_operand_type = cast_operands_to_biggest_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value);
+            } else {
+              assert(false);
+            }
           }
 
           switch (expression->operator_) {
@@ -834,8 +872,9 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                 output_marker = markers.new_marker();
 
                 // TODO: STUB
-                out << output_marker << " = fneg ";
+                out << output_marker << " = sub ";
                 emit_type_specifier(out, context, func, context.type_cache.expression_types[expression]);
+                out << " 0, ";
                 out << " " << value_marker << std::endl;
               } else if (is_logical_operator(expression->operator_)) {
                 std::string value_marker;
@@ -843,8 +882,9 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                 output_marker = markers.new_marker();
 
                 // TODO: STUB
-                out << output_marker << " = fneg ";
+                out << output_marker << " = sub ";
                 emit_type_specifier(out, context, func, context.type_cache.expression_types[expression]);
+                out << " 1, ";
                 out << " " << value_marker << std::endl;
               } else {
                 assert(false);
@@ -863,42 +903,9 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       {
         std::string value_marker;
         emit_expression_as_rvalue(out, context, func, markers, expression->value, value_marker);
-
         Type* value_type = context.type_cache.expression_types[expression->value];
-        Type* type = context.type_cache.expression_types[expression];
-        uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
-        uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, type);
-
-        if (value_size < type_size) {
-          std::string first_step_marker = markers.new_marker();
-          Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
-          int_of_equal_size->size = value_size;
-          int_of_equal_size->is_signed = false;
-          emit_type_bitcast(out, context, func, value_type, value_marker, int_of_equal_size, first_step_marker);
-
-          std::string second_step_marker = markers.new_marker();
-          Type* int_of_greater_size = Type::New(type_t::INTEGER_TYPE);
-          int_of_greater_size->size = type_size;
-          int_of_greater_size->is_signed = false;
-          emit_type_extension(out, context, func, int_of_equal_size, first_step_marker, int_of_greater_size, second_step_marker);
-          value_marker = second_step_marker;
-        } else if (value_size > type_size) {
-          std::string first_step_marker = markers.new_marker();
-          Type* int_of_equal_size = Type::New(type_t::INTEGER_TYPE);
-          int_of_equal_size->size = value_size;
-          int_of_equal_size->is_signed = false;
-          emit_type_bitcast(out, context, func, value_type, value_marker, int_of_equal_size, first_step_marker);
-
-          std::string second_step_marker = markers.new_marker();
-          Type* int_of_lower_size = Type::New(type_t::INTEGER_TYPE);
-          int_of_lower_size->size = type_size;
-          int_of_lower_size->is_signed = false;
-          emit_type_truncation(out, context, func, int_of_equal_size, first_step_marker, int_of_lower_size, second_step_marker);
-          value_marker = second_step_marker;
-        }
-
-        output_marker = markers.new_marker();
-        emit_type_bitcast(out, context, func, value_type, value_marker, type, output_marker);
+        Type* requested_type = context.type_cache.expression_types[expression];
+        cast_value_to_requested_type(out, context, func, markers, value_marker, value_type, requested_type, output_marker);
         break;
       }
   }
@@ -953,7 +960,12 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
           std::string rvalue_marker;
           emit_expression_as_rvalue(out, context, func, markers, statement->expr, rvalue_marker);
           Type* rvalue_type = context.type_cache.expression_types[statement->expr];
-          emit_type_specifier(out << "store ", context, func, rvalue_type) << " " << rvalue_marker << ", ptr " << markers.get_var(statement) << std::endl;
+
+          std::string right_marker;
+          cast_value_to_requested_type(out, context, func, markers, rvalue_marker, rvalue_type, statement->type, right_marker);
+          rvalue_marker = right_marker;
+
+          emit_type_specifier(out << "store ", context, func, statement->type) << " " << rvalue_marker << ", ptr " << markers.get_var(statement) << std::endl;
         }
         break;
       }
@@ -1168,6 +1180,8 @@ void emit_literal_store(std::ostream& out, CGContext& context) {
 void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* decl, std::unordered_map<Declaration*, bool>& processed_types);
 
 void emit_dependencies_of_type_declarations(std::ostream& out, CGContext& context, Declaration* decl, std::unordered_map<Declaration*, bool>& processed_types, Type* type) {
+  assert(type != nullptr);
+  assert(decl != nullptr);
   switch (type->kind) {
     case POINTER_TYPE:
       {
@@ -1201,6 +1215,7 @@ void emit_dependencies_of_type_declarations(std::ostream& out, CGContext& contex
 }
 
 void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* decl, std::unordered_map<Declaration*, bool>& processed_types) {
+  assert(decl != nullptr);
   switch (decl->kind) {
     case MODULE_DECL:
       {
@@ -1213,6 +1228,7 @@ void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* 
       {
         if (!processed_types[decl]) {
           processed_types[decl] = true;
+          emit_dependencies_of_type_declarations(out, context, decl, processed_types, decl->type);
           emit_type_specifier(emit_decl_label(out << "%", decl) << " = type ", context, decl, decl->type) << std::endl;
         }
         break;

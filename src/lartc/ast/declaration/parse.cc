@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cassert>
-#include <iostream>
+#include <filesystem>
 #include <lartc/ast/declaration/parse.hh>
 #include <lartc/ast/declaration/merge.hh>
 #include <lartc/ast/type/parse.hh>
@@ -29,7 +29,7 @@ bool already_visited_or_in_queue(TSContext& context, const std::string& filepath
 
 void append_filepath_or_throw(TSContext& context, TSNode& include_node, std::string& filepath, std::string& filepath_raw) {
   if (filepath == "") {
-    throw_unable_to_resolve_include_filepath(FileDB::Point::From(context.file_db, include_node), filepath_raw);
+    throw_unable_to_resolve_include_filepath(*context.file_db, FileDB::Point::From(context.file_db, include_node), filepath_raw);
     context.ok = false;
   } else {
     if (!already_visited_or_in_queue(context, filepath)) {
@@ -44,7 +44,7 @@ void parse_include_directive(TSContext& context, TSNode& include_node) {
   
   if (localpath_field.id != nullptr) {
     std::string localpath_raw = ts_node_source_code(localpath_field, context.source_code);
-    std::string localpath = FileDB::resolve_local(localpath_raw, context.filepath);
+    std::string localpath = FileDB::resolve_local(localpath_raw, std::filesystem::canonical(context.filepath));
     append_filepath_or_throw(context, include_node, localpath, localpath_raw);
   } else if (globalpath_field.id != nullptr) {
     std::string globalpath_raw = ts_node_source_code(globalpath_field, context.source_code);

@@ -19,7 +19,7 @@ inline char* read_source_code(const char* filepath) {
 }
 
 FileDB::Point FileDB::Point::From(const FileDB* file_db, TSNode& ts_node) {
-  const File* file = file_db->current_file();
+  uint64_t file = file_db->current_file_index();
   TSPoint point = ts_node_start_point(ts_node);
   uint64_t byte_start = ts_node_start_byte(ts_node);
   uint64_t byte_end = ts_node_end_byte(ts_node);
@@ -34,8 +34,9 @@ FileDB::Point FileDB::Point::From(const FileDB* file_db, TSNode& ts_node) {
 
 FileDB::File* FileDB::add_file(const char* filepath) {
   files.push_back(FileDB::File {});
-  FileDB::File* file = &files.back();
-  file->filepath = filepath;
+  FileDB::File* file = current_file();
+  file->filepath = "";
+  file->filepath += filepath;
   file->source_code = read_source_code(file->filepath.c_str());
   return file;
 }
@@ -65,8 +66,8 @@ std::ostream& FileDB::File::Print(std::ostream& out, const FileDB::File& file) {
   return out;
 }
 
-std::ostream& FileDB::Point::Print(std::ostream& out, const FileDB::Point& point) {
-  out << point.file->filepath << ":" << point.row+1 << ":" << point.column+1;
+std::ostream& FileDB::Point::Print(std::ostream& out, const FileDB& file_db, const FileDB::Point& point) {
+  out << file_db.files[point.file].filepath << ":" << point.row+1 << ":" << point.column+1;
   return out;
 }
 
@@ -84,7 +85,7 @@ std::ostream& FileDB::Print(std::ostream& out, const FileDB& file_db) {
     out << " - ";
     Symbol::Print(out, *symbol_point.first);
     out << " -> ";
-    FileDB::Point::Print(out, symbol_point.second);
+    FileDB::Point::Print(out, file_db, symbol_point.second);
     out << std::endl;
   }
 
@@ -93,7 +94,7 @@ std::ostream& FileDB::Print(std::ostream& out, const FileDB& file_db) {
     out << " - ";
     Expression::Print(out, expression_point.first);
     out << " -> ";
-    FileDB::Point::Print(out, expression_point.second);
+    FileDB::Point::Print(out, file_db, expression_point.second);
     out << std::endl;
   }
 
@@ -102,7 +103,7 @@ std::ostream& FileDB::Print(std::ostream& out, const FileDB& file_db) {
     out << " - ";
     Type::Print(out, type_point.first);
     out << " -> ";
-    FileDB::Point::Print(out, type_point.second);
+    FileDB::Point::Print(out, file_db, type_point.second);
     out << std::endl;
   }
 
@@ -111,7 +112,7 @@ std::ostream& FileDB::Print(std::ostream& out, const FileDB& file_db) {
     out << " - ";
     Statement::PrintShort(out, var_decl_point.first);
     out << " -> ";
-    FileDB::Point::Print(out, var_decl_point.second);
+    FileDB::Point::Print(out, file_db, var_decl_point.second);
     out << std::endl;
   }
   return out;

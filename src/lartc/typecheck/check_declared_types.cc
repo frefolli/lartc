@@ -1,3 +1,4 @@
+#include <cassert>
 #include <lartc/typecheck/check_declared_types.hh>
 #include <lartc/external_errors.hh>
 #include <lartc/api/config.hh>
@@ -28,10 +29,10 @@ std::pair<bool, uint64_t> check_declared_types(FileDB& file_db, SymbolCache& sym
       {
         Declaration* decl = symbol_cache.get_declaration(context, type->symbol);
         if (decl->kind != declaration_t::TYPE_DECL) {
-          throw_a_type_definition_cannot_reference_a_non_type_declaration(file_db.symbol_points[&type->symbol], context, decl);
+          throw_a_type_definition_cannot_reference_a_non_type_declaration(file_db, file_db.symbol_points[&type->symbol], context, decl);
           declared_types_ok = false;
         } else if (size_cache.staging[decl]) {
-          throw_cyclic_dependency_between_types_is_not_protected_by_usage_of_pointers(file_db.symbol_points[&type->symbol], context, decl);
+          throw_cyclic_dependency_between_types_is_not_protected_by_usage_of_pointers(file_db, file_db.symbol_points[&type->symbol], context, decl);
           declared_types_ok = false;
         } else {
           if (!size_cache.sizes.contains(decl)) {
@@ -40,8 +41,9 @@ std::pair<bool, uint64_t> check_declared_types(FileDB& file_db, SymbolCache& sym
             declared_types_ok &= checked.first;
             size = checked.second;
             size_cache.staging[decl] = false;
+          } else {
+            size = size_cache.sizes[decl];
           }
-          size += size_cache.sizes[decl];
         }
       }
       break;

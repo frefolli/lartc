@@ -1,15 +1,33 @@
 #!/bin/bash
 
+#SUBJECT="../lart-examples/ts.lart -ltree-sitter -ltree-sitter-lart"
+#ARGS=../lart-examples/raylib.lart
+
+#SUBJECT="../lart-examples/raylib.lart -lraylib"
+#ARGS=
+
+#ARGS=
+#SUBJECT=../lart-examples/array_access.lart
+
+#ARGS=
+#SUBJECT=../lart-examples/hello.lart
+
+#ARGS=
+#SUBJECT=../lart-examples/function-pointer.lart
+
+#ARGS=
+#SUBJECT=types.lart
+
 function run() {
-  ./builddir/lartc ts.lart -l tree-sitter -l tree-sitter-lart -o main.exe && ./main.exe
+  ./builddir/lartc $SUBJECT -o main.exe && ./main.exe $ARGS
 }
 
 function emit() {
-  ./builddir/lartc ts.lart -E -o main.ll
+  ./builddir/lartc $SUBJECT -E -o main.ll -d
 }
 
 function restore() {
-  ./builddir/lartc main.ll -l tree-sitter -l tree-sitter-lart -o main.exe && ./main.exe
+  llc main.ll && as main.s && clang a.out -o main.exe && ./main.exe $ARGS
 }
 
 function inspect() {

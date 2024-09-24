@@ -25,166 +25,166 @@ void throw_syntax_error(const char* filepath, TSPoint& point, const char* node_s
 }
 
 // Duplicate Declaration/Definitions
-void throw_duplicate_declaration_matches_name_but_not_kind(FileDB::Point& older_point, FileDB::Point& latest_point) {
-  FileDB::Point::Print(CERR, latest_point);
+void throw_duplicate_declaration_matches_name_but_not_kind(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {
+  FileDB::Point::Print(CERR, file_db, latest_point);
   CERR << ": " << RED_TEXT << "duplicate declaration error" << NORMAL_TEXT << ": matches name but not kind" << std::endl;
-  print_line_of_source_code_point(latest_point.file->source_code, latest_point, latest_point.byte_start);
+  print_line_of_source_code_point(file_db.files[latest_point.file].source_code, latest_point, latest_point.byte_start);
 
-  FileDB::Point::Print(CERR, older_point);
+  FileDB::Point::Print(CERR, file_db, older_point);
   CERR << ": " << AZURE_TEXT << "reference" << NORMAL_TEXT << ": already declared here" << std::endl;
-  print_line_of_source_code_point(older_point.file->source_code, older_point, older_point.byte_start);
+  print_line_of_source_code_point(file_db.files[older_point.file].source_code, older_point, older_point.byte_start);
 }
 
-void throw_duplicate_type_definition_doesnt_match(FileDB::Point& older_point, FileDB::Point& latest_point) {
-  FileDB::Point::Print(CERR, latest_point);
+void throw_duplicate_type_definition_doesnt_match(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {
+  FileDB::Point::Print(CERR, file_db, latest_point);
   CERR << ": " << RED_TEXT << "duplicate definition error" << NORMAL_TEXT << ": defined type doesn't match" << std::endl;
-  print_line_of_source_code_point(latest_point.file->source_code, latest_point, latest_point.byte_start);
+  print_line_of_source_code_point(file_db.files[latest_point.file].source_code, latest_point, latest_point.byte_start);
 
-  FileDB::Point::Print(CERR, older_point);
+  FileDB::Point::Print(CERR, file_db, older_point);
   CERR << ": " << AZURE_TEXT << "reference" << NORMAL_TEXT << ": already defined here" << std::endl;
-  print_line_of_source_code_point(older_point.file->source_code, older_point, older_point.byte_start);
+  print_line_of_source_code_point(file_db.files[older_point.file].source_code, older_point, older_point.byte_start);
 }
 
-void throw_duplicate_function_definition(FileDB::Point& older_point, FileDB::Point& latest_point) {
-  FileDB::Point::Print(CERR, latest_point);
+void throw_duplicate_function_definition(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {
+  FileDB::Point::Print(CERR, file_db, latest_point);
   CERR << ": " << RED_TEXT << "duplicate definition error" << NORMAL_TEXT << ": duplicate function definition" << std::endl;
-  print_line_of_source_code_point(latest_point.file->source_code, latest_point, latest_point.byte_start);
+  print_line_of_source_code_point(file_db.files[latest_point.file].source_code, latest_point, latest_point.byte_start);
 
-  FileDB::Point::Print(CERR, older_point);
+  FileDB::Point::Print(CERR, file_db, older_point);
   CERR << ": " << AZURE_TEXT << "reference" << NORMAL_TEXT << ": already defined here" << std::endl;
-  print_line_of_source_code_point(older_point.file->source_code, older_point, older_point.byte_start);
+  print_line_of_source_code_point(file_db.files[older_point.file].source_code, older_point, older_point.byte_start);
 }
 
-void throw_duplicate_function_declaration_return_type_doesnt_match(FileDB::Point& older_point, FileDB::Point& latest_point) {
-  FileDB::Point::Print(CERR, latest_point);
+void throw_duplicate_function_declaration_return_type_doesnt_match(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {
+  FileDB::Point::Print(CERR, file_db, latest_point);
   CERR << ": " << RED_TEXT << "duplicate declaration error" << NORMAL_TEXT << ": return type doesn't match previous declaration" << std::endl;
-  print_line_of_source_code_point(latest_point.file->source_code, latest_point, latest_point.byte_start);
+  print_line_of_source_code_point(file_db.files[latest_point.file].source_code, latest_point, latest_point.byte_start);
 
-  FileDB::Point::Print(CERR, older_point);
+  FileDB::Point::Print(CERR, file_db, older_point);
   CERR << ": " << AZURE_TEXT << "reference" << NORMAL_TEXT << ": already declared here" << std::endl;
-  print_line_of_source_code_point(older_point.file->source_code, older_point, older_point.byte_start);
+  print_line_of_source_code_point(file_db.files[older_point.file].source_code, older_point, older_point.byte_start);
 }
 
-void throw_duplicate_function_declaration_parameter_types_dont_match(FileDB::Point& older_point, FileDB::Point& latest_point) {
-  FileDB::Point::Print(CERR, latest_point);
+void throw_duplicate_function_declaration_parameter_types_dont_match(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {
+  FileDB::Point::Print(CERR, file_db, latest_point);
   CERR << ": " << RED_TEXT << "duplicate declaration error" << NORMAL_TEXT << ": parameter types don't match previous declaration" << std::endl;
-  print_line_of_source_code_point(latest_point.file->source_code, latest_point, latest_point.byte_start);
+  print_line_of_source_code_point(file_db.files[latest_point.file].source_code, latest_point, latest_point.byte_start);
 
-  FileDB::Point::Print(CERR, older_point);
+  FileDB::Point::Print(CERR, file_db, older_point);
   CERR << ": " << AZURE_TEXT << "reference" << NORMAL_TEXT << ": already declared here" << std::endl;
-  print_line_of_source_code_point(older_point.file->source_code, older_point, older_point.byte_start);
+  print_line_of_source_code_point(file_db.files[older_point.file].source_code, older_point, older_point.byte_start);
 }
 
-void throw_duplicate_function_declaration_wrong_parameter_number(FileDB::Point& older_point, FileDB::Point& latest_point) {
-  FileDB::Point::Print(CERR, latest_point);
+void throw_duplicate_function_declaration_wrong_parameter_number(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {
+  FileDB::Point::Print(CERR, file_db, latest_point);
   CERR << ": " << RED_TEXT << "duplicate declaration error" << NORMAL_TEXT << ": parameter number doesn't match previous declaration" << std::endl;
-  print_line_of_source_code_point(latest_point.file->source_code, latest_point, latest_point.byte_start);
+  print_line_of_source_code_point(file_db.files[latest_point.file].source_code, latest_point, latest_point.byte_start);
 
-  FileDB::Point::Print(CERR, older_point);
+  FileDB::Point::Print(CERR, file_db, older_point);
   CERR << ": " << AZURE_TEXT << "reference" << NORMAL_TEXT << ": already declared here" << std::endl;
-  print_line_of_source_code_point(older_point.file->source_code, older_point, older_point.byte_start);
+  print_line_of_source_code_point(file_db.files[older_point.file].source_code, older_point, older_point.byte_start);
 }
 
 // Include Machanism
-void throw_unable_to_resolve_include_filepath(const FileDB::Point& point, const std::string& filepath) {
-  FileDB::Point::Print(CERR, point);
+void throw_unable_to_resolve_include_filepath(FileDB& file_db, const FileDB::Point& point, const std::string& filepath) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "include error" << NORMAL_TEXT << ": unable to find " << filepath << std::endl;
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
 // Name Resolution
-void throw_name_resolution_error(FileDB::Point& point, Declaration* context, Symbol& symbol) {
-  FileDB::Point::Print(CERR, point);
+void throw_name_resolution_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Symbol& symbol) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "syntax error" << NORMAL_TEXT << ": unable to resolve symbol '";
   Symbol::Print(CERR, symbol) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
 // Decl Type Checking
-void throw_a_type_definition_cannot_reference_a_non_type_declaration(FileDB::Point& point, Declaration* type_decl, Declaration* non_type_decl) {
-  FileDB::Point::Print(CERR, point);
+void throw_a_type_definition_cannot_reference_a_non_type_declaration(FileDB& file_db, FileDB::Point& point, Declaration* type_decl, Declaration* non_type_decl) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": cannot reference non-type declaration '";
   Declaration::PrintShort(CERR, non_type_decl) << "'" << std::endl;
   CERR << " inside type declaration '";
   Declaration::PrintShort(CERR, type_decl);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_cyclic_dependency_between_types_is_not_protected_by_usage_of_pointers(FileDB::Point& point, Declaration* type_decl, Declaration* requested_type_decl) {
-  FileDB::Point::Print(CERR, point);
+void throw_cyclic_dependency_between_types_is_not_protected_by_usage_of_pointers(FileDB& file_db, FileDB::Point& point, Declaration* type_decl, Declaration* requested_type_decl) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": cyclic dependency with type '";
   Declaration::PrintShort(CERR, requested_type_decl) << "'" << std::endl;
   CERR << " requiring '";
   Declaration::PrintShort(CERR, type_decl);
   CERR << "' is not protected by usage of pointers" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
 // Type Checking
-void throw_type_is_not_dereferenceable_error(FileDB::Point& point, Declaration* context, Type* type) {
-  FileDB::Point::Print(CERR, point);
+void throw_type_is_not_dereferenceable_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": type is not dereferenceable '";
   Type::Print(CERR, type) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_module_has_no_type_error(FileDB::Point& point, Declaration* context, Symbol& symbol) {
-  FileDB::Point::Print(CERR, point);
+void throw_module_has_no_type_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Symbol& symbol) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": a module has not type '";
   Symbol::Print(CERR, symbol) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_type_cannot_be_algebraically_manipulated_error(FileDB::Point& point, Declaration* context, Type* type) {
-  FileDB::Point::Print(CERR, point);
+void throw_type_cannot_be_algebraically_manipulated_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": type cannot be algebraically manipulated '";
   Type::Print(CERR, type) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_type_is_not_callable_error(FileDB::Point& point, Declaration* context, Type* non_callable_type) {
-  FileDB::Point::Print(CERR, point);
+void throw_type_is_not_callable_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* non_callable_type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": called type '";
   Type::Print(CERR, non_callable_type) << "' is not callable" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_wrong_parameter_number_error(FileDB::Point& point, Declaration* context, Type* fn_type) {
-  FileDB::Point::Print(CERR, point);
+void throw_wrong_parameter_number_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* fn_type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": wrong parameter number for function of type '";
   Type::Print(CERR, fn_type) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_type_is_not_implicitly_castable_to(FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type) {
-  FileDB::Point::Print(CERR, point);
+void throw_type_is_not_implicitly_castable_to(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": type '";
   Type::Print(CERR, src_type) << "'";
   CERR << " is not implicitly castable to '";
@@ -193,32 +193,32 @@ void throw_type_is_not_implicitly_castable_to(FileDB::Point& point, Declaration*
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_right_operand_of_dot_operator_should_be_a_symbol(FileDB::Point& point, Declaration* context) {
-  FileDB::Point::Print(CERR, point);
+void throw_right_operand_of_dot_operator_should_be_a_symbol(FileDB& file_db, FileDB::Point& point, Declaration* context) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": right operand of dot operator should be a symbol" << std::endl;
   CERR << "inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_left_operand_of_dot_operator_should_be_a_struct(FileDB::Point& point, Declaration* context, Type* non_struct_type) {
-  FileDB::Point::Print(CERR, point);
+void throw_left_operand_of_dot_operator_should_be_a_struct(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* non_struct_type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": left operand of dot operator should be a struct, instead is '";
   Type::Print(CERR, non_struct_type) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_struct_has_not_named_field(FileDB::Point& point, Declaration* context, Type* struct_type, Symbol& field_name) {
-  FileDB::Point::Print(CERR, point);
+void throw_struct_has_not_named_field(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* struct_type, Symbol& field_name) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": struct '";
   Type::Print(CERR, struct_type);
   Symbol::Print(CERR << "' has not named field '", field_name) << "'" << std::endl;
@@ -226,43 +226,43 @@ void throw_struct_has_not_named_field(FileDB::Point& point, Declaration* context
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_right_operand_of_arrow_operator_should_be_a_symbol(FileDB::Point& point, Declaration* context) {
-  FileDB::Point::Print(CERR, point);
+void throw_right_operand_of_arrow_operator_should_be_a_symbol(FileDB& file_db, FileDB::Point& point, Declaration* context) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": right operand of arrow operator should be a symbol" << std::endl;
   CERR << "inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_left_operand_of_arrow_operator_should_be_a_pointer(FileDB::Point& point, Declaration* context, Type* non_struct_type) {
-  FileDB::Point::Print(CERR, point);
+void throw_left_operand_of_arrow_operator_should_be_a_pointer(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* non_struct_type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": left operand of arrow operator should be a pointer, instead is '";
   Type::Print(CERR, non_struct_type) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_pointed_left_operand_of_arrow_operator_should_be_a_struct(FileDB::Point& point, Declaration* context, Type* non_struct_type) {
-  FileDB::Point::Print(CERR, point);
+void throw_pointed_left_operand_of_arrow_operator_should_be_a_struct(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* non_struct_type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": pointed left operand of arrow operator should be a struct, instead is '";
   Type::Print(CERR, non_struct_type) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_types_cannot_be_algebraically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type) {
-  FileDB::Point::Print(CERR, point);
+void throw_types_cannot_be_algebraically_manipulated_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": types  '";
   Type::Print(CERR, left_type) << "' and '";
   Type::Print(CERR, right_type) << "' cannot be algebraically manipulated together" << std::endl;
@@ -270,22 +270,22 @@ void throw_types_cannot_be_algebraically_manipulated_error(FileDB::Point& point,
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_type_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* type) {
-  FileDB::Point::Print(CERR, point);
+void throw_type_cannot_be_logically_manipulated_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": type cannot be logically manipulated '";
   Type::Print(CERR, type) << "'" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_types_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type) {
-  FileDB::Point::Print(CERR, point);
+void throw_types_cannot_be_logically_manipulated_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": types  '";
   Type::Print(CERR, left_type) << "' and '";
   Type::Print(CERR, right_type) << "' cannot be logically manipulated together" << std::endl;
@@ -293,14 +293,14 @@ void throw_types_cannot_be_logically_manipulated_error(FileDB::Point& point, Dec
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
 
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
-void throw_uncaught_type_checker_error(FileDB::Point& point, Declaration* context, Expression* expr) {
-  FileDB::Point::Print(CERR, point);
+void throw_uncaught_type_checker_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Expression* expr) {
+  FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << " with expression '";
   Expression::Print(CERR, expr) << "' inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;
-  print_line_of_source_code_point(point.file->source_code, point, point.byte_start);
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }

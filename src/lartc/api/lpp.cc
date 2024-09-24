@@ -47,12 +47,7 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
   FileDB::File* file = context.file_db->add_file(context.filepath);
   context.source_code = file->source_code;
 
-  TSTree *tree = ts_parser_parse_string(
-      parser,
-      NULL,
-      context.source_code,
-      strlen(context.source_code)
-      );
+  TSTree *tree = ts_parser_parse_string(parser, NULL, context.source_code, strlen(context.source_code));
   TSNode root_node = ts_tree_root_node(tree);
   if (API::DEBUG_SEGFAULT_IDENTIFY_PHASE) {
     printf("Checking ts_tree for errors ... \n");
@@ -162,6 +157,16 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
   no_errors_occurred &= check_types(file_db, symbol_cache, type_cache, decl_tree);
   if (API::DEBUG_SEGFAULT_IDENTIFY_PHASE) {
     printf("Checking types ... OK\n");
+  }
+
+  /* END-PHASE */
+  if (API::DUMP_DEBUG_INFO_FOR_STRUCS) {
+    std::filesystem::create_directories("tmp");
+    print_to_file(decl_tree, "tmp/decl_tree.txt");
+    print_to_file(symbol_cache, "tmp/symbol_cache.txt", file_db);
+    print_to_file(file_db, "tmp/file_db.txt");
+    print_to_file(type_cache, "tmp/type_cache.txt");
+    print_to_file(size_cache, "tmp/size_cache.txt");
   }
 
   if (!no_errors_occurred) {

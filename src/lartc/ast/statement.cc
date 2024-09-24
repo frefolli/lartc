@@ -1,4 +1,5 @@
 #include "lartc/ast/expression.hh"
+#include <cassert>
 #include <lartc/ast/statement.hh>
 #include <lartc/internal_errors.hh>
 
@@ -39,6 +40,7 @@ void Statement::Delete(Statement*& stmt) {
 }
 
 std::ostream& Statement::Print(std::ostream& out, const Statement* stmt, uint64_t tabulation) {
+  assert(stmt != nullptr);
   if (stmt->kind != statement_t::BLOCK_STMT)
     tabulate(out, tabulation);
   bool first = true;

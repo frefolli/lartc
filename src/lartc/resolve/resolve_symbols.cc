@@ -1,4 +1,3 @@
-#include <iostream>
 #include <lartc/resolve/resolve_symbols.hh>
 #include <lartc/external_errors.hh>
 #include <cassert>
@@ -6,7 +5,7 @@
 inline bool resolve_symbol_or_throw_error(FileDB& file_db, SymbolCache &symbol_cache, Declaration* context, Symbol& symbol) {
   Declaration* query = symbol_cache.get_or_find_declaration(context, symbol);
   if (query == nullptr) {
-    throw_name_resolution_error(file_db.symbol_points[&symbol], context, symbol);
+    throw_name_resolution_error(file_db, file_db.symbol_points[&symbol], context, symbol);
     return false;
   }
   return true;

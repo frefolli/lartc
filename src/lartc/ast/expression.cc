@@ -1,3 +1,4 @@
+#include <cassert>
 #include <lartc/ast/expression.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/serializations.hh>
@@ -41,6 +42,7 @@ void Expression::Delete(Expression*& expr) {
 }
 
 std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool parenthesized) {
+  assert(expr != nullptr);
   if (parenthesized && (expr->kind == expression_t::MONARY_EXPR
                         || expr->kind == expression_t::BINARY_EXPR))
     out << "(";

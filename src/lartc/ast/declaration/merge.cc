@@ -67,7 +67,7 @@ Declaration* merge_type_declarations(TSContext& context, Declaration* older, Dec
     Declaration::Delete(latest);
     result = older;
   } else {
-    throw_duplicate_type_definition_doesnt_match(context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
+    throw_duplicate_type_definition_doesnt_match(*context.file_db, context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
     context.ok = false;
     
     context.file_db->declaration_points.erase(latest);
@@ -118,7 +118,7 @@ Declaration* merge_function_declarations(TSContext& context, Declaration* older,
         if (older->body != nullptr) {
           if (latest->body != nullptr) {
             // err: redefinition
-            throw_duplicate_function_definition(context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
+            throw_duplicate_function_definition(*context.file_db, context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
             context.ok = false;
           }
         } else {
@@ -128,15 +128,15 @@ Declaration* merge_function_declarations(TSContext& context, Declaration* older,
           }
         }
       } else {
-        throw_duplicate_function_declaration_return_type_doesnt_match(context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
+        throw_duplicate_function_declaration_return_type_doesnt_match(*context.file_db, context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
         context.ok = false;
       }
     } else {
-      throw_duplicate_function_declaration_parameter_types_dont_match(context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
+      throw_duplicate_function_declaration_parameter_types_dont_match(*context.file_db, context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
       context.ok = false;
     }
   } else {
-    throw_duplicate_function_declaration_wrong_parameter_number(context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
+    throw_duplicate_function_declaration_wrong_parameter_number(*context.file_db, context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
     context.ok = false;
   }
 
@@ -151,7 +151,7 @@ Declaration* merge_function_declarations(TSContext& context, Declaration* older,
 Declaration* merge_declarations(TSContext& context, Declaration* older, Declaration* latest) {
   Declaration* result = nullptr;
   if (older->kind != latest->kind) {
-    throw_duplicate_declaration_matches_name_but_not_kind(context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
+    throw_duplicate_declaration_matches_name_but_not_kind(*context.file_db, context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
     context.ok = false;
 
     context.file_db->declaration_points.erase(latest);
