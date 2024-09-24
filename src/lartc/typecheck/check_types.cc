@@ -55,9 +55,6 @@ Type* decide_algebric_binop_type(SymbolCache& symbol_cache, Declaration* context
   } else if (left->kind == BOOLEAN_TYPE || right->kind == BOOLEAN_TYPE) {
     type = Type::New(BOOLEAN_TYPE);
   }
-  if (type == nullptr) {
-    Type::Print(Type::Print(std::cerr << RED_TEXT, left) << NORMAL_TEXT << " and " << RED_TEXT, right) << NORMAL_TEXT << std::endl;
-  }
   assert(type != nullptr);
   return type;
 }
@@ -374,7 +371,6 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       }
       break;
   }
-
   return type_check_ok;
 }
 

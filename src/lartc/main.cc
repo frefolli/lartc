@@ -27,8 +27,36 @@ void print_help() {
   std::cout << "" << std::endl;
   std::cout << "  -d                       Dumps debug information to stdout and to './tmp' directory." << std::endl;
   std::cout << "" << std::endl;
+  std::cout << "  -Wg,<options>            Pass comma-separated <options> on to the generator." << std::endl;
+  std::cout << "  -Wa,<options>            Pass comma-separated <options> on to the assembler." << std::endl;
+  std::cout << "  -Wl,<options>            Pass comma-separated <options> on to the linker." << std::endl;
+  std::cout << "  -Xgenerator <arg>        Pass <arg> on to the generator." << std::endl;
+  std::cout << "  -Xassembler <arg>        Pass <arg> on to the assembler." << std::endl;
+  std::cout << "  -Xlinker <arg>           Pass <arg> on to the linker." << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "  Passing *.lart, *.ll, *.s, *.o, *.a, *.so files will cause them to be included in the correct phase of the compilation." << std::endl;
+  std::cout << "  As an experimental feature, passing *.h files will cause the compiler to parse those C-files and try to convert them to LART code (intended for headers). The result is printed to stdout, then the execution terminates." << std::endl;
+  std::cout << "" << std::endl;
   std::cout << "For bug reporting, please see:" << std::endl;
   std::cout << "<https://github.com/frefolli/lartc/issues>." << std::endl;
+}
+
+std::string read_next_arg(char** args, uint64_t n_of_args, uint64_t& arg_index, const char* embedding_prefix = nullptr) {
+  std::string flag = args[arg_index];
+  if (embedding_prefix != nullptr) {
+    std::string prefix = embedding_prefix;
+    if (flag.starts_with(prefix) && flag.size() > prefix.size()) {
+      return flag.substr(prefix.size());
+    }
+  }
+  if (arg_index + 1 < n_of_args) {
+    arg_index  += 1;
+    return args[arg_index];
+  } else {
+    std::cerr << RED_TEXT << "error" << RED_TEXT << ": expected argument after '" << flag << "'" << NORMAL_TEXT << std::endl;
+    std::exit(1);
+  }
+  assert(false);
 }
 
 int main(int argc, char** args) {
@@ -71,14 +99,32 @@ int main(int argc, char** args) {
       workflow = Workflow::DONT_ASSEMBLE;
     } else if (arg == "-c") {
       workflow = Workflow::DONT_LINK;
+    } else if (arg.starts_with("-Wg")) {
+      std::string options = read_next_arg(args, n_of_args, i, "-Wg");
+      std::clog << "options := " << options << std::endl;
+    } else if (arg.starts_with("-Wa")) {
+      std::string options = read_next_arg(args, n_of_args, i, "-Wa");
+      std::clog << "options := " << options << std::endl;
+    } else if (arg.starts_with("-Wl")) {
+      std::string options = read_next_arg(args, n_of_args, i, "-Wl");
+      std::clog << "options := " << options << std::endl;
+    } else if (arg == "-Xgenerator") {
+      std::string options = read_next_arg(args, n_of_args, i);
+      std::clog << "options := " << options << std::endl;
+    } else if (arg == "-Wassembler") {
+      std::string options = read_next_arg(args, n_of_args, i);
+      std::clog << "options := " << options << std::endl;
+    } else if (arg == "-Xlinker") {
+      std::string options = read_next_arg(args, n_of_args, i);
+      std::clog << "options := " << options << std::endl;
     } else if (arg == "-o" || arg == "--output") {
-      if (i + 1 < n_of_args) {
-        output = args[i + 1];
-        i += 1;
-      } else {
-        std::cerr << RED_TEXT << "error" << RED_TEXT << ": expected argument after '" << arg << "'" << std::endl;
-        std::exit(1);
-      }
+      output = read_next_arg(args, n_of_args, i);
+    } else if (arg == "-l" || arg == "--link") {
+      std::string library = ("-l" + read_next_arg(args, n_of_args, i, "-l"));
+      std::clog << "options := " << library << std::endl;
+    } else if (arg == "-l" || arg == "--link") {
+      std::string library = ("-l" + read_next_arg(args, n_of_args, i, "-l"));
+      std::clog << "options := " << library << std::endl;
     } else {
       std::string ext = std::filesystem::path(arg).extension();
       if (ext == ".lart") {
@@ -91,8 +137,12 @@ int main(int argc, char** args) {
         c_files.push_back(arg);
       } else if (ext == ".o") {
         object_files.push_back(arg);
+      } else if (ext == ".a") {
+        object_files.push_back(arg);
+      } else if (ext == ".so") {
+        object_files.push_back(arg);
       } else {
-        std::cerr << RED_TEXT << "error" << RED_TEXT << ": file '" << arg << "' has unknown extension" << std::endl;
+        std::cerr << RED_TEXT << "error" << RED_TEXT << ": file '" << arg << "' has unknown extension" << NORMAL_TEXT << std::endl;
         std::exit(1);
       }
     }
@@ -100,6 +150,7 @@ int main(int argc, char** args) {
 
   if (c_files.size() > 0) {
     API::cpp(c_files);
+    std::exit(0);
   }
 
   if (lart_files.size() > 0) {
@@ -126,28 +177,28 @@ int main(int argc, char** args) {
       API::llc(llvm_ir_files, asm_file);
       asm_files.push_back(asm_file);
     }
-  }
 
-  if (workflow != Workflow::DONT_ASSEMBLE) {
-    if (asm_files.size() > 0) {
-      if (workflow == Workflow::DONT_LINK) {
-        if (output.empty()) {
-          output = "a.o";
+    if (workflow != Workflow::DONT_ASSEMBLE) {
+      if (asm_files.size() > 0) {
+        if (workflow == Workflow::DONT_LINK) {
+          if (output.empty()) {
+            output = "a.o";
+          }
+          object_file = output;
         }
-        object_file = output;
+        API::as(asm_files, object_file);
+        object_files.push_back(object_file);
       }
-      API::as(asm_files, object_file);
-      object_files.push_back(object_file);
-    }
-  }
 
-  if (workflow != Workflow::DONT_LINK) {
-    if (output.empty()) {
-      output = "a.exe";
-    }
-    linked_file = output;
-    if (object_files.size() > 0) {
-      API::ld(object_files, linked_file);
+      if (workflow != Workflow::DONT_LINK) {
+        if (output.empty()) {
+          output = "a.exe";
+        }
+        linked_file = output;
+        if (object_files.size() > 0) {
+          API::ld(object_files, linked_file);
+        }
+      }
     }
   }
   return 0;

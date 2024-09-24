@@ -11,9 +11,6 @@ FILE=../lart-examples/hello.lart
 clean:
 	rm -rf builddir
 
-depclean: clean
-	rm -rf subprojects/tree-sitter-lart.git
-
 test: ./builddir/lartc
 	./test.sh
 

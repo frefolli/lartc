@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <lartc/ast/declaration/parse.hh>
 #include <lartc/ast/declaration/merge.hh>
 #include <lartc/ast/type/parse.hh>

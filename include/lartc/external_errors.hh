@@ -51,4 +51,6 @@ void throw_pointed_left_operand_of_arrow_operator_should_be_a_struct(FileDB::Poi
 void throw_types_cannot_be_algebraically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type);
 void throw_types_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type);
 void throw_type_cannot_be_logically_manipulated_error(FileDB::Point& point, Declaration* context, Type* type);
+
+void throw_uncaught_type_checker_error(FileDB::Point& point, Declaration* context, Expression* expr);
 #endif//LARTC_EXTERNAL_ERROR

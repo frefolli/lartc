@@ -103,18 +103,23 @@ std::pair<Declaration*, Type*> resolve_type_if_symbol(CGContext& context, Declar
 }
 
 bool type_is_pointer(CGContext& context, Declaration* decl, Type* type) {
-  std::pair<Declaration*, Type*> {decl, type} = resolve_type_if_symbol(context, decl, type);
-  return type->kind == POINTER_TYPE;
+  std::pair<Declaration*, Type*> solved = resolve_type_if_symbol(context, decl, type);
+  return solved.second->kind == POINTER_TYPE;
 }
 
 bool type_is_integer(CGContext& context, Declaration* decl, Type* type) {
-  std::pair<Declaration*, Type*> {decl, type} = resolve_type_if_symbol(context, decl, type);
-  return type->kind == INTEGER_TYPE || type->kind == BOOLEAN_TYPE;
+  std::pair<Declaration*, Type*> solved = resolve_type_if_symbol(context, decl, type);
+  return solved.second->kind == INTEGER_TYPE || solved.second->kind == BOOLEAN_TYPE;
+}
+
+bool type_is_struct(CGContext& context, Declaration* decl, Type* type) {
+  std::pair<Declaration*, Type*> solved = resolve_type_if_symbol(context, decl, type);
+  return solved.second->kind == STRUCT_TYPE;
 }
 
 bool type_is_double(CGContext& context, Declaration* decl, Type* type) {
-  std::pair<Declaration*, Type*> {decl, type} = resolve_type_if_symbol(context, decl, type);
-  return type->kind == DOUBLE_TYPE;
+  std::pair<Declaration*, Type*> solved = resolve_type_if_symbol(context, decl, type);
+  return solved.second->kind == DOUBLE_TYPE;
 }
 
 std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declaration* decl, Type* type, bool first_level = true) {
@@ -541,7 +546,12 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         std::vector<std::string> argument_markers = {};
         for (uint64_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
           std::string argument_marker;
-          emit_expression_as_rvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
+          Type* arg_type = context.type_cache.expression_types[expression->arguments[arg_index]];
+          if (type_is_struct(context, func, arg_type)) {
+            emit_expression_as_lvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
+          } else {
+            emit_expression_as_rvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
+          }
           argument_markers.push_back(argument_marker);
         }
 
@@ -560,7 +570,11 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
             out << ", ";
           }
           Type* arg_type = context.type_cache.expression_types[expression->arguments[arg_index]];
-          emit_type_specifier(out, context, func, arg_type) << " " << argument_markers[arg_index];
+          if (type_is_struct(context, func, arg_type)) {
+            emit_type_specifier(out << "ptr byval(", context, func, arg_type) << ") align 8 " << argument_markers[arg_index];
+          } else {
+            emit_type_specifier(out, context, func, arg_type) << " " << argument_markers[arg_index];
+          }
         }
         out << ")" << std::endl;
         break;
