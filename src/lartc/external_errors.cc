@@ -163,8 +163,8 @@ void throw_type_cannot_be_algebraically_manipulated_error(FileDB::Point& point, 
 
 void throw_type_is_not_callable_error(FileDB::Point& point, Declaration* context, Type* non_callable_type) {
   FileDB::Point::Print(CERR, point);
-  CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": called type is not callable '";
-  Type::Print(CERR, non_callable_type) << "'" << std::endl;
+  CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": called type '";
+  Type::Print(CERR, non_callable_type) << "' is not callable" << std::endl;
   CERR << " inside of declaration '";
   Declaration::PrintShort(CERR, context);
   CERR << "'" << std::endl;

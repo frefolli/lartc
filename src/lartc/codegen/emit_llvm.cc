@@ -195,7 +195,7 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
           }
           emit_type_specifier(out, context, decl, field.second, false);
         }
-        out << ")";
+        out << ")*";
         break;
       }
   }
@@ -487,17 +487,18 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
   switch (expression->kind) {
     case SYMBOL_EXPR:
       {
-        output_marker = markers.new_marker();
-        out << output_marker << " = load ";
         if (Declaration* decl = context.symbol_cache.get_declaration(func, expression->symbol)) {
-          emit_type_specifier(out, context, decl, decl->type);
-          emit_decl_label(out << ", ptr ", decl) << ", align 8" << std::endl;
+          output_marker = "@" + craft_decl_label(decl);
         } else if (Statement* var = context.symbol_cache.get_statement(expression)) {
+          output_marker = markers.new_marker();
+          out << output_marker << " = load ";
           emit_type_specifier(out, context, func, var->type);
           std::string marker = markers.get_var(var);
           assert(!marker.empty());
           out << ", ptr " << marker << ", align 8" << std::endl;
         } else if (std::pair<std::string, Type*>* param = context.symbol_cache.get_parameter(expression)) {
+          output_marker = markers.new_marker();
+          out << output_marker << " = load ";
           emit_type_specifier(out, context, func, param->second);
           std::string marker = markers.get_param(param);
           assert(!marker.empty());
@@ -542,6 +543,14 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         std::string callable_marker;
         emit_expression_as_lvalue(out, context, func, markers, expression->callable, callable_marker);
         Type* callable_type = context.type_cache.expression_types[expression->callable];
+
+        if (!callable_marker.starts_with("@")) {
+          // it's an lvalue from stack
+          // I need to dereference it
+          std::string new_callable_marker = markers.new_marker();
+          emit_type_specifier(out << new_callable_marker << " = load ", context, func, callable_type) << ", ptr " << callable_marker << std::endl;
+          callable_marker = new_callable_marker;
+        }
 
         std::vector<std::string> argument_markers = {};
         for (uint64_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {

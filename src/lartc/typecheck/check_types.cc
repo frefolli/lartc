@@ -151,6 +151,11 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       {
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->callable);
         Type* callable_type = type_cache.expression_types[expr->callable];
+        Declaration* callable_decl = context;
+        while (callable_type->kind == SYMBOL_TYPE) {
+          callable_decl = symbol_cache.get_declaration(callable_decl, callable_type->symbol);
+          callable_type = callable_decl->type;
+        }
         if (callable_type->kind == type_t::FUNCTION_TYPE) {
           if (callable_type->parameters.size() == expr->arguments.size()) {
             for (uint64_t argument_index = 0; argument_index < callable_type->parameters.size(); ++argument_index) {
