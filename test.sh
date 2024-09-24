@@ -9,7 +9,7 @@ NORMAL_TEXT="\x1b[0;39m"
 function exec_on() {
   FILE="../lart-examples/$1.lart"
   echo "./builddir/lartc -c $FILE"
-  ./builddir/lartc -c $FILE
+  ./builddir/lartc -c $FILE -o /tmp/test.lart.$1.o
 }
 
 function esit_ok() {
@@ -58,3 +58,4 @@ should_succ_on_file array_access
 should_succ_on_file strucs-as-rvalue
 should_succ_on_file strucs
 should_succ_on_file ts
+should_succ_on_file function-pointer
