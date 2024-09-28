@@ -33,7 +33,7 @@ API::Result API::ld(const std::vector<std::string>& object_files, const std::vec
     cmd << " " << object_file;
   }
   for (const std::string& argument : arguments) {
-    cmd << " " << argument;
+    cmd << " -Xlinker " << argument;
   }
   // i threw away -Wl but i feel safer to pass it to clang
   for (const std::string& option : options) {
