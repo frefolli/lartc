@@ -28,7 +28,7 @@ API::Result API::llc(const std::vector<std::string>& llvm_ir_files, const std::v
   }
 
   std::ostringstream cmd ("");
-  cmd << "llc";
+  cmd << "llc --relocation-model=pic ";
   for (const std::string& llvm_ir_file : llvm_ir_files) {
     cmd << " " << llvm_ir_file;
   }
