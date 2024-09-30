@@ -12,7 +12,8 @@ Type* Type::New(type_t kind) {
     .subtype = nullptr,
     .symbol = {},
     .fields = {},
-    .parameters = {}
+    .parameters = {},
+    .is_variadic = false
   };
 }
 
@@ -32,6 +33,7 @@ void Type::Delete(Type*& type) {
       Type::Delete(item.second);
     }
     type->parameters = {};
+    type->is_variadic = false;
 
     delete type;
     type = nullptr;
@@ -97,6 +99,12 @@ std::ostream& Type::Print(std::ostream& out, const Type* type, uint64_t tabulati
           out << ", ";
         }
         Type::Print(out << item.first << ": ", item.second);
+      }
+      if (type->is_variadic) {
+        if (type->parameters.size() > 0) {
+          out << ", ";
+        }
+        out << "...";
       }
       return Type::Print(out << ") -> ", type->subtype, 0);
     default:

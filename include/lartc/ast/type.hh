@@ -14,6 +14,7 @@ struct Type {
   Symbol symbol;
   std::vector<std::pair<std::string, Type*>> fields;
   std::vector<std::pair<std::string, Type*>> parameters;
+  bool is_variadic;
 
   static Type* New(type_t kind);
   static Type* Clone(const Type* other);

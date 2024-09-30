@@ -92,6 +92,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 for (auto param : query_decl->parameters) {
                   type->parameters.push_back({param.first, Type::Clone(param.second)});
                 }
+                type->is_variadic = query_decl->is_variadic;
                 type_cache.expression_types[expr] = type;
               } else {// = declaration_t::MODULE_DECL
                 throw_module_has_no_type_error(file_db, file_db.expression_points[expr], context, expr->symbol);
@@ -162,15 +163,18 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
           callable_type = callable_decl->type;
         }
         if (callable_type->kind == type_t::FUNCTION_TYPE) {
-          if (callable_type->parameters.size() == expr->arguments.size()) {
-            for (uint64_t argument_index = 0; argument_index < callable_type->parameters.size(); ++argument_index) {
+          if ((callable_type->parameters.size() == expr->arguments.size())
+           || (callable_type->parameters.size() <= expr->arguments.size() && callable_type->is_variadic)) {
+            for (uint64_t argument_index = 0; argument_index < expr->arguments.size(); ++argument_index) {
               Expression* argument = expr->arguments.at(argument_index);
               type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, argument);
-              Type* argument_type = type_cache.expression_types[argument];
-              Type* parameter_type = callable_type->parameters.at(argument_index).second;
-              if (!type_can_be_implicitly_casted_to(symbol_cache, context, argument_type, parameter_type)) {
-                throw_type_is_not_implicitly_castable_to(file_db, file_db.expression_points[argument], context, argument_type, parameter_type);
-                type_check_ok = false;
+              if (argument_index < callable_type->parameters.size()) {
+                Type* argument_type = type_cache.expression_types[argument];
+                Type* parameter_type = callable_type->parameters.at(argument_index).second;
+                if (!type_can_be_implicitly_casted_to(symbol_cache, context, argument_type, parameter_type)) {
+                  throw_type_is_not_implicitly_castable_to(file_db, file_db.expression_points[argument], context, argument_type, parameter_type);
+                  type_check_ok = false;
+                }
               }
             }
           } else {

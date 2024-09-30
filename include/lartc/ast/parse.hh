@@ -6,5 +6,5 @@
 #include <lartc/tree_sitter.hh>
 #include <tree_sitter/api.h>
 
-std::vector<std::pair<std::string, Type*>> parse_field_parameter_list(TSContext& context, TSNode& node);
+std::pair<std::vector<std::pair<std::string, Type*>>, bool> parse_field_parameter_list(TSContext& context, TSNode& node);
 #endif//LARTC_AST_PARSE

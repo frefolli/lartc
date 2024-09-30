@@ -214,6 +214,11 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
           }
           emit_type_specifier(out, context, decl, field.second, false);
         }
+        if (type->is_variadic) {
+          if (type->parameters.size() > 0)
+            out << ", ";
+          out << "...";
+        }
         out << ")*";
         break;
       }
@@ -581,14 +586,16 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         for (uint64_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
           std::string argument_marker;
           Type* arg_type = context.type_cache.expression_types[expression->arguments[arg_index]];
-          Type* param_type = callable_type->parameters[arg_index].second;
-          if (type_is_struct(context, func, param_type) && context.size_cache.compute_size_of(context.symbol_cache, func, param_type) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
+          if (type_is_struct(context, func, arg_type) && context.size_cache.compute_size_of(context.symbol_cache, func, arg_type) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
             emit_expression_as_lvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
           } else {
             emit_expression_as_rvalue(out, context, func, markers, expression->arguments[arg_index], argument_marker);
-            std::string casted_marker;
-            cast_value_to_requested_type(out, context, func, markers, argument_marker, arg_type, param_type, casted_marker);
-            argument_marker = casted_marker;
+            if (arg_index < callable_type->parameters.size()) {
+              Type* param_type = callable_type->parameters[arg_index].second;
+              std::string casted_marker;
+              cast_value_to_requested_type(out, context, func, markers, argument_marker, arg_type, param_type, casted_marker);
+              argument_marker = casted_marker;
+            }
           }
           argument_markers.push_back(argument_marker);
         }
@@ -607,11 +614,16 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           if (arg_index > 0) {
             out << ", ";
           }
-          Type* param_type = callable_type->parameters[arg_index].second;
-          if (type_is_struct(context, func, param_type) && context.size_cache.compute_size_of(context.symbol_cache, func, param_type) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
-            emit_type_specifier(out << "ptr byval(", context, func, param_type) << ") align 8 " << argument_markers[arg_index];
+          Type* arg_type = context.type_cache.expression_types[expression->arguments[arg_index]];
+          if (type_is_struct(context, func, arg_type) && context.size_cache.compute_size_of(context.symbol_cache, func, arg_type) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
+            emit_type_specifier(out << "ptr byval(", context, func, arg_type) << ") align 8 " << argument_markers[arg_index];
           } else {
-            emit_type_specifier(out, context, func, param_type) << " " << argument_markers[arg_index];
+            if (arg_index < callable_type->parameters.size()) {
+              Type* param_type = callable_type->parameters[arg_index].second;
+              emit_type_specifier(out, context, func, param_type) << " " << argument_markers[arg_index];
+            } else {
+              emit_type_specifier(out, context, func, arg_type) << " " << argument_markers[arg_index];
+            }
           }
         }
         out << ")" << std::endl;
@@ -1093,6 +1105,11 @@ std::ostream& emit_function_declaration(std::ostream& out, CGContext& context, D
     }
     emit_type_specifier(out, context, decl, field.second);
   }
+  if (decl->is_variadic) {
+    if (decl->parameters.size() > 0)
+      out << ", ";
+    out << "...";
+  }
   out << ")" << std::endl;
   return out;
 }
@@ -1114,6 +1131,17 @@ std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& ma
   return out;
 }
 
+std::ostream& emit_variadic_start(std::ostream& out) {
+  out << "%valist = alloca %llvm.va_list" << std::endl;
+  out << "call void @llvm.va_start.p0(ptr %valist)" << std::endl;
+  return out;
+}
+
+std::ostream& emit_variadic_end(std::ostream& out) {
+  out << "call void @llvm.va_end.p0(ptr %valist)" << std::endl;
+  return out;
+}
+
 std::ostream& emit_function_definition(std::ostream& out, CGContext& context, Declaration* decl) {
   out << "define ";
   emit_type_specifier(out, context, decl, decl->type);
@@ -1130,10 +1158,19 @@ std::ostream& emit_function_definition(std::ostream& out, CGContext& context, De
     emit_type_specifier(out, context, decl, param.second);
     out << " %" << param.first;
   }
+  if (decl->is_variadic) {
+    if (decl->parameters.size() > 0)
+      out << ", ";
+    out << "...";
+  }
   out << ") {" << std::endl;
   Markers markers;
   emit_parameters(out, context, markers, decl);
+  if (decl->is_variadic)
+    emit_variadic_start(out);
   emit_statement(out, context, decl, markers, decl->body);
+  if (decl->is_variadic)
+    emit_variadic_end(out);
   emit_automatic_return_statement(out, context, decl, markers);
   out << "}" << std::endl;
   return out;
@@ -1240,8 +1277,17 @@ void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* 
   }
 }
 
+std::ostream& emit_variadic_utils(std::ostream& out) {
+  out << "%llvm.va_list = type { ptr }" << std::endl;
+  out << "declare void @llvm.va_start.p0(ptr)" << std::endl;
+  out << "declare void @llvm.va_copy.p0(ptr, ptr)" << std::endl;
+  out << "declare void @llvm.va_end.p0(ptr)" << std::endl;
+  return out << std::endl;
+}
+
 void emit_llvm(std::ostream& out, CGContext& context, Declaration* decl_tree) {
   std::unordered_map<Declaration*, bool> processed_types;
+  emit_variadic_utils(out);
   emit_type_declarations(out, context, decl_tree, processed_types);
   emit_declaration(out, context, decl_tree);
   emit_literal_store(out, context);

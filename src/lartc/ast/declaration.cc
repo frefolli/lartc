@@ -11,7 +11,8 @@ Declaration* Declaration::New(declaration_t kind) {
     .parent = nullptr,
     .type = nullptr,
     .parameters = {},
-    .body = nullptr
+    .body = nullptr,
+    .is_variadic = false
   };
 }
 
@@ -26,6 +27,7 @@ void Declaration::Delete(Declaration*& decl) {
       Type::Delete(item.second);
     }
     decl->parameters.clear();
+    decl->is_variadic = false;
     Statement::Delete(decl->body);
     delete decl;
     decl = nullptr;
@@ -63,6 +65,12 @@ std::ostream& Declaration::Print(std::ostream& out, const Declaration* decl, uin
           out << ", ";
         }
         Type::Print(out << item.first << ": ", item.second);
+      }
+      if (decl->is_variadic) {
+        if (decl->parameters.size() > 0) {
+          out << ", ";
+        }
+        out << "...";
       }
       Type::Print(out << ") -> ", decl->type, 0);
       if (decl->body != nullptr) {

@@ -56,6 +56,7 @@ bool types_are_namely_equal(SymbolCache& symbol_cache, Declaration* contextA, Ty
     case type_t::FUNCTION_TYPE:
       equals &= types_are_namely_equal(symbol_cache, contextA, A->subtype, contextB, B->subtype);
       equals &= A->parameters.size() == B->parameters.size();
+      equals &= A->is_variadic == B->is_variadic;
       if (equals) {
         for (uint64_t i = 0; i < A->parameters.size(); ++i) {
           equals &= types_are_namely_equal(symbol_cache, contextA, A->parameters.at(i).second, contextB, B->parameters.at(i).second);
@@ -116,6 +117,7 @@ bool types_are_structurally_equal(SymbolCache& symbol_cache, Declaration* contex
     case type_t::FUNCTION_TYPE:
       equals &= types_are_structurally_equal(symbol_cache, contextA, A->subtype, contextB, B->subtype);
       equals &= A->parameters.size() == B->parameters.size();
+      equals &= A->is_variadic == B->is_variadic;
       if (equals) {
         for (uint64_t i = 0; i < A->parameters.size(); ++i) {
           equals &= types_are_structurally_equal(symbol_cache, contextA, A->parameters.at(i).second, contextB, B->parameters.at(i).second);
@@ -180,6 +182,7 @@ bool types_are_structurally_compatible(SymbolCache& symbol_cache, Declaration* c
     case type_t::FUNCTION_TYPE:
       compatibles &= types_are_structurally_compatible(symbol_cache, contextSrc, Src->subtype, contextDst, Dst->subtype);
       compatibles &= Src->parameters.size() == Dst->parameters.size();
+      compatibles &= Src->is_variadic == Dst->is_variadic;
       if (compatibles) {
         for (uint64_t i = 0; i < Src->parameters.size(); ++i) {
           compatibles &= types_are_structurally_compatible(symbol_cache, contextSrc, Src->parameters.at(i).second, contextDst, Dst->parameters.at(i).second);

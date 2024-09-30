@@ -65,7 +65,8 @@ Type* parse_type_struct(TSContext& context, TSNode& node) {
   Type* type = Type::New(type_t::STRUCT_TYPE);
   
   TSNode fields = ts_node_child_by_field_name(node, "fields");
-  type->fields = parse_field_parameter_list(context, fields);
+  auto parsed = parse_field_parameter_list(context, fields);
+  type->fields = parsed.first;
 
   return type;
 }
@@ -75,7 +76,9 @@ Type* parse_type_function(TSContext& context, TSNode& node) {
   Type* type = Type::New(type_t::FUNCTION_TYPE);
   
   TSNode parameters = ts_node_child_by_field_name(node, "parameters");
-  type->parameters = parse_field_parameter_list(context, parameters);
+  auto parsed = parse_field_parameter_list(context, parameters);
+  type->parameters = parsed.first;
+  type->is_variadic = parsed.second;
 
   TSNode subtype = ts_node_child_by_field_name(node, "type");
   if (subtype.id) {

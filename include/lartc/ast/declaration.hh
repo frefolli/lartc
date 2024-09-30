@@ -14,6 +14,7 @@ struct Declaration {
   Type* type;
   std::vector<std::pair<std::string, Type*>> parameters;
   Statement* body;
+  bool is_variadic;
 
   static Declaration* New(declaration_t kind);
   static std::ostream& Print(std::ostream& out, const Declaration* decl, uint64_t tabulation = 0);

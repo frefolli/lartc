@@ -109,7 +109,9 @@ inline Declaration* parse_declaration_function(TSContext& context, TSNode& node)
   decl->name = ts_node_source_code(name, context.source_code);
   
   TSNode parameters = ts_node_child_by_field_name(node, "parameters");
-  decl->parameters = parse_field_parameter_list(context, parameters);
+  auto parsed = parse_field_parameter_list(context, parameters);
+  decl->parameters = parsed.first;
+  decl->is_variadic = parsed.second;
 
   TSNode type = ts_node_child_by_field_name(node, "type");
   if (type.id) {
