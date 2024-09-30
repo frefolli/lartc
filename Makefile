@@ -22,3 +22,7 @@ run: ./builddir/lartc
 
 inspect:
 	nvim tmp/bucket.ll
+
+install: ./builddir/lartc
+	install -d $(DESTDIR)/usr/bin
+	install ./builddir/lartc $(DESTDIR)/usr/bin/lartc
