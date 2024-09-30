@@ -126,6 +126,21 @@ void ensure_success(API::Result result) {
   }
 }
 
+std::vector<std::string> lart_file_extensions = {".lart"};
+std::vector<std::string> llvm_ir_file_extensions = {".ll", ".bc"};
+std::vector<std::string> object_file_extensions = {".o", ".a", ".so"};
+std::vector<std::string> asm_file_extensions = {".s"};
+std::vector<std::string> c_file_extensions = {".c", ".h"};
+
+bool match_extension(std::string ext, std::vector<std::string>& extensions) {
+  for (const std::string& comparable : extensions) {
+    if (comparable == ext) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int main(int argc, char** args) {
   std::vector<std::string> lart_files = {};
   std::vector<std::string> llvm_ir_files = {};
@@ -198,19 +213,15 @@ int main(int argc, char** args) {
       linker_args.push_back(library);
     } else {
       std::string ext = std::filesystem::path(arg).extension();
-      if (ext == ".lart") {
+      if (match_extension(ext, lart_file_extensions)) {
         lart_files.push_back(arg);
-      } else if (ext == ".ll") {
+      } else if (match_extension(ext, llvm_ir_file_extensions)) {
         llvm_ir_files.push_back(arg);
-      } else if (ext == ".s") {
+      } else if (match_extension(ext, asm_file_extensions)) {
         asm_files.push_back(arg);
-      } else if (ext == ".h") {
+      } else if (match_extension(ext, c_file_extensions)) {
         c_files.push_back(arg);
-      } else if (ext == ".o") {
-        object_files.push_back(arg);
-      } else if (ext == ".a") {
-        object_files.push_back(arg);
-      } else if (ext == ".so") {
+      } else if (match_extension(ext, object_file_extensions)) {
         object_files.push_back(arg);
       } else {
         std::cerr << RED_TEXT << "error" << RED_TEXT << ": file '" << arg << "' has unknown extension" << NORMAL_TEXT << std::endl;

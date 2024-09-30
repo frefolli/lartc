@@ -74,8 +74,14 @@ bool parse_filepath(Declaration* decl_tree, TSParser* parser, TSContext& context
 }
 
 API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& output_file) {
-  if (output_file.empty()) {
-    output_file = generate_temp_file(".ll");
+  std::string ll_file;
+  if (output_file.ends_with(".bc")) {
+    ll_file = generate_temp_file(".ll");
+  } else {
+    if (output_file.empty()) {
+      output_file = generate_temp_file(".ll");
+    }
+    ll_file = output_file;
   }
 
   TSParser* parser = ts_parser_new();
@@ -182,7 +188,7 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
     .size_cache = size_cache,
     .literal_store = literal_store
   };
-  std::ofstream bucket (output_file);
+  std::ofstream bucket (ll_file);
   if (API::DEBUG_SEGFAULT_IDENTIFY_PHASE) {
     printf("Emitting LLVM to %s ... \n", output_file.c_str());
   }
@@ -194,6 +200,14 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
 
   if (!no_errors_occurred) {
     return Result::LLVM_IR_GENERATION_ERROR;
+  }
+
+  if (output_file.ends_with(".bc")) {
+    std::ostringstream cmd ("");
+    cmd << "llvm-as " << ll_file << " -o " << output_file;
+    if (execute_command_line(cmd.str()) == Result::OK) {
+      return Result::OK;
+    }
   }
 
   /* END-PHASE */
