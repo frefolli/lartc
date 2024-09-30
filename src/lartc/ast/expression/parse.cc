@@ -131,6 +131,14 @@ Expression* parse_expression_bitcast(TSContext& context, TSNode& node) {
   return bitcast;
 }
 
+Expression* parse_expression_vanext(TSContext& context, TSNode& node) {
+  Expression* vanext = Expression::New(VANEXT_EXPR);
+  TSNode type = ts_node_child_by_field_name(node, "type");
+  vanext->type = parse_type(context, type);
+  ts_validate_parsing(context.language, type, "vanext_expr:type", vanext->type);
+  return vanext;
+}
+
 inline Expression* parse_expression_parenthesized(TSContext& context, TSNode& node) {
   TSNode inner_expr = ts_node_named_child(node, 0);
   return parse_expression(context, inner_expr);
@@ -177,6 +185,7 @@ std::unordered_map<std::string, expression_parser> expression_parsers = {
   {"sizeof_expression", parse_expression_sizeof},
   {"cast_expression", parse_expression_cast},
   {"bitcast_expression", parse_expression_bitcast},
+  {"vanext_expression", parse_expression_vanext},
   {"parenthesized_expression", parse_expression_parenthesized},
   {"array_access_expression", parse_array_access_expression}
 };

@@ -15,7 +15,8 @@
   X(MONARY_EXPR), \
   X(SIZEOF_EXPR), \
   X(CAST_EXPR), \
-  X(BITCAST_EXPR)
+  X(BITCAST_EXPR), \
+  X(VANEXT_EXPR)
   
 enum expression_t {
 #define X(_) _

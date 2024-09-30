@@ -86,6 +86,9 @@ bool resolve_symbols(FileDB& file_db, SymbolCache &symbol_cache, SymbolStack& sy
       resolution_ok &= resolve_symbols(file_db, symbol_cache, context, expr->type);
       resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->value);
       break;
+    case expression_t::VANEXT_EXPR:
+      resolution_ok &= resolve_symbols(file_db, symbol_cache, context, expr->type);
+      break;
     case expression_t::SIZEOF_EXPR:
       resolution_ok &= resolve_symbols(file_db, symbol_cache, context, expr->type);
       break;

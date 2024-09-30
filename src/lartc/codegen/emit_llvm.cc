@@ -494,6 +494,11 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
         cast_value_to_requested_type(out, context, func, markers, value_marker, value_type, requested_type, output_marker);
         break;
       }
+    case VANEXT_EXPR:
+      {
+        emit_expression_as_rvalue(out, context, func, markers, expression, output_marker);
+        break;
+      }
     case INTEGER_EXPR:
     case DOUBLE_EXPR:
     case BOOLEAN_EXPR:
@@ -920,6 +925,14 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         cast_value_to_requested_type(out, context, func, markers, value_marker, value_type, requested_type, output_marker);
         break;
       }
+    case VANEXT_EXPR:
+      {
+        output_marker = markers.new_marker();
+        out << output_marker << " = va_arg ptr %valist, ";
+        emit_type_specifier(out, context, func, expression->type);
+        out << std::endl;
+        break;
+      }
   }
   if (output_marker.empty()) {
     std::cerr << RED_TEXT << expression->kind << std::endl;
@@ -1133,12 +1146,12 @@ std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& ma
 
 std::ostream& emit_variadic_start(std::ostream& out) {
   out << "%valist = alloca %llvm.va_list" << std::endl;
-  out << "call void @llvm.va_start.p0(ptr %valist)" << std::endl;
+  out << "call void @llvm.va_start(ptr %valist)" << std::endl;
   return out;
 }
 
 std::ostream& emit_variadic_end(std::ostream& out) {
-  out << "call void @llvm.va_end.p0(ptr %valist)" << std::endl;
+  out << "call void @llvm.va_end(ptr %valist)" << std::endl;
   return out;
 }
 
@@ -1279,9 +1292,9 @@ void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* 
 
 std::ostream& emit_variadic_utils(std::ostream& out) {
   out << "%llvm.va_list = type { ptr }" << std::endl;
-  out << "declare void @llvm.va_start.p0(ptr)" << std::endl;
-  out << "declare void @llvm.va_copy.p0(ptr, ptr)" << std::endl;
-  out << "declare void @llvm.va_end.p0(ptr)" << std::endl;
+  out << "declare void @llvm.va_start(ptr)" << std::endl;
+  out << "declare void @llvm.va_copy(ptr, ptr)" << std::endl;
+  out << "declare void @llvm.va_end(ptr)" << std::endl;
   return out << std::endl;
 }
 

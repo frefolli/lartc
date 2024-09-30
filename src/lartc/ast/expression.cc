@@ -115,6 +115,11 @@ std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool 
       Expression::Print(out, expr->value);
       out << ")"; 
       break;
+    case expression_t::VANEXT_EXPR:
+      out << "bitcast<";
+      Type::Print(out, expr->type);
+      out << ">";
+      break;
    }
   if (parenthesized && (expr->kind == expression_t::MONARY_EXPR
                         || expr->kind == expression_t::BINARY_EXPR))

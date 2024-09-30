@@ -384,6 +384,11 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
         type_cache.expression_types[expr] = Type::Clone(expr->type);
       }
       break;
+    case expression_t::VANEXT_EXPR:
+      {
+        type_cache.expression_types[expr] = Type::Clone(expr->type);
+      }
+      break;
   }
   return type_check_ok;
 }
