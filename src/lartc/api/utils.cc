@@ -13,7 +13,7 @@ char* API::strclone(const char* string) {
 
 std::string API::generate_temp_file(std::string ext) {
   char buffer[L_tmpnam];
-  std::tmpnam(buffer);
+  (void)std::tmpnam(buffer);
   std::string output_file = buffer;
   assert(!output_file.empty());
   output_file += ext;
