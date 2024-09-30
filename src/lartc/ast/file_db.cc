@@ -13,7 +13,7 @@ inline char* read_source_code(const char* filepath) {
     long fsize = ftell(file);
     fseek(file, 0, SEEK_SET);
     text = (char*) malloc(fsize + 1);
-    (void)fread(text, fsize, 1, file);
+    fsize = fread(text, fsize, 1, file);
     fclose(file);
     return text;
 }
