@@ -226,26 +226,86 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
   return out;
 }
 
-void emit_type_truncation(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker) {
-  emit_type_specifier(emit_type_specifier(out << dst_marker << " = trunc ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
+void emit_type_truncation(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker, const std::string& truncator = "trunc") {
+  emit_type_specifier(emit_type_specifier(out << dst_marker << " = " << truncator << " ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
 }
 
-void emit_type_extension(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker) {
-  emit_type_specifier(emit_type_specifier(out << dst_marker << " = zext ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
+void emit_type_extension(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker, const std::string& extensor = "zext") {
+  emit_type_specifier(emit_type_specifier(out << dst_marker << " = " << extensor << " ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
 }
 
 void emit_type_bitcast(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker) {
   emit_type_specifier(emit_type_specifier(out << dst_marker << " = bitcast ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
 }
 
-void cast_value_to_requested_type(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
+void cast_integer_to_integer(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
+  uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
+  uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
+  if (type_size == 0) {
+    Type::Print(std::cerr << RED_TEXT, requested_type) << NORMAL_TEXT << std::endl;
+    assert(false);
+  }
+  if (value_size < type_size) {
+    output_marker = markers.new_marker();
+    emit_type_extension(out, context, func, value_type, value_marker, requested_type, output_marker);
+  } else if (value_size > type_size) {
+    output_marker = markers.new_marker();
+    emit_type_truncation(out, context, func, value_type, value_marker, requested_type, output_marker);
+  } else {
+    output_marker = value_marker;
+  }
+}
+
+void cast_double_to_double(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
+  uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
+  uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
+  if (type_size == 0) {
+    Type::Print(std::cerr << RED_TEXT, requested_type) << NORMAL_TEXT << std::endl;
+    assert(false);
+  }
+  if (value_size < type_size) {
+    output_marker = markers.new_marker();
+    emit_type_extension(out, context, func, value_type, value_marker, requested_type, output_marker, "fpext");
+  } else if (value_size > type_size) {
+    output_marker = markers.new_marker();
+    emit_type_truncation(out, context, func, value_type, value_marker, requested_type, output_marker, "fptrunc");
+  } else {
+    output_marker = value_marker;
+  }
+}
+
+void cast_integer_to_double(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
+  output_marker = markers.new_marker();
+  emit_type_specifier(emit_type_specifier(out << output_marker << " = sitofp ", context, func, value_type) << " " << value_marker << " to ", context, func, requested_type) << std::endl;
+}
+
+void cast_double_to_integer(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
+  output_marker = markers.new_marker();
+  emit_type_specifier(emit_type_specifier(out << output_marker << " = fptosi ", context, func, value_type) << " " << value_marker << " to ", context, func, requested_type) << std::endl;
+}
+
+void cast_value_to_requested_type(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker, bool is_bitcast = false) {
   if (types_are_namely_equal(context.symbol_cache, func, value_type, func, requested_type)) {
     output_marker = value_marker;
     return;
   }
 
-  // Type* value_type = context.type_cache.expression_types[expression->value];
-  // Type* type = context.type_cache.expression_types[expression];
+  if (!is_bitcast) {
+    if (type_is_integer(context, func, value_type)) {
+      if (type_is_integer(context, func, requested_type)) {
+        return cast_integer_to_integer(out, context, func, markers, value_marker, value_type, requested_type, output_marker);
+      } else if (type_is_double(context, func, requested_type)) {
+        return cast_integer_to_double(out, context, func, markers, value_marker, value_type, requested_type, output_marker);
+      }
+    } else if (type_is_double(context, func, value_type)) {
+      if (type_is_integer(context, func, requested_type)) {
+        return cast_double_to_integer(out, context, func, markers, value_marker, value_type, requested_type, output_marker);
+      } else if (type_is_double(context, func, requested_type)) {
+        return cast_double_to_double(out, context, func, markers, value_marker, value_type, requested_type, output_marker);
+      }
+    }
+  }
+
   uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
   uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
   std::string temporary_marker = value_marker;

@@ -39,8 +39,15 @@ Type* decide_algebric_binop_type(SymbolCache& symbol_cache, Declaration* context
   }
 
   Type* type = nullptr;
-  if (left->kind == DOUBLE_TYPE || right->kind == DOUBLE_TYPE) {
+  if (left->kind == DOUBLE_TYPE && right->kind != DOUBLE_TYPE) {
     type = Type::New(DOUBLE_TYPE);
+    type->size = left->size;
+  } else if (left->kind != DOUBLE_TYPE && right->kind == DOUBLE_TYPE) {
+    type = Type::New(DOUBLE_TYPE);
+    type->size = right->size;
+  } else if (left->kind == DOUBLE_TYPE && right->kind == DOUBLE_TYPE) {
+    type = Type::New(DOUBLE_TYPE);
+    type->size = std::max(left->size, right->size);
   } else if (left->kind == POINTER_TYPE || right->kind == POINTER_TYPE) {
     if (left->kind == POINTER_TYPE) {
       type = Type::Clone(left);

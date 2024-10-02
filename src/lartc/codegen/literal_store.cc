@@ -15,7 +15,6 @@ std::string LiteralStore::get_int_literal(int64_t literal) {
   return std::to_string(literal);
 }
 
-std::string LiteralStore::get_float_literal(double_t /*literal*/) {
-  // TODO:
-  return "0";
+std::string LiteralStore::get_float_literal(double_t literal) {
+  return std::to_string(literal);
 }

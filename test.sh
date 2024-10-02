@@ -54,10 +54,11 @@ should_succ_on_file hello
 should_succ_on_file tree
 should_succ_on_file chatgpt
 should_succ_on_file include-files
-should_succ_on_file array_access
+should_succ_on_file array-access
 should_succ_on_file strucs-as-rvalue
 should_succ_on_file strucs
 should_succ_on_file function-pointer
 should_succ_on_file types
 should_succ_on_file ts
 should_succ_on_file raylib
+shoudl_succ_on_file streams-and-floats
