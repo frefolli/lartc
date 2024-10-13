@@ -62,3 +62,13 @@ Will produce an executable which output is:
 00000000000010100000000000001010
 00000000000111100000000000011110
 ```
+
+# Building
+
+You'll need `tree-sitter-lart` (which can be found in my repos), `meson` and `llvm`. Optionally you could also compile it with whatever compiler you want, however with Clang for example a warning would arise (`-W-tautological-constant-out-of-range-compare`) since I'm checking in some parts of the code that the user of a function hasn't coerced a random int to enum (clang dislikes that) and so you would need to disable such warning (`CXXFLAGS=-Wno-tautological-constant-out-of-range-compare`).
+
+I configured Meson to stop compile process if a warning from the C++ compile is arose (except ld warnings). Enjoy.
+
+# Installing
+
+Either with `packer` (my personal package building system) or with `make install`.
