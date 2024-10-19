@@ -1,9 +1,16 @@
 version: 1.0.0
 license: GPL-3.0
 summary: Compiler for Lart Programming Language
-makedepends:
- arch: meson make gcc-c++ frefolli/tree-sitter-lart tree-sitter-c
- fedora: meson make gcc-c++ frefolli/tree-sitter-lart tree-sitter/tree-sitter-c
-depends:
- arch: frefolli/tree-sitter-lart tree-sitter/tree-sitter-c
- fedora: frefolli/tree-sitter-lart tree-sitter/tree-sitter-c
+makedepends: meson make frefolli/tree-sitter-lart
+depends: frefolli/tree-sitter-lart
+patches:
+  arch:
+    makedepends: gcc tree-sitter-c
+    depends: tree-sitter-c
+  fedora:
+    makedepends: gcc-c++ tree-sitter/tree-sitter-c
+    depends: tree-sitter/tree-sitter-c
+build: |
+  make
+install: |
+  make install
