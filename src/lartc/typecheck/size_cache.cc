@@ -29,7 +29,7 @@ uint64_t SizeCache::compute_size_of(SymbolCache& symbol_cache, Declaration* scop
       }
     case POINTER_TYPE:
       {
-        size += API::POINTER_SIZE;
+        size += API::CPU_BIT_SIZE;
         break;
       }
     case SYMBOL_TYPE:
@@ -51,7 +51,7 @@ uint64_t SizeCache::compute_size_of(SymbolCache& symbol_cache, Declaration* scop
       }
     case FUNCTION_TYPE:
       {
-        size += API::POINTER_SIZE;
+        size += API::CPU_BIT_SIZE;
         break;
       }
   }

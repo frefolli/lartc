@@ -2,6 +2,7 @@
 #include <lartc/api/cpp.hh>
 #include <lartc/terminal.hh>
 #include <lartc/tree_sitter.hh>
+#include <lartc/api/config.hh>
 
 #include <cstdint>
 #include <iostream>
@@ -65,7 +66,7 @@ Type* interpret_as_primitive_type(const std::string& line) {
     type->is_signed = true;
   } else if (line.starts_with("long long")) {
     type = interpret_as_primitive_type(remove_piece(line, "long long"));
-    type->size = 64;;
+    type->size = API::CPU_BIT_SIZE;
   } else if (line.starts_with("long ")) {
     type = interpret_as_primitive_type(remove_piece(line, "long "));
   } else if (line.starts_with("short")) {
@@ -95,7 +96,7 @@ Type* interpret_as_primitive_type(const std::string& line) {
     type->is_signed = true;
   } else if (line == "size_t") {
     type = Type::New(INTEGER_TYPE);
-    type->size = 64;
+    type->size = API::CPU_BIT_SIZE;
     type->is_signed = false;
   } else if (line == "int") {
     type = Type::New(INTEGER_TYPE);
@@ -106,7 +107,7 @@ Type* interpret_as_primitive_type(const std::string& line) {
     type->size = 32;
   } else if (line == "double") {
     type = Type::New(DOUBLE_TYPE);
-    type->size = 64;
+    type->size = API::CPU_BIT_SIZE;
   } else if (line == "void") {
     type = Type::New(VOID_TYPE);
   } else if (line == "") {

@@ -9,6 +9,7 @@
 #include <lartc/serializations.hh>
 #include <unordered_map>
 #include <lartc/api/config.hh>
+#include <lartc/api/config.hh>
 
 #define PRESERVE_MARKER_KEY(KEY) \
   int64_t preserved_##KEY = markers.save_key(KEY);
@@ -152,7 +153,7 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
       {
         if (type->size <= 32) {
           out << "float";
-        } else if (type->size <= 64) {
+        } else if (type->size <= API::CPU_BIT_SIZE) {
           out << "double";
         } else {
           out << "fp128";

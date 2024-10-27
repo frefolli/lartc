@@ -2,6 +2,7 @@
 #include <lartc/typecheck/casting.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/external_errors.hh>
+#include <lartc/api/config.hh>
 #include <cassert>
 #include <iostream>
 #include <cmath>
@@ -126,7 +127,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
     case expression_t::DOUBLE_EXPR:
       {
         Type* type = Type::New(type_t::DOUBLE_TYPE);
-        type->size = 64;
+        type->size = API::CPU_BIT_SIZE;
         type_cache.expression_types[expr] = type;
       }
       break;
@@ -368,7 +369,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
     case expression_t::SIZEOF_EXPR:
       {
         Type* type = Type::New(type_t::INTEGER_TYPE);
-        type->size = 64;
+        type->size = API::CPU_BIT_SIZE;
         type->is_signed = false;
         type_cache.expression_types[expr] = type;
       }
