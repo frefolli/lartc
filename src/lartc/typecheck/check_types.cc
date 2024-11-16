@@ -14,7 +14,7 @@ constexpr uint64_t compute_minimum_size_for(int64_t value) {
   uint64_t bitlength = 8;
   
   // assuming signed numbers;
-  while(value > (1 << (bitlength - 1))) {
+  while((uint64_t)value > (uint64_t)(1 << (bitlength - 1)) && bitlength != 0) {
     bitlength *= 2;
   }
 
