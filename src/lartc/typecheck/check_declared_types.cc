@@ -3,9 +3,9 @@
 #include <lartc/external_errors.hh>
 #include <lartc/api/config.hh>
 
-std::pair<bool, uint64_t> check_declared_types(FileDB& file_db, SymbolCache& symbol_cache, SizeCache& size_cache, Declaration* context, Type* type) {
+std::pair<bool, std::uintmax_t> check_declared_types(FileDB& file_db, SymbolCache& symbol_cache, SizeCache& size_cache, Declaration* context, Type* type) {
   bool declared_types_ok = true;
-  uint64_t size = 0;
+  std::uintmax_t size = 0;
   switch (type->kind) {
     case type_t::POINTER_TYPE:
       size = API::CPU_BIT_SIZE;

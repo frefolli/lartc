@@ -3,23 +3,23 @@
 
 #define CERR std::cerr
 
-inline uint64_t find_next_newline(const char* source_code, uint64_t byte_start) {
+inline std::uintmax_t find_next_newline(const char* source_code, std::uintmax_t byte_start) {
   while(source_code[byte_start] != '\0' && source_code[byte_start] != '\n')
     byte_start++;
   return byte_start;
 }
 
 template<typename Point>
-std::ostream& print_line_of_source_code_point(const char* source_code, Point& point, uint64_t byte_start) {
-  uint64_t byte_of_first_character_of_line = byte_start - point.column;
-  uint64_t byte_of_last_character_of_line = find_next_newline(source_code, byte_start);
+std::ostream& print_line_of_source_code_point(const char* source_code, Point& point, std::uintmax_t byte_start) {
+  std::uintmax_t byte_of_first_character_of_line = byte_start - point.column;
+  std::uintmax_t byte_of_last_character_of_line = find_next_newline(source_code, byte_start);
 
   CERR << std::string(source_code + byte_of_first_character_of_line, byte_of_last_character_of_line - byte_of_first_character_of_line) << std::endl;
   return CERR << std::string(point.column, ' ') << "^" << std::endl;
 }
 
 // Cst Checking
-void throw_syntax_error(const char* filepath, TSPoint& point, const char* node_symbol_name, const char* source_code, uint64_t byte_start) {
+void throw_syntax_error(const char* filepath, TSPoint& point, const char* node_symbol_name, const char* source_code, std::uintmax_t byte_start) {
   CERR << filepath << ":" << point.row+1 << ":" << point.column+1 << ": " << RED_TEXT << "syntax error" << NORMAL_TEXT << ": unexpected token inside of " << node_symbol_name << std::endl;
   print_line_of_source_code_point(source_code, point, byte_start);
 }

@@ -41,16 +41,16 @@ void crash_on_line(const std::string& line, const std::string& msg) {
 void explore(const TSLanguage* language, const char* source_code, Declaration* scope, TSNode& node);
 
 std::string remove_piece(const std::string& line, const char* piece) {
-  uint64_t len = strlen(piece);
-  uint64_t i = len;
+  std::uintmax_t len = strlen(piece);
+  std::uintmax_t i = len;
   while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\n')) {
     ++i;
   }
   return line.substr(i);
 }
 
-uint64_t catch_size(const std::string& line, const char* prefix) {
-  uint64_t prefix_length = strlen(prefix);
+std::uintmax_t catch_size(const std::string& line, const char* prefix) {
+  std::uintmax_t prefix_length = strlen(prefix);
   std::string num = line.substr(prefix_length, line.size() - prefix_length - 2);
   return std::stoi(num);
 }
@@ -134,8 +134,8 @@ Type* interpret_as_struct_specifier(const TSLanguage* language, const char* sour
   Type* struct_type = Type::New(STRUCT_TYPE);
   TSNode body = ts_node_child_by_field_name(node, "body");
   if (body.id != nullptr) {
-    uint64_t length = ts_node_named_child_count(body);
-    for (uint64_t i = 0; i < length; ++i) {
+    std::uintmax_t length = ts_node_named_child_count(body);
+    for (std::uintmax_t i = 0; i < length; ++i) {
       TSNode field_node = ts_node_named_child(body, i);
       TSNode type_node = ts_node_child_by_field_name(field_node, "type");
       assert(type_node.id != nullptr);
@@ -250,8 +250,8 @@ void explore_as_function_declaration(const TSLanguage* language, const char* sou
 
   TSNode parameters = ts_node_child_by_field_name(function_declarator_node, "parameters");
   if (parameters.id != nullptr) {
-    uint64_t length = ts_node_named_child_count(parameters);
-    for (uint64_t i = 0; i < length; ++i) {
+    std::uintmax_t length = ts_node_named_child_count(parameters);
+    for (std::uintmax_t i = 0; i < length; ++i) {
       TSNode parameter_node = ts_node_named_child(parameters, i);
       TSNode type_node = ts_node_child_by_field_name(parameter_node, "type");
       assert(type_node.id != nullptr);
@@ -283,8 +283,8 @@ void explore_as_function_declaration(const TSLanguage* language, const char* sou
 }
  
 void explore_as_scope(const TSLanguage* language, const char* source_code, Declaration* scope, TSNode& node) {
-  uint64_t n_of_children = ts_node_named_child_count(node);
-  for (uint64_t i = 0; i < n_of_children; ++i) {
+  std::uintmax_t n_of_children = ts_node_named_child_count(node);
+  for (std::uintmax_t i = 0; i < n_of_children; ++i) {
     TSNode child = ts_node_named_child(node, i);
     explore(language, source_code, scope, child);
   }

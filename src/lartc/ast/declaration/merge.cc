@@ -17,8 +17,8 @@ bool type_matches_symbolically(Type* older, Type* latest) {
       return type_matches_symbolically(older->subtype, latest->subtype);
     case type_t::SYMBOL_TYPE:
       {
-        int64_t older_index = older->symbol.identifiers.size() - 1;
-        int64_t latest_index = latest->symbol.identifiers.size() - 1;
+        std::intmax_t older_index = older->symbol.identifiers.size() - 1;
+        std::intmax_t latest_index = latest->symbol.identifiers.size() - 1;
         while (older_index > 0 && latest_index > 0) {
           if (older->symbol.identifiers.at(older_index) == latest->symbol.identifiers.at(latest_index)) {
             --older_index;
@@ -36,8 +36,8 @@ bool type_matches_symbolically(Type* older, Type* latest) {
       {
         if (older->fields.size() != latest->fields.size())
           return false;
-        uint64_t n_of_fields = older->fields.size();
-        for (uint64_t index = 0; index < n_of_fields; ++index) {
+        std::uintmax_t n_of_fields = older->fields.size();
+        for (std::uintmax_t index = 0; index < n_of_fields; ++index) {
           if (!type_matches_symbolically(older->fields[index].second, latest->fields[index].second)) {
             return false;
           }
@@ -48,8 +48,8 @@ bool type_matches_symbolically(Type* older, Type* latest) {
       {
         if (older->parameters.size() != latest->parameters.size())
           return false;
-        uint64_t n_of_parameters = older->parameters.size();
-        for (uint64_t index = 0; index < n_of_parameters; ++index) {
+        std::uintmax_t n_of_parameters = older->parameters.size();
+        for (std::uintmax_t index = 0; index < n_of_parameters; ++index) {
           if (!type_matches_symbolically(older->parameters[index].second, latest->parameters[index].second)) {
             return false;
           }
@@ -103,10 +103,10 @@ Declaration* merge_module_declarations(TSContext& context, Declaration* older, D
 Declaration* merge_function_declarations(TSContext& context, Declaration* older, Declaration* latest) {
   Declaration* result = nullptr;
 
-  uint64_t n_of_parameters = older->parameters.size();
+  std::uintmax_t n_of_parameters = older->parameters.size();
   if (n_of_parameters == latest->parameters.size()) {
     bool ok = true;
-    for (uint64_t index = 0; index < n_of_parameters; ++index) {
+    for (std::uintmax_t index = 0; index < n_of_parameters; ++index) {
       if (!type_matches_symbolically(older->parameters.at(index).second, latest->parameters.at(index).second)) {
         ok = false;
         break;

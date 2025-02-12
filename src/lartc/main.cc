@@ -41,7 +41,7 @@ void print_help() {
   std::cout << "<https://github.com/frefolli/lartc/issues>." << std::endl;
 }
 
-std::string read_next_arg(char** args, uint64_t n_of_args, uint64_t& arg_index, const char* embedding_prefix = nullptr) {
+std::string read_next_arg(char** args, std::uintmax_t n_of_args, std::uintmax_t& arg_index, const char* embedding_prefix = nullptr) {
   std::string flag = args[arg_index];
   if (embedding_prefix != nullptr) {
     std::string prefix = embedding_prefix;
@@ -169,8 +169,8 @@ int main(int argc, char** args) {
   };
   Workflow workflow = ALL;
 
-  uint64_t n_of_args = argc;
-  for (uint64_t i = 1; i < n_of_args; ++i) {
+  std::uintmax_t n_of_args = argc;
+  for (std::uintmax_t i = 1; i < n_of_args; ++i) {
     std::string arg = args[i];
     if (arg == "-d" || arg == "--debug") {
       API::DUMP_DEBUG_INFO_FOR_STRUCS = true;

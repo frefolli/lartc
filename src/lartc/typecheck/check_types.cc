@@ -7,14 +7,14 @@
 #include <iostream>
 #include <cmath>
 
-constexpr uint64_t compute_minimum_size_for(int64_t value) {
+constexpr std::uintmax_t compute_minimum_size_for(std::intmax_t value) {
   if (value < 0) {
     value = -value;
   }
-  uint64_t bitlength = 8;
+  std::uintmax_t bitlength = 8;
   
   // assuming signed numbers;
-  while((uint64_t)value > (uint64_t)(1 << (bitlength - 1)) && bitlength != 0) {
+  while((std::uintmax_t)value > (std::uintmax_t)(1 << (bitlength - 1)) && bitlength != 0) {
     bitlength *= 2;
   }
 
@@ -173,7 +173,7 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
         if (callable_type->kind == type_t::FUNCTION_TYPE) {
           if ((callable_type->parameters.size() == expr->arguments.size())
            || (callable_type->parameters.size() <= expr->arguments.size() && callable_type->is_variadic)) {
-            for (uint64_t argument_index = 0; argument_index < expr->arguments.size(); ++argument_index) {
+            for (std::uintmax_t argument_index = 0; argument_index < expr->arguments.size(); ++argument_index) {
               Expression* argument = expr->arguments.at(argument_index);
               type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, argument);
               if (argument_index < callable_type->parameters.size()) {

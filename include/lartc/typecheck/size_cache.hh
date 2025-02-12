@@ -6,11 +6,11 @@
 #include <cstdint>
 
 struct SizeCache {
-  std::map<Declaration*, uint64_t> sizes;
+  std::map<Declaration*, std::uintmax_t> sizes;
   std::map<Declaration*, bool> staging;
 
   static std::ostream& Print(std::ostream& out, SizeCache& size_cache);
-  uint64_t compute_size_of(SymbolCache& symbol_cache, Declaration* scope, Type* type);
-  uint64_t compute_size_in_byte_of(SymbolCache& symbol_cache, Declaration* scope, Type* type);
+  std::uintmax_t compute_size_of(SymbolCache& symbol_cache, Declaration* scope, Type* type);
+  std::uintmax_t compute_size_in_byte_of(SymbolCache& symbol_cache, Declaration* scope, Type* type);
 };
 #endif//LARTC_TYPECHECK_SIZE_CACHE

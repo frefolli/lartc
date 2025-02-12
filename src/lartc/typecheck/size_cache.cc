@@ -9,8 +9,8 @@ std::ostream& SizeCache::Print(std::ostream& out, SizeCache& size_cache) {
   return out;
 }
 
-uint64_t SizeCache::compute_size_of(SymbolCache& symbol_cache, Declaration* scope, Type* type) {
-  uint64_t size = 0;
+std::uintmax_t SizeCache::compute_size_of(SymbolCache& symbol_cache, Declaration* scope, Type* type) {
+  std::uintmax_t size = 0;
   switch (type->kind) {
     case INTEGER_TYPE:
       {
@@ -58,7 +58,7 @@ uint64_t SizeCache::compute_size_of(SymbolCache& symbol_cache, Declaration* scop
   return size;
 }
 
-uint64_t SizeCache::compute_size_in_byte_of(SymbolCache& symbol_cache, Declaration* scope, Type* type) {
+std::uintmax_t SizeCache::compute_size_in_byte_of(SymbolCache& symbol_cache, Declaration* scope, Type* type) {
   size_t bitsize = compute_size_of(symbol_cache, scope, type);
   size_t bytesize = bitsize / 8;
   if (bytesize * 8 < bitsize) {

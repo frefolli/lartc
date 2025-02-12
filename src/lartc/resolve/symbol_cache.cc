@@ -31,7 +31,7 @@ std::ostream& SymbolCache::Print(std::ostream& out, FileDB& file_db, SymbolCache
   return out;
 }
 
-Declaration* SymbolCache::find_by_going_up(Declaration* context, Symbol& symbol, uint64_t progress) {
+Declaration* SymbolCache::find_by_going_up(Declaration* context, Symbol& symbol, std::uintmax_t progress) {
   Declaration* query = find_by_going_down(context, symbol);
   while (query == nullptr && context->parent != nullptr) {
     if (context->parent->name == symbol.identifiers.at(progress)) {
@@ -58,7 +58,7 @@ Declaration* SymbolCache::find_by_going_up(Declaration* context, Symbol& symbol,
   return query;
 }
 
-Declaration* SymbolCache::find_by_going_down(Declaration* context, Symbol& symbol, uint64_t progress) {
+Declaration* SymbolCache::find_by_going_down(Declaration* context, Symbol& symbol, std::uintmax_t progress) {
   if (context->name == symbol.identifiers.at(progress)) {
     progress += 1;
     if (symbol.identifiers.size() == progress) {

@@ -30,8 +30,8 @@ std::ostream& operator<<(std::ostream& out, internal_error_t error);
 void throw_internal_error(internal_error_t error, std::stringstream msg);
 void throw_internal_error(internal_error_t error, std::string msg);
 
-inline std::ostream& tabulate(std::ostream& out, uint64_t tabulation) {
-  for (uint64_t i = 0; i < tabulation; ++i) {
+inline std::ostream& tabulate(std::ostream& out, std::uintmax_t tabulation) {
+  for (std::uintmax_t i = 0; i < tabulation; ++i) {
     out << "  ";
   }
   return out;

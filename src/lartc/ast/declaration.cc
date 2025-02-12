@@ -34,7 +34,7 @@ void Declaration::Delete(Declaration*& decl) {
   }
 }
 
-std::ostream& Declaration::Print(std::ostream& out, const Declaration* decl, uint64_t tabulation) {
+std::ostream& Declaration::Print(std::ostream& out, const Declaration* decl, std::uintmax_t tabulation) {
   assert(decl != nullptr);
   tabulate(out, tabulation);
   bool first;

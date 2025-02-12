@@ -57,8 +57,8 @@ Expression* parse_expression_call(TSContext& context, TSNode& node) {
   ts_validate_parsing(context.language, callable, "call_expr:callable", call->callable);
 
   TSNode arguments = ts_node_child_by_field_name(node, "arguments");
-  uint64_t argument_count = ts_node_named_child_count(arguments);
-  for (uint64_t argument_index = 0; argument_index < argument_count; ++argument_index) {
+  std::uintmax_t argument_count = ts_node_named_child_count(arguments);
+  for (std::uintmax_t argument_index = 0; argument_index < argument_count; ++argument_index) {
     TSNode argument_node = ts_node_named_child(arguments, argument_index);
     Expression* argument = parse_expression(context, argument_node);
     if (argument != nullptr) {

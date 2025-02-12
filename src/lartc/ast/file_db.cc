@@ -20,10 +20,10 @@ inline char* read_source_code(const char* filepath) {
 }
 
 FileDB::Point FileDB::Point::From(const FileDB* file_db, TSNode& ts_node) {
-  uint64_t file = file_db->current_file_index();
+  std::uintmax_t file = file_db->current_file_index();
   TSPoint point = ts_node_start_point(ts_node);
-  uint64_t byte_start = ts_node_start_byte(ts_node);
-  uint64_t byte_end = ts_node_end_byte(ts_node);
+  std::uintmax_t byte_start = ts_node_start_byte(ts_node);
+  std::uintmax_t byte_end = ts_node_end_byte(ts_node);
   return FileDB::Point {
     .file = file,
     .row = point.row,

@@ -12,8 +12,8 @@ struct SymbolCache {
   std::map<Expression*, Statement*> locals;
   std::map<Expression*, std::pair<std::string, Type*>*> parameters;
 
-  Declaration* find_by_going_up(Declaration* context, Symbol& symbol, uint64_t progress = 0);
-  Declaration* find_by_going_down(Declaration* context, Symbol& symbol, uint64_t progress = 0);
+  Declaration* find_by_going_up(Declaration* context, Symbol& symbol, std::uintmax_t progress = 0);
+  Declaration* find_by_going_down(Declaration* context, Symbol& symbol, std::uintmax_t progress = 0);
 
   Declaration* get_or_find_declaration(Declaration* context, Symbol& symbol);
   Declaration* get_declaration(Declaration* context, Symbol& symbol) const;

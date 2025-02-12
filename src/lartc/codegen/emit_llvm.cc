@@ -12,7 +12,7 @@
 #include <lartc/api/config.hh>
 
 #define PRESERVE_MARKER_KEY(KEY) \
-  int64_t preserved_##KEY = markers.save_key(KEY);
+  std::intmax_t preserved_##KEY = markers.save_key(KEY);
 
 #define RESTORE_MARKER_KEY(KEY) \
   if (preserved_##KEY != 1) { \
@@ -244,8 +244,8 @@ void emit_type_bitcast(std::ostream& out, CGContext& context, Declaration* func,
 }
 
 void cast_integer_to_integer(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
-  uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
-  uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
+  std::uintmax_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
+  std::uintmax_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
   if (type_size == 0) {
     Type::Print(std::cerr << RED_TEXT, requested_type) << NORMAL_TEXT << std::endl;
     assert(false);
@@ -262,8 +262,8 @@ void cast_integer_to_integer(std::ostream& out, CGContext& context, Declaration*
 }
 
 void cast_double_to_double(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
-  uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
-  uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
+  std::uintmax_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
+  std::uintmax_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
   if (type_size == 0) {
     Type::Print(std::cerr << RED_TEXT, requested_type) << NORMAL_TEXT << std::endl;
     assert(false);
@@ -311,8 +311,8 @@ void cast_value_to_requested_type(std::ostream& out, CGContext& context, Declara
     }
   }
 
-  uint64_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
-  uint64_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
+  std::uintmax_t value_size = context.size_cache.compute_size_of(context.symbol_cache, func, value_type);
+  std::uintmax_t type_size = context.size_cache.compute_size_of(context.symbol_cache, func, requested_type);
   std::string temporary_marker = value_marker;
 
   if (type_size == 0) {
@@ -436,7 +436,7 @@ std::ostream& emit_integer_only_binary_operation(std::ostream& out, CGContext& c
   return out;
 }
 
-uint64_t compute_field_index(CGContext& context, Declaration* decl, Type* left_type, Expression* right) {
+std::uintmax_t compute_field_index(CGContext& context, Declaration* decl, Type* left_type, Expression* right) {
   Declaration* left_decl = decl;
   while (left_type->kind == SYMBOL_TYPE) {
     Declaration* source = context.symbol_cache.get_or_find_declaration(left_decl, left_type->symbol);
@@ -515,7 +515,7 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
           output_marker = markers.new_marker();
 
           emit_type_specifier(out << output_marker << " = getelementptr ", context, func, left_type) << ", ptr " << left_value;
-          uint64_t field_index = compute_field_index(context, func, left_type, expression->right);
+          std::uintmax_t field_index = compute_field_index(context, func, left_type, expression->right);
           out << ", i64 0, i32 " << field_index << std::endl;
         } else if (expression->operator_ == DOT_OP) {
           std::string left_value;
@@ -524,7 +524,7 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
           output_marker = markers.new_marker();
 
           emit_type_specifier(out << output_marker << " = getelementptr ", context, func, left_type) << ", ptr " << left_value;
-          uint64_t field_index = compute_field_index(context, func, left_type, expression->right);
+          std::uintmax_t field_index = compute_field_index(context, func, left_type, expression->right);
           out << ", i64 0, i32 " << field_index << std::endl;
         } else {
           assert(false);
@@ -653,7 +653,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         }
 
         std::vector<std::string> argument_markers = {};
-        for (uint64_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
+        for (std::uintmax_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
           std::string argument_marker;
           Type* arg_type = context.type_cache.expression_types[expression->arguments[arg_index]];
           if (type_is_struct(context, func, arg_type) && context.size_cache.compute_size_of(context.symbol_cache, func, arg_type) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
@@ -680,7 +680,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           emit_type_specifier(out, context, func, callable_subtype);
         }
         out << " " << callable_marker << "(";
-        for (uint64_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
+        for (std::uintmax_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
           if (arg_index > 0) {
             out << ", ";
           }
@@ -1193,7 +1193,7 @@ std::ostream& emit_function_declaration(std::ostream& out, CGContext& context, D
 }
 
 std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& markers, Declaration* func) {
-  for (uint64_t param_index = 0; param_index < func->parameters.size(); ++param_index) {
+  for (std::uintmax_t param_index = 0; param_index < func->parameters.size(); ++param_index) {
     std::pair<std::string, Type*>* param = func->parameters.data() + param_index;
     markers.add_param(param);
     std::string param_marker = markers.get_param(param);

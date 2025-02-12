@@ -115,7 +115,7 @@ std::string dump_unescaped_char(char c) {
 std::string load_escaped_string(const std::string& string) {
   assert(string.front() == '\"');
   assert(string.back() == '\"');
-  uint64_t cursor = 1, length = string.size();
+  std::uintmax_t cursor = 1, length = string.size();
   std::string result = "";
 
   while (cursor < length - 1) {

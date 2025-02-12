@@ -12,7 +12,7 @@ struct Expression {
   Symbol symbol;
   std::string string_literal;
   bool boolean_literal;
-  int64_t integer_literal;
+  std::intmax_t integer_literal;
   double_t decimal_literal;
   Expression* callable;
   std::vector<Expression*> arguments;

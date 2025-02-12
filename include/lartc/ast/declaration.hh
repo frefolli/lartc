@@ -17,7 +17,7 @@ struct Declaration {
   bool is_variadic;
 
   static Declaration* New(declaration_t kind);
-  static std::ostream& Print(std::ostream& out, const Declaration* decl, uint64_t tabulation = 0);
+  static std::ostream& Print(std::ostream& out, const Declaration* decl, std::uintmax_t tabulation = 0);
   static void Delete(Declaration*& decl);
   static std::string QualifiedName(const Declaration* decl);
   static std::ostream& PrintShort(std::ostream& out, const Declaration* decl);

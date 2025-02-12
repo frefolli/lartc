@@ -5,21 +5,21 @@ std::string Markers::last_marker() {
 }
 
 std::string Markers::new_marker(marker_key key) {
-  uint64_t marker = count++;
+  std::uintmax_t marker = count++;
   if (key != NONE_MK) {
     keyd[key] = marker;
   }
   return serialize(marker);
 }
 
-int64_t Markers::save_key(marker_key key) {
+std::intmax_t Markers::save_key(marker_key key) {
   if (keyd.contains(key)) {
     return keyd[key];
   }
   return -1;
 }
 
-void Markers::restore_key(marker_key key, uint64_t old_key) {
+void Markers::restore_key(marker_key key, std::uintmax_t old_key) {
   keyd[key] = old_key;
 }
 
@@ -37,7 +37,7 @@ void Markers::no_key(marker_key key) {
 }
 
 void Markers::add_var(Statement* var) {
-  uint64_t marker = count++;
+  std::uintmax_t marker = count++;
   vars[var] = marker;
 }
 
@@ -55,7 +55,7 @@ void Markers::del_var(Statement* var) {
 }
 
 void Markers::add_param(std::pair<std::string, Type*>* param) {
-  uint64_t marker = count++;
+  std::uintmax_t marker = count++;
   params[param] = marker;
 }
 

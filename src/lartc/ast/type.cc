@@ -60,7 +60,7 @@ Type* Type::Clone(const Type* other) {
   return type;
 }
 
-std::ostream& Type::Print(std::ostream& out, const Type* type, uint64_t tabulation) {
+std::ostream& Type::Print(std::ostream& out, const Type* type, std::uintmax_t tabulation) {
   assert(type != nullptr);
   tabulate(out, tabulation);
   bool first;
@@ -114,14 +114,14 @@ std::ostream& Type::Print(std::ostream& out, const Type* type, uint64_t tabulati
 }
 
 Type* Type::ExtractField(const Type* struct_type, const Symbol& name) {
-  int64_t index = ExtractFieldIndex(struct_type, name);
+  std::intmax_t index = ExtractFieldIndex(struct_type, name);
   if (index != -1)
     return struct_type->fields[index].second;
   return nullptr;
 }
 
-int64_t Type::ExtractFieldIndex(const Type* struct_type, const Symbol& name) {
-  for (uint64_t index = 0; index < struct_type->fields.size(); ++index) {
+std::intmax_t Type::ExtractFieldIndex(const Type* struct_type, const Symbol& name) {
+  for (std::uintmax_t index = 0; index < struct_type->fields.size(); ++index) {
     if (struct_type->fields[index].first == name.identifiers.front()) {
       return index;
     }

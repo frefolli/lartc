@@ -26,7 +26,7 @@ std::ostream& Symbol::Print(std::ostream& out, const Symbol& symbol) {
 }
 
 bool Symbol::operator<(const Symbol& other) const {
-  uint64_t i = 0, j = 0;
+  std::uintmax_t i = 0, j = 0;
   while (i < identifiers.size() && j < other.identifiers.size()) {
     if (identifiers.at(i) < other.identifiers.at(j)) {
       return true;

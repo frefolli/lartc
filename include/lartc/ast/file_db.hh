@@ -16,11 +16,11 @@ struct FileDB {
     static std::ostream& Print(std::ostream& out, const File& file);
   };
   struct Point {
-    uint64_t file;
-    uint64_t row;
-    uint64_t column;
-    uint64_t byte_start;
-    uint64_t byte_end;
+    std::uintmax_t file;
+    std::uintmax_t row;
+    std::uintmax_t column;
+    std::uintmax_t byte_start;
+    std::uintmax_t byte_end;
 
     static std::ostream& Print(std::ostream& out, const FileDB& file_db, const Point& point);
     
@@ -40,7 +40,7 @@ struct FileDB {
   void add_type(Type* type, TSNode& node);
   void add_declaration(Declaration* declaration, TSNode& node);
   void add_var(Statement* var_decl, TSNode& node);
-  inline uint64_t current_file_index() const {
+  inline std::uintmax_t current_file_index() const {
     return files.size() - 1;
   }
   inline File* current_file() {

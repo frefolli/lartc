@@ -55,9 +55,9 @@ void parse_include_directive(TSContext& context, TSNode& include_node) {
   }
 }
 
-inline void parse_declaration_module_rest(Declaration* decl, TSContext& context, TSNode& node, uint64_t from_index = 0) {
-  uint64_t child_count = ts_node_named_child_count(node);
-  for (uint64_t child_index = from_index; child_index < child_count; ++child_index) {
+inline void parse_declaration_module_rest(Declaration* decl, TSContext& context, TSNode& node, std::uintmax_t from_index = 0) {
+  std::uintmax_t child_count = ts_node_named_child_count(node);
+  for (std::uintmax_t child_index = from_index; child_index < child_count; ++child_index) {
     TSNode child_node = ts_node_named_child(node, child_index);
     const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(child_node));
     if (strcmp("include", symbol_name) == 0) {

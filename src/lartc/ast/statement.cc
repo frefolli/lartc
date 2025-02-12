@@ -39,7 +39,7 @@ void Statement::Delete(Statement*& stmt) {
   }
 }
 
-std::ostream& Statement::Print(std::ostream& out, const Statement* stmt, uint64_t tabulation) {
+std::ostream& Statement::Print(std::ostream& out, const Statement* stmt, std::uintmax_t tabulation) {
   assert(stmt != nullptr);
   if (stmt->kind != statement_t::BLOCK_STMT)
     tabulate(out, tabulation);

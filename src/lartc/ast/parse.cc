@@ -6,8 +6,8 @@
 std::pair<std::vector<std::pair<std::string, Type*>>, bool> parse_field_parameter_list(TSContext& context, TSNode& node) {
   std::vector<std::pair<std::string, Type*>> list = {};
   bool is_variadic = false;
-  uint64_t child_count = ts_node_named_child_count(node);
-  for (uint64_t child_index = 0; child_index < child_count; ++child_index) {
+  std::uintmax_t child_count = ts_node_named_child_count(node);
+  for (std::uintmax_t child_index = 0; child_index < child_count; ++child_index) {
     TSNode child_node = ts_node_named_child(node, child_index);
     const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(child_node));
     if (strcmp(symbol_name, "variadic_parameter") == 0) {

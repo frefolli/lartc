@@ -1,7 +1,7 @@
 #include <lartc/codegen/literal_store.hh>
 
 std::string LiteralStore::get_string_literal(const std::string& literal) {
-  uint64_t marker;
+  std::uintmax_t marker;
   if (string_literals.contains(literal)) {
     marker = string_literals[literal];
   } else {
@@ -11,7 +11,7 @@ std::string LiteralStore::get_string_literal(const std::string& literal) {
   return serialize(marker);
 }
 
-std::string LiteralStore::get_int_literal(int64_t literal) {
+std::string LiteralStore::get_int_literal(std::intmax_t literal) {
   return std::to_string(literal);
 }
 

@@ -11,8 +11,8 @@
 inline Statement* parse_statement_block(TSContext& context, TSNode& node) {
   Statement* block = Statement::New(statement_t::BLOCK_STMT);
 
-  uint64_t child_count = ts_node_named_child_count(node);
-  for (uint64_t child_index = 0; child_index < child_count; ++child_index) {
+  std::uintmax_t child_count = ts_node_named_child_count(node);
+  for (std::uintmax_t child_index = 0; child_index < child_count; ++child_index) {
     TSNode child_node = ts_node_named_child(node, child_index);
     const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(child_node));
     if (!ts_can_ignore(symbol_name)) {
