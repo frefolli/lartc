@@ -236,7 +236,11 @@ void emit_type_extension(std::ostream& out, CGContext& context, Declaration* fun
 }
 
 void emit_type_bitcast(std::ostream& out, CGContext& context, Declaration* func, Type* src_type, const std::string& src_marker, Type* dst_type, const std::string& dst_marker) {
-  emit_type_specifier(emit_type_specifier(out << dst_marker << " = bitcast ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
+  if (type_is_pointer(context, func, dst_type) && !type_is_pointer(context, func, src_type)) {
+    emit_type_specifier(emit_type_specifier(out << dst_marker << " = inttoptr ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
+  } else {
+    emit_type_specifier(emit_type_specifier(out << dst_marker << " = bitcast ", context, func, src_type) << " " << src_marker << " to ", context, func, dst_type) << std::endl;
+  }
 }
 
 void cast_integer_to_integer(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, const std::string& value_marker, Type* value_type, Type* requested_type, std::string& output_marker) {
@@ -811,7 +815,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->left]);
                     out << " " << left_value << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
-                    out << " " << right_value << std::endl;
+                    out << " " << inverted_offset << std::endl;
                   }
                 } else {
                   emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "sub", "fsub");
@@ -973,7 +977,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
       }
     case SIZEOF_EXPR:
       {
-        output_marker = context.literal_store.get_int_literal(context.size_cache.compute_size_of(context.symbol_cache, func, expression->type));
+        output_marker = context.literal_store.get_int_literal(context.size_cache.compute_size_in_byte_of(context.symbol_cache, func, expression->type));
         break;
       }
     case CAST_EXPR: // TODO:

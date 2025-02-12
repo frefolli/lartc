@@ -183,7 +183,11 @@ std::string load_escaped_string(const std::string& string) {
 std::string dump_unescaped_string(const std::string& string, bool null_terminated) {
   std::string result = "\"";
   for (char c : string) {
-    if (isprint(c)) {
+    if (c == '"') {
+      result += "\22";
+    } else if (c == '\\') {
+      result += "\\\\";
+    } else if (isprint(c)) {
       result += c;
     } else {
       char h = int2hex(c >> 4);
