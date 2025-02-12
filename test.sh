@@ -62,3 +62,5 @@ should_succ_on_file types
 should_succ_on_file ts
 should_succ_on_file raylib
 should_succ_on_file streams-and-floats
+should_succ_on_file regex
+should_succ_on_file comments
