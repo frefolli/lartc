@@ -12,6 +12,8 @@ void operator>>(std::string op, operator_t& operator_) {
     operator_ = MUL_OP;
   if (op == "/")
     operator_ = DIV_OP;
+  if (op == "%")
+    operator_ = MOD_OP;
   if (op == "+")
     operator_ = ADD_OP;
   if (op == "-")
@@ -59,6 +61,7 @@ std::ostream& operator<<(std::ostream& out, operator_t operator_) {
     case XOR_OP: return out << "^";
     case MUL_OP: return out << "*";
     case DIV_OP: return out << "/";
+    case MOD_OP: return out << "%";
     case ADD_OP: return out << "+";
     case SUB_OP: return out << "-";
     case GE_OP: return out << ">=";
@@ -104,6 +107,7 @@ operator_category_t get_operator_category(operator_t operator_) {
     case TILDE_OP:
     case MUL_OP:
     case DIV_OP:
+    case MOD_OP:
     case ADD_OP:
     case SUB_OP:
     case INC_OP:

@@ -7,6 +7,7 @@
     X(XOR_OP), \
     X(MUL_OP), \
     X(DIV_OP), \
+    X(MOD_OP), \
     X(ADD_OP), \
     X(SUB_OP), \
     X(GE_OP), \

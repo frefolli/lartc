@@ -768,6 +768,15 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                 }
                 break;
               }
+            case MOD_OP:
+              {
+                if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
+                  assert(false);
+                } else {
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, context.type_cache.expression_types[expression], "urem", "frem");
+                }
+                break;
+              }
             case ADD_OP:
               {
                 if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
