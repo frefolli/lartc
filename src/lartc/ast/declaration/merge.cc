@@ -15,6 +15,8 @@ bool type_matches_symbolically(Type* older, Type* latest) {
       return true;
     case type_t::POINTER_TYPE:
       return type_matches_symbolically(older->subtype, latest->subtype);
+    case type_t::ARRAY_TYPE:
+      return type_matches_symbolically(older->subtype, latest->subtype);
     case type_t::SYMBOL_TYPE:
       {
         std::intmax_t older_index = older->symbol.identifiers.size() - 1;

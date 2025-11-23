@@ -73,6 +73,8 @@ std::ostream& Type::Print(std::ostream& out, const Type* type, std::uintmax_t ta
       return out << "bool";
     case type_t::POINTER_TYPE:
       return Type::Print(out << "&", type->subtype);
+    case type_t::ARRAY_TYPE:
+      return Type::Print(out << "[", type->subtype) << ", " << type->size << "]";
     case type_t::SYMBOL_TYPE:
       return Symbol::Print(out, type->symbol);
     case type_t::VOID_TYPE:
@@ -107,8 +109,6 @@ std::ostream& Type::Print(std::ostream& out, const Type* type, std::uintmax_t ta
         out << "...";
       }
       return Type::Print(out << ") -> ", type->subtype, 0);
-    default:
-      assert(false);
   }
   return out;
 }

@@ -10,6 +10,13 @@ std::pair<bool, std::uintmax_t> check_declared_types(FileDB& file_db, SymbolCach
     case type_t::POINTER_TYPE:
       size = API::CPU_BIT_SIZE;
       break;
+    case type_t::ARRAY_TYPE:
+      {
+        auto checked = check_declared_types(file_db, symbol_cache, size_cache, context, type->subtype);
+        declared_types_ok &= checked.first;
+        size = checked.second * type->size;
+        break;
+      }
     case type_t::VOID_TYPE:
       break;
     case type_t::DOUBLE_TYPE:

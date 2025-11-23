@@ -27,6 +27,10 @@ bool types_are_namely_equal(SymbolCache& symbol_cache, Declaration* contextA, Ty
     case type_t::POINTER_TYPE:
       equals &= types_are_namely_equal(symbol_cache, contextA, A->subtype, contextB, B->subtype);
       break;
+    case type_t::ARRAY_TYPE:
+      equals &= types_are_namely_equal(symbol_cache, contextA, A->subtype, contextB, B->subtype);
+      equals &= A->size == B->size;
+      break;
     case type_t::VOID_TYPE:
       break;
     case type_t::DOUBLE_TYPE:
@@ -92,6 +96,10 @@ bool types_are_structurally_equal(SymbolCache& symbol_cache, Declaration* contex
     case type_t::POINTER_TYPE:
       equals &= types_are_structurally_equal(symbol_cache, contextA, A->subtype, contextB, B->subtype);
       break;
+    case type_t::ARRAY_TYPE:
+      equals &= types_are_structurally_equal(symbol_cache, contextA, A->subtype, contextB, B->subtype);
+      equals &= A->size == B->size;
+      break;
     case type_t::VOID_TYPE:
       break;
     case type_t::DOUBLE_TYPE:
@@ -152,6 +160,10 @@ bool types_are_structurally_compatible(SymbolCache& symbol_cache, Declaration* c
   switch (Src->kind) {
     case type_t::POINTER_TYPE:
       compatibles &= types_are_structurally_compatible(symbol_cache, contextSrc, Src->subtype, contextDst, Dst->subtype);
+      break;
+    case type_t::ARRAY_TYPE:
+      compatibles &= types_are_structurally_compatible(symbol_cache, contextSrc, Src->subtype, contextDst, Dst->subtype);
+      compatibles &= Src->size == Dst->size;
       break;
     case type_t::VOID_TYPE:
       break;
@@ -224,6 +236,16 @@ bool type_can_be_implicitly_casted_to(SymbolCache& symbol_cache, Declaration* co
         }
       }
       break;
+    case type_t::ARRAY_TYPE:
+      {
+        if (src->kind == type_t::ARRAY_TYPE) {
+          implicitly_castable &= (src->subtype->kind == VOID_TYPE || dst->subtype->kind == VOID_TYPE || types_are_structurally_compatible(symbol_cache, context, src->subtype, context, dst->subtype));
+          implicitly_castable &= src->size == dst->size;
+        } else {
+          implicitly_castable = false;
+        }
+      }
+      break;
     case type_t::VOID_TYPE:
       {
         implicitly_castable &= (src->kind == dst->kind);
@@ -283,6 +305,9 @@ bool type_is_algebraically_manipulable(SymbolCache& symbol_cache, Declaration* c
   bool algebraically_manipulable = true;
   switch (type->kind) {
     case type_t::POINTER_TYPE:
+      algebraically_manipulable = false;
+      break;
+    case type_t::ARRAY_TYPE:
       algebraically_manipulable = false;
       break;
     case type_t::VOID_TYPE:
@@ -348,6 +373,8 @@ bool type_is_logically_manipulable(SymbolCache& symbol_cache, Declaration* conte
   bool logically_manipulable = true;
   switch (type->kind) {
     case type_t::POINTER_TYPE:
+      break;
+    case type_t::ARRAY_TYPE:
       break;
     case type_t::VOID_TYPE:
       logically_manipulable = false;

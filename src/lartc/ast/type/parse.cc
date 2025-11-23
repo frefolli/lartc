@@ -49,6 +49,25 @@ Type* parse_type_pointer(TSContext& context, TSNode& node) {
   return type;
 }
 
+Type* parse_type_array(TSContext& context, TSNode& node) {
+  Type* type = Type::New(type_t::ARRAY_TYPE);
+
+  TSNode subtype = ts_node_child_by_field_name(node, "type");
+  type->subtype = parse_type(context, subtype);
+  if (type->subtype == nullptr) {
+    const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(subtype));
+    throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(symbol_name) << " inside a (pointer)"));
+  }
+
+  TSNode size = ts_node_child_by_field_name(node, "length");
+  if (size.id) {
+    type->size = std::stoi(ts_node_source_code(size, context.source_code));
+  } else {
+    type->size = 0;
+  }
+  return type;
+}
+
 Type* parse_type_symbol(TSContext& context, TSNode& node) {
   Type* type = Type::New(type_t::SYMBOL_TYPE);
   type->symbol = Symbol::From(ts_node_source_code(node, context.source_code));
@@ -96,6 +115,7 @@ std::unordered_map<std::string, type_parser> type_parsers = {
   {"double_type", parse_type_double},
   {"boolean_type", parse_type_boolean},
   {"pointer_type", parse_type_pointer},
+  {"array_type", parse_type_array},
   {"identifier", parse_type_symbol},
   {"scoped_identifier", parse_type_symbol},
   {"void_type", parse_type_void},

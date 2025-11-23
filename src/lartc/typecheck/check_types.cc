@@ -199,6 +199,36 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
         }
       }
       break;
+    case expression_t::ARRAY_ACCESS_EXPR:
+      {
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->left);
+        Type* left_type = type_cache.expression_types[expr->left];
+        while (left_type->kind == type_t::SYMBOL_TYPE)
+          left_type = resolve_symbol_type(symbol_cache, context, left_type).first;
+
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->right);
+        Type* right_type = type_cache.expression_types[expr->right];
+        while (right_type->kind == type_t::SYMBOL_TYPE)
+          right_type = resolve_symbol_type(symbol_cache, context, right_type).first;
+
+        if (left_type->kind != type_t::ARRAY_TYPE && left_type->kind != type_t::POINTER_TYPE) {
+            throw_left_operand_of_array_access_should_be_a_pointer_or_an_array(file_db, file_db.expression_points[expr], context, left_type);
+            type_check_ok = false;
+            Type* type = Type::New(type_t::VOID_TYPE);
+            type_cache.expression_types[expr] = type;
+        }
+        if (right_type->kind != type_t::INTEGER_TYPE) {
+            throw_right_operand_of_array_access_should_be_an_integer(file_db, file_db.expression_points[expr], context, right_type);
+            type_check_ok = false;
+            Type* type = Type::New(type_t::VOID_TYPE);
+            type_cache.expression_types[expr] = type;
+        }
+        if (type_check_ok) {
+          Type* type = Type::Clone(left_type->subtype);
+          type_cache.expression_types[expr] = type;
+        }
+        break;
+      }
     case expression_t::BINARY_EXPR:
       {
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->left);

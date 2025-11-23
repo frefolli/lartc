@@ -45,6 +45,9 @@ bool resolve_symbols(FileDB& file_db, SymbolCache &symbol_cache, Declaration* co
     case type_t::POINTER_TYPE:
       resolution_ok &= resolve_symbols(file_db, symbol_cache, context, type->subtype);
       break;
+    case type_t::ARRAY_TYPE:
+      resolution_ok &= resolve_symbols(file_db, symbol_cache, context, type->subtype);
+      break;
     case type_t::STRUCT_TYPE:
       resolution_ok &= resolve_symbols(file_db, symbol_cache,  context, type->fields);
       break;
@@ -97,6 +100,10 @@ bool resolve_symbols(FileDB& file_db, SymbolCache &symbol_cache, SymbolStack& sy
       if (expr->operator_ != DOT_OP && expr->operator_ != ARR_OP) {
         resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->right);
       }
+      break;
+    case expression_t::ARRAY_ACCESS_EXPR:
+      resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->left);
+      resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->right);
       break;
     case expression_t::MONARY_EXPR:
       resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, context, expr->value);

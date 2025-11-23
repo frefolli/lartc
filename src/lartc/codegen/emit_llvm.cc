@@ -63,6 +63,10 @@ Type* extract_subtype(CGContext& context, Declaration* decl, Type* type) {
       {
         return type->subtype;
       }
+    case ARRAY_TYPE:
+      {
+        return type->subtype;
+      }
     case FUNCTION_TYPE:
       {
         return type->subtype;
@@ -168,6 +172,17 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
     case POINTER_TYPE:
       {
         emit_type_specifier(out, context, decl, type->subtype, false) << "*";
+        break;
+      }
+    case ARRAY_TYPE:
+      {
+        if (type->size > 0) {
+          out << "< " << type->size << " x ";
+          emit_type_specifier(out, context, decl, type->subtype, false) << " >";
+        } else {
+          out << "[ " << type->size << " x ";
+          emit_type_specifier(out, context, decl, type->subtype, false) << " ]";
+        }
         break;
       }
     case SYMBOL_TYPE:
@@ -528,6 +543,34 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
           out << ", i64 0, i32 " << field_index << std::endl;
         } else {
           assert(false);
+        }
+        break;
+      }
+    case ARRAY_ACCESS_EXPR:
+      {
+        Type* left_type = context.type_cache.expression_types[expression->left];
+        Type* element_type = left_type;
+
+        std::string left_value;
+        if (left_type->kind == type_t::ARRAY_TYPE) {
+          emit_expression_as_lvalue(out, context, func, markers, expression->left, left_value);
+        } else {
+          assert (left_type->kind == type_t::POINTER_TYPE);
+          emit_expression_as_rvalue(out, context, func, markers, expression->left, left_value);
+          element_type = extract_subtype(context, func, left_type);
+        }
+
+        std::string right_value;
+        emit_expression_as_rvalue(out, context, func, markers, expression->right, right_value);
+
+        output_marker = markers.new_marker();
+        if (left_type->kind == type_t::ARRAY_TYPE) {
+          emit_type_specifier(out << output_marker << " = getelementptr ", context, func, element_type) << ", ptr " << left_value;
+          out << ", i64 0, i32 " << right_value << std::endl;
+        } else {
+          assert (left_type->kind == type_t::POINTER_TYPE);
+          emit_type_specifier(out << output_marker << " = getelementptr ", context, func, element_type) << ", ptr " << left_value;
+          out << ", i64 " << right_value << std::endl;
         }
         break;
       }
@@ -1007,6 +1050,17 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         out << std::endl;
         break;
       }
+    case ARRAY_ACCESS_EXPR:
+      {
+        std::string element_marker;
+        emit_expression_as_lvalue(out, context, func, markers, expression, element_marker);
+
+        output_marker = markers.new_marker();
+        out << output_marker << " = load ";
+        emit_type_specifier(out, context, func, context.type_cache.expression_types[expression]);
+        out << ", ptr " << element_marker << std::endl;
+        break;
+      }
   }
   if (output_marker.empty()) {
     std::cerr << RED_TEXT << expression->kind << std::endl;
@@ -1308,6 +1362,11 @@ void emit_dependencies_of_type_declarations(std::ostream& out, CGContext& contex
   assert(decl != nullptr);
   switch (type->kind) {
     case POINTER_TYPE:
+      {
+        emit_dependencies_of_type_declarations(out, context, decl, processed_types, type->subtype);
+        break;
+      }
+    case ARRAY_TYPE:
       {
         emit_dependencies_of_type_declarations(out, context, decl, processed_types, type->subtype);
         break;

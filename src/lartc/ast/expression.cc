@@ -92,6 +92,12 @@ std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool 
       }
       Expression::Print(out, expr->right, parenthesized || expr->operator_ != operator_t::ASS_OP);
       break;
+    case expression_t::ARRAY_ACCESS_EXPR:
+      Expression::Print(out, expr->left, parenthesized);
+      out << "[";
+      Expression::Print(out, expr->right, parenthesized);
+      out << "]";
+      break;
     case expression_t::MONARY_EXPR:
       out << expr->operator_;
       Expression::Print(out, expr->value, true);

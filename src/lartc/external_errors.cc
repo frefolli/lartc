@@ -239,6 +239,28 @@ void throw_right_operand_of_arrow_operator_should_be_a_symbol(FileDB& file_db, F
   print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
+void throw_left_operand_of_array_access_should_be_a_pointer_or_an_array(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* invalid_type) {
+  FileDB::Point::Print(CERR, file_db, point);
+  CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": left operand of an array access should be an array or a pointer";
+  Type::Print(CERR << ", found instead '", invalid_type) << "'" << std::endl;
+  CERR << "inside of declaration '";
+  Declaration::PrintShort(CERR, context);
+  CERR << "'" << std::endl;
+
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
+}
+
+void throw_right_operand_of_array_access_should_be_an_integer(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* invalid_type) {
+  FileDB::Point::Print(CERR, file_db, point);
+  CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": right operand of an array access should be an integer";
+  Type::Print(CERR << ", found instead '", invalid_type) << "'" << std::endl;
+  CERR << "inside of declaration '";
+  Declaration::PrintShort(CERR, context);
+  CERR << "'" << std::endl;
+
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
+}
+
 void throw_left_operand_of_arrow_operator_should_be_a_pointer(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* non_struct_type) {
   FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": left operand of arrow operator should be a pointer, instead is '";

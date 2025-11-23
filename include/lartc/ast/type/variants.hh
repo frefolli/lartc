@@ -9,7 +9,8 @@
   X(SYMBOL_TYPE), \
   X(VOID_TYPE), \
   X(STRUCT_TYPE), \
-  X(FUNCTION_TYPE)
+  X(FUNCTION_TYPE), \
+  X(ARRAY_TYPE)
 enum type_t {
   #define X(_) _
     TYPE_VARIANTS

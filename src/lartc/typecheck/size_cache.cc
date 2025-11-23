@@ -32,6 +32,11 @@ std::uintmax_t SizeCache::compute_size_of(SymbolCache& symbol_cache, Declaration
         size += API::CPU_BIT_SIZE;
         break;
       }
+    case ARRAY_TYPE:
+      {
+        size = compute_size_of(symbol_cache, scope, type->subtype) * type->size;
+        break;
+      }
     case SYMBOL_TYPE:
       {
         Declaration* decl = symbol_cache.get_declaration(scope, type->symbol);

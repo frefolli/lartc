@@ -145,27 +145,21 @@ inline Expression* parse_expression_parenthesized(TSContext& context, TSNode& no
 }
 
 Expression* parse_array_access_expression(TSContext& context, TSNode& node) {
+  // TODO: RENAME THESE NAMES
   TSNode pointer_node = ts_node_child_by_field_name(node, "pointer");
   Expression* pointer_expression = parse_expression(context, pointer_node);
   ts_validate_parsing(context.language, pointer_node, "array_access_expr:pointer", pointer_expression);
 
+  // TODO: RENAME THESE NAMES
   TSNode offset_node = ts_node_child_by_field_name(node, "offset");
   Expression* offset_expression = parse_expression(context, offset_node);
   ts_validate_parsing(context.language, offset_node, "array_access_expr:offset", offset_expression);
 
-  Expression* sum = Expression::New(BINARY_EXPR);
-  sum->left = pointer_expression;
-  sum->right = offset_expression;
-  sum->operator_ = ADD_OP;
+  Expression* array_access = Expression::New(ARRAY_ACCESS_EXPR);
+  array_access->left = pointer_expression;
+  array_access->right = offset_expression;
 
-  // I'm adding `sum` to FileDB since only `dereference` would be added by `parse_expression` to FileDB
-  context.file_db->add_expression(sum, node);
-
-  Expression* dereference = Expression::New(MONARY_EXPR);
-  dereference->operator_ = MUL_OP;
-  dereference->value = sum;
-
-  return dereference;
+  return array_access;
 }
 
 typedef Expression*(*expression_parser)(TSContext& context, TSNode& node);

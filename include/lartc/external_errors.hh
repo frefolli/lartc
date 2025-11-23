@@ -44,6 +44,8 @@ void throw_wrong_parameter_number_error(FileDB& file_db, FileDB::Point& point, D
 void throw_type_is_not_implicitly_castable_to(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type);
 void throw_right_operand_of_dot_operator_should_be_a_symbol(FileDB& file_db, FileDB::Point& point, Declaration* context);
 void throw_right_operand_of_arrow_operator_should_be_a_symbol(FileDB& file_db, FileDB::Point& point, Declaration* context);
+void throw_left_operand_of_array_access_should_be_a_pointer_or_an_array(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* invalid_type);
+void throw_right_operand_of_array_access_should_be_an_integer(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* invalid_type);
 void throw_left_operand_of_dot_operator_should_be_a_struct(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* non_struct_type);
 void throw_struct_has_not_named_field(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* struct_type, Symbol& field_name);
 void throw_left_operand_of_arrow_operator_should_be_a_pointer(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* non_struct_type);
