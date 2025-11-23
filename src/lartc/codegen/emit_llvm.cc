@@ -46,6 +46,10 @@ Type* extract_callable_type(CGContext& context, Declaration* decl, Type* type) {
       {
         return type;
       }
+    case POINTER_TYPE:
+      {
+        return type->subtype;
+      }
     case SYMBOL_TYPE:
       {
         Declaration* source = context.symbol_cache.get_or_find_declaration(decl, type->symbol);
@@ -146,7 +150,7 @@ bool type_is_double(CGContext& context, Declaration* decl, Type* type) {
   return solved.second->kind == DOUBLE_TYPE;
 }
 
-std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declaration* decl, Type* type, bool first_level = true) {
+std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declaration* decl, Type* type, bool first_level = true, bool function_as_pointer = true) {
   switch (type->kind) {
     case INTEGER_TYPE:
       {
@@ -229,13 +233,20 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
             out << ", ";
           }
           emit_type_specifier(out, context, decl, field.second, false);
+          if (type_is_struct(context, decl, field.second) && context.size_cache.compute_size_of(context.symbol_cache, decl, field.second) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
+            out << "*";
+          }
         }
         if (type->is_variadic) {
           if (type->parameters.size() > 0)
             out << ", ";
           out << "...";
         }
-        out << ")*";
+        out << ")";
+        if (function_as_pointer) {
+          out << "*";
+        }
+        // TODO: PTR
         break;
       }
   }
@@ -699,8 +710,9 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         if (!callable_marker.starts_with("@")) {
           // it's an lvalue from stack
           // I need to dereference it
+          // TODO: ALIGN
           std::string new_callable_marker = markers.new_marker();
-          emit_type_specifier(out << new_callable_marker << " = load ", context, func, callable_type) << ", ptr " << callable_marker << std::endl;
+          emit_type_specifier(out << new_callable_marker << " = load ", context, func, callable_type) << ", ptr " << callable_marker << ", align 8" << std::endl;
           callable_marker = new_callable_marker;
         }
 
@@ -725,12 +737,12 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         Type* callable_subtype = extract_subtype(context, func, callable_type);
         if (callable_subtype->kind == VOID_TYPE) {
           output_marker = "if_you_read_this_you_are_operating_on_a_void_returning_function";
-          out << "call void";
+          out << "call ";
         } else {
           output_marker = markers.new_marker();
           out << output_marker << " = call ";
-          emit_type_specifier(out, context, func, callable_subtype);
         }
+        emit_type_specifier(out, context, func, callable_type, true, false);
         out << " " << callable_marker << "(";
         for (std::uintmax_t arg_index = 0; arg_index < expression->arguments.size(); ++arg_index) {
           if (arg_index > 0) {
@@ -779,7 +791,8 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
           cast_value_to_requested_type(out, context, func, markers, right_value, right_type, left_type, right_marker);
           right_value = right_marker;
 
-          emit_type_specifier(out << "store ", context, func, left_type) << " " << right_value << ", ptr " << left_value << std::endl;
+          // TODO: ALIGN
+          emit_type_specifier(out << "store ", context, func, left_type) << " " << right_value << ", ptr " << left_value << ", align 8" << std::endl;
           emit_type_specifier(out << output_marker << " = load ", context, func, left_type) << ", ptr " << left_value << ", align 8" << std::endl;
         } else {
           std::string right_value;
@@ -995,9 +1008,10 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
               std::string value_marker;
               emit_expression_as_rvalue(out, context, func, markers, expression->value, value_marker);
               output_marker = markers.new_marker();
+              // TODO: ALIGN
               out << output_marker << " = load ";
               emit_type_specifier(out, context, func, extract_subtype(context, func, context.type_cache.expression_types[expression->value]));
-              out << ", ptr " << value_marker << std::endl;
+              out << ", ptr " << value_marker << ", align 8" << std::endl;
               break;
             }
           case AND_OP: //&
@@ -1072,10 +1086,11 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
         std::string element_marker;
         emit_expression_as_lvalue(out, context, func, markers, expression, element_marker);
 
+        // TODO: ALIGN
         output_marker = markers.new_marker();
         out << output_marker << " = load ";
         emit_type_specifier(out, context, func, context.type_cache.expression_types[expression]);
-        out << ", ptr " << element_marker << std::endl;
+        out << ", ptr " << element_marker << ", align 8" << std::endl;
         break;
       }
   }
@@ -1135,7 +1150,8 @@ std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration*
           cast_value_to_requested_type(out, context, func, markers, rvalue_marker, rvalue_type, statement->type, right_marker);
           rvalue_marker = right_marker;
 
-          emit_type_specifier(out << "store ", context, func, statement->type) << " " << rvalue_marker << ", ptr " << markers.get_var(statement) << std::endl;
+          // TODO: ALIGN
+          emit_type_specifier(out << "store ", context, func, statement->type) << " " << rvalue_marker << ", ptr " << markers.get_var(statement) << ", align 8" << std::endl;
         }
         break;
       }
@@ -1282,9 +1298,10 @@ std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& ma
     emit_type_specifier(out, context, func, param->second);
     out << ", align 8" << std::endl;
 
+    // TODO: ALIGN
     out << "store ";
     emit_type_specifier(out, context, func, param->second);
-    out << " %" << param->first << ", ptr " << param_marker << std::endl;
+    out << " %" << param->first << ", ptr " << param_marker << ", align 8" << std::endl;
   }
   return out;
 }
