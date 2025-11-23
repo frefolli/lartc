@@ -27,6 +27,7 @@ void print_help() {
   std::cout << "" << std::endl;
   std::cout << "  -d                       Dumps debug information to stdout and to './tmp' directory." << std::endl;
   std::cout << "" << std::endl;
+  std::cout << "  -I<path>                 Add path to include directories." << std::endl;
   std::cout << "  -Wg,<options>            Pass comma-separated <options> on to the generator." << std::endl;
   std::cout << "  -Wa,<options>            Pass comma-separated <options> on to the assembler." << std::endl;
   std::cout << "  -Wl,<options>            Pass comma-separated <options> on to the linker." << std::endl;
@@ -154,6 +155,7 @@ int main(int argc, char** args) {
   std::vector<std::string> assembler_args = {};
   std::vector<std::string> linker_options = {};
   std::vector<std::string> linker_args = {};
+  std::vector<std::string> include_directories = {};
 
   std::string object_file;
   std::string asm_file;
@@ -188,6 +190,9 @@ int main(int argc, char** args) {
       workflow = Workflow::DONT_ASSEMBLE;
     } else if (arg == "-c") {
       workflow = Workflow::DONT_LINK;
+    } else if (arg.starts_with("-I")) {
+      std::string include_directory = read_next_arg(args, n_of_args, i, "-I");
+      include_directories.push_back(include_directory);
     } else if (arg.starts_with("-Wg")) {
       std::string options = read_next_arg(args, n_of_args, i, "-Wg");
       generator_options.push_back(options);
@@ -228,6 +233,14 @@ int main(int argc, char** args) {
         std::exit(1);
       }
     }
+  }
+
+  for (const std::string& include_directory : include_directories) {
+    if (!std::filesystem::exists(include_directory)) {
+      std::cerr << RED_TEXT << "error" << RED_TEXT << ": include directory '" << include_directory << "' doesn't exist" << NORMAL_TEXT << std::endl;
+      std::exit(1);
+    }
+    API::INCLUDE_DIRECTORIES.push_back(std::filesystem::absolute(include_directory));
   }
 
   if (c_files.size() > 0) {

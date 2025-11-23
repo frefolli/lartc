@@ -1,5 +1,6 @@
 #include <iostream>
 #include <lartc/ast/file_db.hh>
+#include <lartc/api/config.hh>
 #include <cstring>
 #include <tree_sitter/api.h>
 #include <filesystem>
@@ -141,10 +142,12 @@ std::string FileDB::resolve_local(const std::string& filepath, const std::string
   return path;
 }
 
-std::vector<std::string> INCLUDE_DIRECTORIES = {"/usr/include/", "/usr/local/include/"};
 std::string FileDB::resolve_global(const std::string& filepath) {
-  for (std::string basepath : INCLUDE_DIRECTORIES) {
-    std::string path = attempt_resolve(filepath, basepath);
+  std::string path;
+  for (std::string basepath : API::INCLUDE_DIRECTORIES) {
+    path = attempt_resolve(filepath, basepath);
+    if (!path.empty())
+      break;
   }
-  return "";
+  return path;
 }
