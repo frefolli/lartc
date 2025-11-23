@@ -400,7 +400,16 @@ Type* decide_logic_operand_type(CGContext& context, Declaration* decl, Type* lef
 
   Type* type = nullptr;
   if (left->kind == DOUBLE_TYPE || right->kind == DOUBLE_TYPE) {
-    type = Type::New(DOUBLE_TYPE);
+    if (left->kind  == DOUBLE_TYPE) {
+      type = Type::Clone(left);
+    }
+    if (right->kind  == DOUBLE_TYPE) {
+      if (type == nullptr) {
+        type = Type::Clone(right);
+      } else if (type->size < right->size) {
+        type->size = right->size;
+      }
+    }
   } else if (left->kind == POINTER_TYPE || right->kind == POINTER_TYPE) {
     if (left->kind == POINTER_TYPE) {
       type = Type::Clone(left);
@@ -942,33 +951,33 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                 if (type_is_pointer(context, func, master_operand_type)) {
                   assert(false);
                 } else {
-                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sge", "fcmp sge");
+                  emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sge", "fcmp oge");
                 }
                 break;
               }
             case LE_OP:
               {
-                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sle", "fcmp sle");
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sle", "fcmp ole");
                 break;
               }
             case EQ_OP:
               {
-                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp eq", "fcmp eq");
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp eq", "fcmp oeq");
                 break;
               }
             case NE_OP:
               {
-                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp ne", "fcmp ne");
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp ne", "fcmp one");
                 break;
               }
             case GR_OP:
               {
-                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sgt", "fcmp sgt");
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp sgt", "fcmp ogt");
                 break;
               }
             case LR_OP:
               {
-                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp slt", "fcmp slt");
+                emit_simple_binary_operation(out, context, func, output_marker, left_value, right_value, master_operand_type, "icmp slt", "fcmp olt");
                 break;
               }
             default:
@@ -1006,9 +1015,17 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
                 output_marker = markers.new_marker();
 
                 // TODO: STUB
-                out << output_marker << " = sub ";
+                if (context.type_cache.expression_types[expression]->kind == type_t::DOUBLE_TYPE) {
+                  out << output_marker << " = fsub ";
+                } else {
+                  out << output_marker << " = sub ";
+                }
                 emit_type_specifier(out, context, func, context.type_cache.expression_types[expression]);
-                out << " 0, ";
+                if (context.type_cache.expression_types[expression]->kind == type_t::DOUBLE_TYPE) {
+                  out << " 0.0, ";
+                } else {
+                  out << " 0, ";
+                }
                 out << " " << value_marker << std::endl;
               } else if (is_logical_operator(expression->operator_)) {
                 std::string value_marker;

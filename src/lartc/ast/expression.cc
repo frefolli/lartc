@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iomanip>
 #include <lartc/ast/expression.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/serializations.hh>
@@ -55,7 +56,7 @@ std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool 
       out << expr->integer_literal;
       break;
     case expression_t::DOUBLE_EXPR:
-      out << expr->decimal_literal;
+      out << std::setprecision(19) << expr->decimal_literal;
       break;
     case expression_t::BOOLEAN_EXPR:
       out << dump_boolean(expr->boolean_literal);

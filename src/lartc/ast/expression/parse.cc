@@ -4,7 +4,6 @@
 #include <lartc/internal_errors.hh>
 #include <lartc/tree_sitter.hh>
 #include <lartc/serializations.hh>
-#include <cstring>
 #include <tree_sitter/api.h>
 #include <unordered_map>
 
@@ -23,7 +22,7 @@ Expression* parse_expression_integer(TSContext& context, TSNode& node) {
 
 Expression* parse_expression_double(TSContext& context, TSNode& node) {
   Expression* double_ = Expression::New(DOUBLE_EXPR);
-  double_->decimal_literal = std::stod(ts_node_source_code(node, context.source_code));
+  double_->decimal_literal = std::stold(ts_node_source_code(node, context.source_code));
   return double_;
 }
 

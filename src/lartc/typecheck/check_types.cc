@@ -5,7 +5,6 @@
 #include <lartc/api/config.hh>
 #include <cassert>
 #include <iostream>
-#include <cmath>
 
 constexpr std::uintmax_t compute_minimum_size_for(std::intmax_t value) {
   if (value < 0) {
@@ -344,6 +343,9 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       {
         type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, expr->value);
         Type* value_type = type_cache.expression_types[expr->value];
+        while (value_type->kind == type_t::SYMBOL_TYPE) {
+          value_type = resolve_symbol_type(symbol_cache, context, value_type).first;
+        }
 
         switch (expr->operator_) {
           case operator_t::MUL_OP: // *
