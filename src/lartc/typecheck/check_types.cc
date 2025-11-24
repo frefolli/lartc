@@ -223,6 +223,10 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
             type_cache.expression_types[expr] = type;
         }
         if (type_check_ok) {
+          if (left_type->kind == type_t::POINTER_TYPE
+           && left_type->subtype->kind == type_t::ARRAY_TYPE) {
+            left_type = left_type->subtype;
+          }
           Type* type = Type::Clone(left_type->subtype);
           type_cache.expression_types[expr] = type;
         }
