@@ -2,6 +2,7 @@
 #include <lartc/ast/type/parse.hh>
 #include <lartc/ast/parse.hh>
 #include <lartc/internal_errors.hh>
+#include <lartc/external_errors.hh>
 #include <lartc/tree_sitter.hh>
 #include <lartc/serializations.hh>
 #include <tree_sitter/api.h>
@@ -16,7 +17,12 @@ Expression* parse_expression_symbol(TSContext& context, TSNode& node) {
 
 Expression* parse_expression_integer(TSContext& context, TSNode& node) {
   Expression* integer = Expression::New(INTEGER_EXPR);
-  integer->integer_literal = std::stoi(ts_node_source_code(node, context.source_code));
+  try {
+    integer->integer_literal = std::stoull(ts_node_source_code(node, context.source_code));
+  } catch(...) {
+    TSPoint point = ts_node_start_point(node);
+    throw_parsed_integer_is_too_large(context.filepath, point, context.source_code, ts_node_start_byte(node));
+  }
   return integer;
 }
 

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <lartc/typecheck/size_cache.hh>
 #include <lartc/api/config.hh>
   
@@ -67,6 +68,9 @@ std::uintmax_t SizeCache::compute_size_in_byte_of(SymbolCache& symbol_cache, Dec
   size_t bitsize = compute_size_of(symbol_cache, scope, type);
   size_t bytesize = bitsize / 8;
   if (bytesize * 8 < bitsize) {
+    bytesize++;
+  }
+  while (bytesize % 8 != 0) {
     bytesize++;
   }
   return bytesize;

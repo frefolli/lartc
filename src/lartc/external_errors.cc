@@ -23,6 +23,10 @@ void throw_syntax_error(const char* filepath, TSPoint& point, const char* node_s
   CERR << filepath << ":" << point.row+1 << ":" << point.column+1 << ": " << RED_TEXT << "syntax error" << NORMAL_TEXT << ": unexpected token inside of " << node_symbol_name << std::endl;
   print_line_of_source_code_point(source_code, point, byte_start);
 }
+void throw_parsed_integer_is_too_large(const char* filepath, TSPoint& point, const char* source_code, std::uintmax_t byte_start) {
+  CERR << filepath << ":" << point.row+1 << ":" << point.column+1 << ": " << RED_TEXT << "parsing error" << NORMAL_TEXT << ": integer is too large " << std::endl;
+  print_line_of_source_code_point(source_code, point, byte_start);
+}
 
 // Duplicate Declaration/Definitions
 void throw_duplicate_declaration_matches_name_but_not_kind(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {

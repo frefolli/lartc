@@ -846,6 +846,9 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
               {
                 if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
                   Type* subtype = extract_subtype(context, func, context.type_cache.expression_types[expression]);
+                  if (subtype->kind == type_t::ARRAY_TYPE) {
+                    subtype = subtype->subtype;
+                  }
                   if (type_is_pointer(context, func, context.type_cache.expression_types[expression->right])) {
                     emit_type_specifier(out << output_marker << " = getelementptr ", context, func, subtype) << ", ";
                     emit_type_specifier(out, context, func, context.type_cache.expression_types[expression->right]);
