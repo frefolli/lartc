@@ -542,7 +542,6 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
       }
     case BINARY_EXPR:
       {
-        // DONE: GETELEMENTPTR
         if (expression->operator_ == ARR_OP) {
           std::string left_value;
           emit_expression_as_rvalue(out, context, func, markers, expression->left, left_value);
@@ -584,7 +583,6 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
         std::string right_value;
         emit_expression_as_rvalue(out, context, func, markers, expression->right, right_value);
 
-        // TODO: GETELEMENTPTR
         output_marker = markers.new_marker();
         if (left_type->kind == type_t::ARRAY_TYPE || (left_type->kind == type_t::POINTER_TYPE && left_type->subtype->kind == type_t::ARRAY_TYPE)) {
           emit_type_specifier(out << output_marker << " = getelementptr ", context, func, element_type) << ", ptr " << left_value;
@@ -846,7 +844,6 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
               }
             case ADD_OP:
               {
-                // TODO: GETELEMENTPTR
                 if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
                   Type* subtype = extract_subtype(context, func, context.type_cache.expression_types[expression]);
                   if (type_is_pointer(context, func, context.type_cache.expression_types[expression->right])) {
@@ -869,7 +866,6 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
               }
             case SUB_OP:
               {
-                // TODO: GETELEMENTPTR
                 if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
                   Type* subtype = extract_subtype(context, func, context.type_cache.expression_types[expression]);
                   if (type_is_pointer(context, func, context.type_cache.expression_types[expression->right])) {
