@@ -184,7 +184,7 @@ std::string dump_unescaped_string(const std::string& string, bool null_terminate
   std::string result = "\"";
   for (char c : string) {
     if (c == '"') {
-      result += "\22";
+      result += "\\22";
     } else if (c == '\\') {
       result += "\\\\";
     } else if (isprint(c)) {

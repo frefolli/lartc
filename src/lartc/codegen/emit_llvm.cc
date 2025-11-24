@@ -135,6 +135,11 @@ bool type_is_pointer(CGContext& context, Declaration* decl, Type* type) {
   return solved.second->kind == POINTER_TYPE;
 }
 
+bool type_is_array(CGContext& context, Declaration* decl, Type* type) {
+  std::pair<Declaration*, Type*> solved = resolve_type_if_symbol(context, decl, type);
+  return solved.second->kind == ARRAY_TYPE;
+}
+
 bool type_is_integer(CGContext& context, Declaration* decl, Type* type) {
   std::pair<Declaration*, Type*> solved = resolve_type_if_symbol(context, decl, type);
   return solved.second->kind == INTEGER_TYPE || solved.second->kind == BOOLEAN_TYPE;
@@ -572,10 +577,10 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
         Type* element_type = left_type;
 
         std::string left_value;
-        if (left_type->kind == type_t::ARRAY_TYPE) {
+        if (type_is_array(context, func, left_type)) {
           emit_expression_as_lvalue(out, context, func, markers, expression->left, left_value);
         } else {
-          assert (left_type->kind == type_t::POINTER_TYPE);
+          assert (type_is_pointer(context, func, left_type));
           emit_expression_as_rvalue(out, context, func, markers, expression->left, left_value);
           element_type = extract_subtype(context, func, left_type);
         }
@@ -584,11 +589,11 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
         emit_expression_as_rvalue(out, context, func, markers, expression->right, right_value);
 
         output_marker = markers.new_marker();
-        if (left_type->kind == type_t::ARRAY_TYPE || (left_type->kind == type_t::POINTER_TYPE && left_type->subtype->kind == type_t::ARRAY_TYPE)) {
+        if (type_is_array(context, func, left_type) || (type_is_pointer(context, func, left_type) && type_is_array(context, func, extract_subtype(context, func, left_type)))) {
           emit_type_specifier(out << output_marker << " = getelementptr ", context, func, element_type) << ", ptr " << left_value;
           emit_type_specifier(out << ", i64 0, ", context, func, right_type) << " " << right_value << std::endl;
         } else {
-          assert (left_type->kind == type_t::POINTER_TYPE);
+          assert (type_is_pointer(context, func, left_type));
           emit_type_specifier(out << output_marker << " = getelementptr ", context, func, element_type) << ", ptr " << left_value;
           emit_type_specifier(out << ", ", context, func, right_type) << " " << right_value << std::endl;
         }
@@ -1449,7 +1454,8 @@ void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* 
         if (!processed_types[decl]) {
           processed_types[decl] = true;
           emit_dependencies_of_type_declarations(out, context, decl, processed_types, decl->type);
-          emit_type_specifier(emit_decl_label(out << "%", decl) << " = type ", context, decl, decl->type) << std::endl;
+          auto found = resolve_type_if_symbol(context, decl, decl->type);
+          emit_type_specifier(emit_decl_label(out << "%", decl) << " = type ", context, decl, found.second) << std::endl;
         }
         break;
       };
