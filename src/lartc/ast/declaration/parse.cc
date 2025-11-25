@@ -5,6 +5,7 @@
 #include <lartc/ast/declaration/merge.hh>
 #include <lartc/ast/type/parse.hh>
 #include <lartc/ast/statement/parse.hh>
+#include <lartc/ast/expression/parse.hh>
 #include <lartc/ast/parse.hh>
 #include <lartc/internal_errors.hh>
 #include <lartc/tree_sitter.hh>
@@ -154,11 +155,56 @@ inline Declaration* parse_declaration_type(TSContext& context, TSNode& node) {
   return decl;
 }
 
+inline Declaration* parse_declaration_static_variable(TSContext& context, TSNode& node) {
+  Declaration* decl = Declaration::New(declaration_t::STATIC_VARIABLE_DECL);
+  
+  TSNode name = ts_node_child_by_field_name(node, "name");
+  decl->name = ts_node_source_code(name, context.source_code);
+
+  TSNode type = ts_node_child_by_field_name(node, "type");
+  decl->type = parse_type(context, type);
+
+  if (decl->type == nullptr) {
+    const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(type));
+    throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(symbol_name) << " inside a (typedef)"));
+  }
+
+  TSNode value = ts_node_child_by_field_name(node, "value");
+  if (value.id != nullptr) {
+    decl->value = parse_expression(context, value);
+    if (decl->value == nullptr) {
+      const char* symbol_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(type));
+      throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(symbol_name) << " inside a (static_variable)"));
+    }
+  }
+
+  TSNode modifier = ts_node_child_by_field_name(node, "modifier");
+  if (modifier.id != nullptr) {
+    const char* modifier_name = ts_language_symbol_name(context.language, ts_node_grammar_symbol(modifier));
+    if (strcmp(modifier_name, "extern_modifier") == 0) {
+      decl->modifier = MODIFIER_EXTERN;
+    } else if (strcmp(modifier_name, "global_modifier") == 0) {
+      decl->modifier = MODIFIER_GLOBAL;
+    } else {
+      throw_internal_error(UNHANDLED_TS_SYMBOL_NAME, MSG(": " << std::string(modifier_name) << " inside a (static_variable::modifier)"));
+    }
+  }
+
+  if (decl->modifier == MODIFIER_EXTERN && decl->value != nullptr) {
+    TSPoint point = ts_node_start_point(node);
+    throw_extern_static_variables_cannot_have_a_defined_value(context.filepath, point, context.source_code, ts_node_start_byte(node));
+  }
+
+  context.file_db->add_declaration(decl, node);
+  return decl;
+}
+
 typedef Declaration*(*declaration_parser)(TSContext& context, TSNode& node);
 std::unordered_map<std::string, declaration_parser> declaration_parsers = {
   {"module", parse_declaration_module},
   {"function", parse_declaration_function},
   {"typedef", parse_declaration_type},
+  {"static_variable", parse_declaration_static_variable},
 };
 
 Declaration* parse_declaration(TSContext& context, TSNode& node) {

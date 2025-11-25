@@ -201,6 +201,17 @@ bool resolve_symbols(FileDB& file_db, SymbolCache& symbol_cache, Declaration* de
         resolution_ok &= resolve_symbols(file_db, symbol_cache, child);
       }
       break;
+    case declaration_t::STATIC_VARIABLE_DECL:
+      {
+        resolution_ok &= resolve_symbols(file_db, symbol_cache, decl, decl->type);
+        if (decl->value != nullptr) {
+          SymbolStack symbol_stack;
+          symbol_stack.open_scope();
+          resolution_ok &= resolve_symbols(file_db, symbol_cache, symbol_stack, decl, decl->value);
+          symbol_stack.close_scope();
+        }
+        break;
+      }
   }
   return resolution_ok;
 }

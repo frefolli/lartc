@@ -528,7 +528,6 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
 std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker);
 
 std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
-  // out << "; " << expression->kind << std::endl;
   switch (expression->kind) {
     case SYMBOL_EXPR:
       {
@@ -651,12 +650,22 @@ std::ostream& emit_expression_as_lvalue(std::ostream& out, CGContext& context, D
 }
 
 std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Expression* expression, std::string& output_marker) {
-  Expression::Print(out << "; ", expression) << std::endl;
   switch (expression->kind) {
     case SYMBOL_EXPR:
       {
         if (Declaration* decl = context.symbol_cache.get_declaration(func, expression->symbol)) {
-          output_marker = "@" + craft_decl_label(decl);
+          if (decl->kind == declaration_t::FUNCTION_DECL) {
+            output_marker = "@" + craft_decl_label(decl);
+          } else if (decl->kind == declaration_t::STATIC_VARIABLE_DECL) {
+            output_marker = markers.new_marker();
+            out << output_marker << " = load ";
+            emit_type_specifier(out, context, func, decl->type);
+            std::string marker = "@" + craft_decl_label(decl);
+            assert(!marker.empty());
+            out << ", ptr " << marker << ", align 8" << std::endl;
+          } else {
+            assert (false);
+          }
         } else if (Statement* var = context.symbol_cache.get_statement(expression)) {
           output_marker = markers.new_marker();
           out << output_marker << " = load ";
@@ -1111,7 +1120,6 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
 }
 
 std::ostream& emit_statement(std::ostream& out, CGContext& context, Declaration* func, Markers& markers, Statement* statement) {
-  // out << "; " << statement->kind << std::endl;
   switch (statement->kind) {
     case statement_t::FOR_STMT:
       {
@@ -1359,6 +1367,41 @@ std::ostream& emit_function_definition(std::ostream& out, CGContext& context, De
   return out;
 }
 
+std::ostream& emit_static_variable_declaration(std::ostream& out, CGContext& context, Declaration* decl) {
+  out << "@";
+  emit_decl_label(out, decl);
+  out << " = ";
+
+  switch (decl->modifier) {
+    case modifier_t::MODIFIER_NONE:
+      {
+        out << "internal dso_local global ";
+        break;
+      }
+    case modifier_t::MODIFIER_EXTERN:
+      {
+        out << "external dso_local global ";
+        break;
+      }
+    case modifier_t::MODIFIER_GLOBAL:
+      {
+        out << "dso_local global ";
+        break;
+      }
+  }
+  emit_type_specifier(out, context, decl, decl->type);
+  
+  if (decl->value != nullptr) {
+    Markers markers;
+    std::string output_marker;
+    emit_expression_as_rvalue(out << " ", context, decl, markers, decl->value, output_marker);
+    out << output_marker;
+  }
+
+  out << ", align 8" << std::endl;
+  return out;
+}
+
 void emit_declaration(std::ostream& out, CGContext& context, Declaration* decl) {
   switch (decl->kind) {
     case MODULE_DECL:
@@ -1380,6 +1423,12 @@ void emit_declaration(std::ostream& out, CGContext& context, Declaration* decl) 
         } else {
           emit_function_definition(out, context, decl);
         }
+        break;
+      };
+    case STATIC_VARIABLE_DECL:
+      {
+        emit_static_variable_declaration(out, context, decl);
+        // TODO: STATIC VARIABLES
         break;
       };
   }
@@ -1460,6 +1509,10 @@ void emit_type_declarations(std::ostream& out, CGContext& context, Declaration* 
         break;
       };
     case FUNCTION_DECL:
+      {
+        break;
+      };
+    case STATIC_VARIABLE_DECL:
       {
         break;
       };

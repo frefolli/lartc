@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <lartc/external_errors.hh>
 #include <iostream>
 
@@ -24,8 +25,14 @@ void throw_syntax_error(const char* filepath, TSPoint& point, const char* node_s
   print_line_of_source_code_point(source_code, point, byte_start);
 }
 void throw_parsed_integer_is_too_large(const char* filepath, TSPoint& point, const char* source_code, std::uintmax_t byte_start) {
-  CERR << filepath << ":" << point.row+1 << ":" << point.column+1 << ": " << RED_TEXT << "parsing error" << NORMAL_TEXT << ": integer is too large " << std::endl;
+  CERR << filepath << ":" << point.row+1 << ":" << point.column+1 << ": " << RED_TEXT << "parsing error" << NORMAL_TEXT << ": integer is too large" << std::endl;
   print_line_of_source_code_point(source_code, point, byte_start);
+  std::exit(1);
+}
+void throw_extern_static_variables_cannot_have_a_defined_value(const char* filepath, TSPoint& point, const char* source_code, std::uintmax_t byte_start) {
+  CERR << filepath << ":" << point.row+1 << ":" << point.column+1 << ": " << RED_TEXT << "parsing error" << NORMAL_TEXT << ": an extern static variable cannot be defined with value" << std::endl;
+  print_line_of_source_code_point(source_code, point, byte_start);
+  std::exit(1);
 }
 
 // Duplicate Declaration/Definitions
@@ -42,6 +49,16 @@ void throw_duplicate_declaration_matches_name_but_not_kind(FileDB& file_db, File
 void throw_duplicate_type_definition_doesnt_match(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {
   FileDB::Point::Print(CERR, file_db, latest_point);
   CERR << ": " << RED_TEXT << "duplicate definition error" << NORMAL_TEXT << ": defined type doesn't match" << std::endl;
+  print_line_of_source_code_point(file_db.files[latest_point.file].source_code, latest_point, latest_point.byte_start);
+
+  FileDB::Point::Print(CERR, file_db, older_point);
+  CERR << ": " << AZURE_TEXT << "reference" << NORMAL_TEXT << ": already defined here" << std::endl;
+  print_line_of_source_code_point(file_db.files[older_point.file].source_code, older_point, older_point.byte_start);
+}
+
+void throw_duplicate_static_variable_definition(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point) {
+  FileDB::Point::Print(CERR, file_db, latest_point);
+  CERR << ": " << RED_TEXT << "duplicate definition error" << NORMAL_TEXT << ": duplicate static-variable definition" << std::endl;
   print_line_of_source_code_point(file_db.files[latest_point.file].source_code, latest_point, latest_point.byte_start);
 
   FileDB::Point::Print(CERR, file_db, older_point);

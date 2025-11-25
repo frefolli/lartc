@@ -150,6 +150,32 @@ Declaration* merge_function_declarations(TSContext& context, Declaration* older,
   return result;
 }
 
+Declaration* merge_static_variable_declarations(TSContext& context, Declaration* older, Declaration* latest) {
+  Declaration* result = nullptr;
+  if (type_matches_symbolically(older->type, latest->type)) {
+    if (older->value != nullptr) {
+      if (latest->value != nullptr) {
+        // err: redefinition
+        throw_duplicate_static_variable_definition(*context.file_db, context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
+        context.ok = false;
+      }
+    } else {
+      if (latest->value != nullptr) {
+        older->value = latest->value;
+        latest->value = nullptr;
+      }
+    }
+  } else {
+    throw_duplicate_type_definition_doesnt_match(*context.file_db, context.file_db->declaration_points[older], context.file_db->declaration_points[latest]);
+    context.ok = false;
+  }
+  context.file_db->declaration_points.erase(latest);
+  Declaration::Delete(latest);
+  result = older;
+  assert(result != nullptr);
+  return result;
+}
+
 Declaration* merge_declarations(TSContext& context, Declaration* older, Declaration* latest) {
   Declaration* result = nullptr;
   if (older->kind != latest->kind) {
@@ -174,6 +200,11 @@ Declaration* merge_declarations(TSContext& context, Declaration* older, Declarat
       case declaration_t::FUNCTION_DECL:
         {
           result = merge_function_declarations(context, older, latest);
+          break;
+        }
+      case declaration_t::STATIC_VARIABLE_DECL:
+        {
+          result = merge_static_variable_declarations(context, older, latest);
           break;
         }
     }

@@ -17,10 +17,12 @@
 // Cst Checking
 void throw_syntax_error(const char* filepath, TSPoint& point, const char* node_symbol_name, const char* source_code, std::uintmax_t byte_start);
 void throw_parsed_integer_is_too_large(const char* filepath, TSPoint& point, const char* source_code, std::uintmax_t byte_start);
+void throw_extern_static_variables_cannot_have_a_defined_value(const char* filepath, TSPoint& point, const char* source_code, std::uintmax_t byte_start);
 
 // Ast Formation
 void throw_duplicate_declaration_matches_name_but_not_kind(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point);
 void throw_duplicate_type_definition_doesnt_match(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point);
+void throw_duplicate_static_variable_definition(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point);
 void throw_duplicate_function_definition(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point);
 void throw_duplicate_function_declaration_return_type_doesnt_match(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point);
 void throw_duplicate_function_declaration_parameter_types_dont_match(FileDB& file_db, FileDB::Point& older_point, FileDB::Point& latest_point);

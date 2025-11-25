@@ -101,6 +101,9 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
                 }
                 type->is_variadic = query_decl->is_variadic;
                 type_cache.expression_types[expr] = type;
+              } else if (query_decl->kind == declaration_t::STATIC_VARIABLE_DECL) {
+                Type* type = Type::Clone(query_decl->type);
+                type_cache.expression_types[expr] = type;
               } else {// = declaration_t::MODULE_DECL
                 throw_module_has_no_type_error(file_db, file_db.expression_points[expr], context, expr->symbol);
                 type_check_ok = false;
@@ -518,6 +521,11 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       }
       break;
     case declaration_t::TYPE_DECL:
+      break;
+    case declaration_t::STATIC_VARIABLE_DECL:
+      if (decl->value != nullptr) {
+        type_check_ok &= check_types(file_db, symbol_cache, type_cache, decl, decl->value);
+      }
       break;
   }
 

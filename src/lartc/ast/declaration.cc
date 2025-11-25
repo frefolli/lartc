@@ -12,7 +12,9 @@ Declaration* Declaration::New(declaration_t kind) {
     .type = nullptr,
     .parameters = {},
     .body = nullptr,
-    .is_variadic = false
+    .is_variadic = false,
+    .value = nullptr,
+    .modifier = MODIFIER_NONE
   };
 }
 
@@ -28,7 +30,9 @@ void Declaration::Delete(Declaration*& decl) {
     }
     decl->parameters.clear();
     decl->is_variadic = false;
+    decl->modifier = MODIFIER_NONE;
     Statement::Delete(decl->body);
+    Expression::Delete(decl->value);
     delete decl;
     decl = nullptr;
   }
@@ -86,8 +90,21 @@ std::ostream& Declaration::Print(std::ostream& out, const Declaration* decl, std
         out << " " << decl->name;
       Type::Print(out << " = ", decl->type);
       return out << ";";
-    default:
-      assert(false);
+    case declaration_t::STATIC_VARIABLE_DECL:
+      if (decl->modifier == MODIFIER_EXTERN) {
+        out << "extern ";
+      }
+      if (decl->modifier == MODIFIER_GLOBAL) {
+        out << "global ";
+      }
+      out << "var";
+      if (!decl->name.empty())
+        out << " " << decl->name;
+      Type::Print(out << ": ", decl->type);
+      if (decl->value != nullptr) {
+        Expression::Print(out << " = ", decl->value);
+      }
+      return out << ";";
   }
   return out;
 }
@@ -126,6 +143,9 @@ std::ostream& Declaration::PrintShort(std::ostream& out, const Declaration* decl
       break;
     case declaration_t::TYPE_DECL:
       out << "type " << Declaration::QualifiedName(decl);
+      break;
+    case declaration_t::STATIC_VARIABLE_DECL:
+      out << "var " << Declaration::QualifiedName(decl);
       break;
   }
   return out;

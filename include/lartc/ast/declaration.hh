@@ -6,6 +6,12 @@
 #include <vector>
 #include <cstdint>
 
+enum modifier_t {
+  MODIFIER_NONE,
+  MODIFIER_EXTERN,
+  MODIFIER_GLOBAL
+};
+
 struct Declaration {
   declaration_t kind;
   std::vector<Declaration*> children;
@@ -15,6 +21,8 @@ struct Declaration {
   std::vector<std::pair<std::string, Type*>> parameters;
   Statement* body;
   bool is_variadic;
+  Expression* value;
+  modifier_t modifier;
 
   static Declaration* New(declaration_t kind);
   static std::ostream& Print(std::ostream& out, const Declaration* decl, std::uintmax_t tabulation = 0);

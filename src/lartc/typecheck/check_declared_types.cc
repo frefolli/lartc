@@ -64,6 +64,22 @@ std::pair<bool, std::uintmax_t> check_declared_types(FileDB& file_db, SymbolCach
   return {declared_types_ok, size};
 }
 
+/*
+ * This function should iterate over possible type declarations
+ * - Modules only do recursive calls to their children
+ * - Typedefs have their type checked
+ * The purporse of this is to avoid cyclic unbounded definitions of types, such as
+ *
+ * ```
+ * // This is BAD
+ * type A = B;
+ * type B = A;
+ *
+ * // This is GOOD
+ * type A = &B;
+ * type B = &A;
+ * ```
+ * */
 bool check_declared_types(FileDB& file_db, SymbolCache& symbol_cache, SizeCache& size_cache, Declaration* decl) {
   bool declared_types_ok = true;
   switch (decl->kind) {
@@ -82,6 +98,8 @@ bool check_declared_types(FileDB& file_db, SymbolCache& symbol_cache, SizeCache&
       }
       break;
     case declaration_t::FUNCTION_DECL:
+      break;
+    case declaration_t::STATIC_VARIABLE_DECL:
       break;
   }
   return declared_types_ok;
