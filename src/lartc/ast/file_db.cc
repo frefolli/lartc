@@ -63,6 +63,10 @@ void FileDB::add_var(Statement* var_decl, TSNode& node) {
   var_decl_points[var_decl] = FileDB::Point::From(this, node);
 }
 
+void FileDB::add_return(Statement* return_stmt, TSNode& node) {
+  return_points[return_stmt] = FileDB::Point::From(this, node);
+}
+
 std::ostream& FileDB::File::Print(std::ostream& out, const FileDB::File& file) {
   out << file.filepath << " | " << (strlen(file.source_code)/1024) << " KB";
   return out;

@@ -200,6 +200,19 @@ void throw_type_is_not_implicitly_castable_to(FileDB& file_db, FileDB::Point& po
   print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
+void throw_return_type_is_not_implicitly_castable_to(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type) {
+  FileDB::Point::Print(CERR, file_db, point);
+  CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": statement returns a value of type '";
+  Type::Print(CERR, src_type) << "'";
+  CERR << " when the declared function type required '";
+  Type::Print(CERR, dst_type) << "' as return type. It may need to be casted explicitly" << std::endl;
+  CERR << " inside of declaration '";
+  Declaration::PrintShort(CERR, context);
+  CERR << "'" << std::endl;
+
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
+}
+
 void throw_right_operand_of_dot_operator_should_be_a_symbol(FileDB& file_db, FileDB::Point& point, Declaration* context) {
   FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "type checking error" << NORMAL_TEXT << ": right operand of dot operator should be a symbol" << std::endl;

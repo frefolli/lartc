@@ -43,6 +43,7 @@ void throw_type_cannot_be_algebraically_manipulated_error(FileDB& file_db, FileD
 void throw_type_is_not_callable_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* non_callable_type);
 void throw_wrong_parameter_number_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* fn_type);
 void throw_type_is_not_implicitly_castable_to(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type);
+void throw_return_type_is_not_implicitly_castable_to(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* src_type, Type* dst_type);
 void throw_right_operand_of_dot_operator_should_be_a_symbol(FileDB& file_db, FileDB::Point& point, Declaration* context);
 void throw_right_operand_of_arrow_operator_should_be_a_symbol(FileDB& file_db, FileDB::Point& point, Declaration* context);
 void throw_left_operand_of_array_access_should_be_a_pointer_or_an_array(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* invalid_type);

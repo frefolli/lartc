@@ -447,10 +447,29 @@ bool check_types(FileDB& file_db, SymbolCache& symbol_cache, TypeCache& type_cac
       }
       break;
     case statement_t::RETURN_STMT:
-      if (stmt->expr != nullptr) {
-        type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, stmt->expr);
+      {
+        Type* return_type = context->type;
+        Type* right_type;
+        if (stmt->expr != nullptr) {
+          type_check_ok &= check_types(file_db, symbol_cache, type_cache, context, stmt->expr);
+          right_type = type_cache.expression_types[stmt->expr];
+        } else {
+          right_type = Type::New(type_t::VOID_TYPE);
+        }
+        if (!type_can_be_implicitly_casted_to(symbol_cache, context, right_type, return_type)) {
+          FileDB::Point& point = file_db.return_points[stmt];
+          if (stmt->expr != nullptr) {
+            point = file_db.expression_points[stmt->expr];
+          }
+
+          throw_type_is_not_implicitly_castable_to(file_db, file_db.return_points[stmt], context, right_type, return_type);
+          type_check_ok = false;
+        }
+        if (stmt->expr == nullptr) {
+          Type::Delete(right_type);
+        }
+        break;
       }
-      break;
     case statement_t::BREAK_STMT:
       break;
     case statement_t::CONTINUE_STMT:

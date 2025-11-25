@@ -32,6 +32,7 @@ struct FileDB {
   std::map<Type*, Point> type_points;
   std::map<Declaration*, Point> declaration_points;
   std::map<Statement*, Point> var_decl_points;
+  std::map<Statement*, Point> return_points;
   std::vector<File> files;
 
   File* add_file(const char* filepath);
@@ -40,6 +41,7 @@ struct FileDB {
   void add_type(Type* type, TSNode& node);
   void add_declaration(Declaration* declaration, TSNode& node);
   void add_var(Statement* var_decl, TSNode& node);
+  void add_return(Statement* var_decl, TSNode& node);
   inline std::uintmax_t current_file_index() const {
     return files.size() - 1;
   }

@@ -57,6 +57,7 @@ inline Statement* parse_statement_return(TSContext& context, TSNode& node) {
     return_->expr = parse_expression(context, value);
     ts_validate_parsing(context.language, value, "return:value", return_->expr);
   }
+  context.file_db->add_return(return_, node);
   return return_;
 }
 
