@@ -96,6 +96,11 @@ void print_error(API::Result error) {
         std::cerr << RED_TEXT << "type checking error" << NORMAL_TEXT << std::endl;
         break;
       }
+    case API::Result::CONSTANT_CHECKING_ERROR:
+      {
+        std::cerr << RED_TEXT << "constant checking error" << NORMAL_TEXT << std::endl;
+        break;
+      }
     case API::Result::LLVM_IR_GENERATION_ERROR:
       {
         std::cerr << RED_TEXT << "llvm ir generation error" << NORMAL_TEXT << std::endl;

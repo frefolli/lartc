@@ -58,5 +58,9 @@ void throw_types_cannot_be_algebraically_manipulated_error(FileDB& file_db, File
 void throw_types_cannot_be_logically_manipulated_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* left_type, Type* right_type);
 void throw_type_cannot_be_logically_manipulated_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Type* type);
 
+// Constant checking
+void throw_expression_is_used_in_constant_context_but_is_not_constant(FileDB& file_db, FileDB::Point& point, Declaration* decl);
+void throw_cyclic_dependency_between_static_variables_is_not_protected_by_usage_of_pointers(FileDB& file_db, FileDB::Point& point, Declaration* static_var_decl, Declaration* requested_static_var_decl);
+
 void throw_uncaught_type_checker_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Expression* expr);
 #endif//LARTC_EXTERNAL_ERROR

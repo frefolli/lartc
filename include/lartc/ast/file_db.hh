@@ -53,5 +53,6 @@ struct FileDB {
   static std::string resolve_global(const std::string& filepath);
 
   static std::ostream& Print(std::ostream& out, const FileDB& file_db);
+  static void Delete(FileDB& file_db);
 };
 #endif//LARTC_AST_FILE_DB

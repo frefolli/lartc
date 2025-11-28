@@ -38,6 +38,8 @@ executable('lartc', [
     'src/lartc/typecheck/size_cache.cc',
     'src/lartc/typecheck/casting.cc',
     'src/lartc/typecheck/check_declared_types.cc',
+    'src/lartc/constants/constant_cache.cc',
+    'src/lartc/constants/check_constants.cc',
     'src/lartc/codegen/emit_llvm.cc',
     'src/lartc/codegen/markers.cc',
     'src/lartc/codegen/literal_store.cc',

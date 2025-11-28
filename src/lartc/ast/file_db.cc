@@ -155,3 +155,19 @@ std::string FileDB::resolve_global(const std::string& filepath) {
   }
   return path;
 }
+
+void FileDB::Delete(FileDB& file_db) {
+  file_db.symbol_points.clear();
+  file_db.expression_points.clear();
+  file_db.type_points.clear();
+  file_db.declaration_points.clear();
+  file_db.var_decl_points.clear();
+  file_db.return_points.clear();
+
+  for (File& file : file_db.files) {
+    file.filepath = "";
+    free(file.source_code);
+    file.source_code = nullptr;
+  }
+  file_db.files.clear();
+}

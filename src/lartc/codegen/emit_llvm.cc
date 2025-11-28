@@ -817,10 +817,10 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
 
           Type* master_operand_type;
           if (type_is_pointer(context, func, context.type_cache.expression_types[expression])) {
-            master_operand_type = context.type_cache.expression_types[expression];
+            master_operand_type = Type::Clone(context.type_cache.expression_types[expression]);
           } else {
             if (is_algebraic_operator(expression->operator_)) {
-              master_operand_type = cast_operands_to_expression_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value, context.type_cache.expression_types[expression]);
+              master_operand_type = cast_operands_to_expression_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value, Type::Clone(context.type_cache.expression_types[expression]));
             } else if (is_logical_operator(expression->operator_)) {
               master_operand_type = cast_operands_to_biggest_type(out, context, markers, func, context.type_cache.expression_types[expression->left], left_value, context.type_cache.expression_types[expression->right], right_value);
             } else {
@@ -1013,6 +1013,7 @@ std::ostream& emit_expression_as_rvalue(std::ostream& out, CGContext& context, D
             default:
               assert(false);
           }
+          Type::Delete(master_operand_type);
         }
         break;
       }

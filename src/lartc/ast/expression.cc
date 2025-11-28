@@ -37,6 +37,9 @@ void Expression::Delete(Expression*& expr) {
     expr->symbol = {};
     expr->operator_ = (operator_t)-1;
     Type::Delete(expr->type);
+    Expression::Delete(expr->left);
+    Expression::Delete(expr->right);
+    Expression::Delete(expr->value);
     delete expr;
     expr = nullptr;
   }
@@ -132,4 +135,32 @@ std::ostream& Expression::Print(std::ostream& out, const Expression* expr, bool 
                         || expr->kind == expression_t::BINARY_EXPR))
     out << ")";
   return out;
+}
+
+Expression* Expression::Clone(Expression* expr) {
+  if (expr == nullptr) {
+    throw_internal_error(ATTEMPT_TO_CLONE_NULLPTR_AS_EXPRESSION, MSG(""));
+  }
+  Expression* result = Expression::New(expr->kind);
+  result->symbol = expr->symbol;
+  result->string_literal = expr->string_literal;
+  result->boolean_literal = expr->boolean_literal;
+  result->integer_literal = expr->integer_literal;
+  result->decimal_literal = expr->decimal_literal;
+  result->operator_ = expr->operator_;
+  result->arguments = {};
+  for (auto argument : expr->arguments) {
+    result->arguments.push_back(Expression::Clone(argument));
+  }
+  if (expr->callable != nullptr)
+    result->callable = Expression::Clone(expr->callable);
+  if (expr->type != nullptr)
+    result->type = Type::Clone(expr->type);
+  if (expr->left != nullptr)
+    result->left = Expression::Clone(expr->left);
+  if (expr->right != nullptr)
+    result->right = Expression::Clone(expr->right);
+  if (expr->value != nullptr)
+    result->value = Expression::Clone(expr->value);
+  return result;
 }

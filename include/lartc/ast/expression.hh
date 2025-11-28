@@ -25,5 +25,6 @@ struct Expression {
   static Expression* New(expression_t kind);
   static std::ostream& Print(std::ostream& out, const Expression* decl, bool parenthesized = false);
   static void Delete(Expression*& decl);
+  static Expression* Clone(Expression* expr);
 };
 #endif//LARTC_AST_EXPRESSION

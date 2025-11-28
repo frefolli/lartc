@@ -13,6 +13,8 @@
 #include <lartc/typecheck/check_types.hh>
 #include <lartc/typecheck/size_cache.hh>
 #include <lartc/typecheck/check_declared_types.hh>
+#include <lartc/constants/check_constants.hh>
+#include <lartc/constants/constant_cache.hh>
 #include <lartc/codegen/cg_context.hh>
 #include <lartc/codegen/emit_llvm.hh>
 
@@ -116,6 +118,9 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
       std::cerr << RED_TEXT << "error" << NORMAL_TEXT << ": file '" << context.filepath << "' not found" << std::endl;
       break;
     }
+
+    free((char*)context.filepath);
+    context.filepath = nullptr;
   }
 
   if (!at_least_one_source_file) {
@@ -126,6 +131,8 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
   if (!no_errors_occurred) {
     return Result::PARSING_ERROR;
   }
+
+  ts_parser_delete(parser);
 
   /* RESOLVE-PHASE */
   SymbolCache symbol_cache;
@@ -165,6 +172,24 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
     printf("Checking types ... OK\n");
   }
 
+  if (!no_errors_occurred) {
+    return Result::TYPE_CHECKING_ERROR;
+  }
+
+  /* CONSTANT PROPAGATION */
+  ConstantCache constant_cache;
+  if (API::DEBUG_SEGFAULT_IDENTIFY_PHASE) {
+    printf("Checking constants ... \n");
+  }
+  no_errors_occurred &= check_constants(file_db, symbol_cache, size_cache, type_cache, constant_cache, decl_tree);
+  if (API::DEBUG_SEGFAULT_IDENTIFY_PHASE) {
+    printf("Checking constants ... OK\n");
+  }
+
+  if (!no_errors_occurred) {
+    return Result::CONSTANT_CHECKING_ERROR;
+  }
+
   /* END-PHASE */
   if (API::DUMP_DEBUG_INFO_FOR_STRUCS) {
     std::filesystem::create_directories("tmp");
@@ -173,10 +198,6 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
     print_to_file(file_db, "tmp/file_db.txt");
     print_to_file(type_cache, "tmp/type_cache.txt");
     print_to_file(size_cache, "tmp/size_cache.txt");
-  }
-
-  if (!no_errors_occurred) {
-    return Result::TYPE_CHECKING_ERROR;
   }
 
   /* CODE-GEN-PHASE */
@@ -220,8 +241,10 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
     print_to_file(size_cache, "tmp/size_cache.txt");
   }
 
+  TypeCache::Delete(type_cache);
+  ConstantCache::Delete(constant_cache);
   Declaration::Delete(decl_tree);
-  ts_parser_delete(parser);
+  FileDB::Delete(file_db);
 
   return Result::OK;
 }

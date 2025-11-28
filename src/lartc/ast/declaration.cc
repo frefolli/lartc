@@ -33,6 +33,7 @@ void Declaration::Delete(Declaration*& decl) {
     decl->modifier = MODIFIER_NONE;
     Statement::Delete(decl->body);
     Expression::Delete(decl->value);
+    Type::Delete(decl->type);
     delete decl;
     decl = nullptr;
   }

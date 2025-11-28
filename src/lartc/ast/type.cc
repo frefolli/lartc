@@ -57,6 +57,7 @@ Type* Type::Clone(const Type* other) {
   for (auto item : other->parameters) {
     type->parameters.push_back({item.first, Type::Clone(item.second)});
   }
+  type->is_variadic = true;
   return type;
 }
 
