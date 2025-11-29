@@ -1,7 +1,7 @@
 # LartC - Compiler for Lart Programming Language
 
 Static typed prototype programming language made in a two month journey.
-Checkout [lart-examples](https://github.com/frefolli/lart-examples) repository for examples of usage of both the compiler and the language.
+Checkout [lart-tests](https://github.com/frefolli/lart-tests) repository for examples of usage of both the compiler and the language.
 
 # Help
 
@@ -19,6 +19,7 @@ Options:
 
   -d                       Dumps debug information to stdout and to './tmp' directory.
 
+  -I<path>                 Add path to include directories.
   -Wg,<options>            Pass comma-separated <options> on to the generator.
   -Wa,<options>            Pass comma-separated <options> on to the assembler.
   -Wl,<options>            Pass comma-separated <options> on to the linker.
@@ -30,12 +31,12 @@ Options:
   As an experimental feature, passing *.h files will cause the compiler to parse those C-files and try to convert them to LART code (intended for headers). The result is printed to stdout, then the execution terminates.
 
 For bug reporting, please see:
-<https://github.com/frefolli/lartc/issues>.
+<https://github.com/frefolli/lartc/issues>
 ```
 
 # Example usage
 
-`./builddir/lartc ../lart-examples/hello.lart -o main.exe`
+`./builddir/lartc -I../lart-tests/include ../lart-tests/tests/diff/hello/source.lart -o main.exe`
 
 Will produce an executable which output is:
 
