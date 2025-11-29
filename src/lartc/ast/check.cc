@@ -15,6 +15,11 @@ bool check_ts_tree_for_errors(TSContext& context, TSNode& node) {
       throw_syntax_error(context.filepath, child_start, node_symbol_name, context.source_code, ts_node_start_byte(child_node));
       ok = false;
       check_ts_tree_for_errors(context, child_node);
+    } else if (ts_node_is_missing(child_node)) {
+      TSPoint child_start = ts_node_start_point(child_node);
+      throw_syntax_error(context.filepath, child_start, node_symbol_name, context.source_code, ts_node_start_byte(child_node));
+      ok = false;
+      check_ts_tree_for_errors(context, child_node);
     } else {
       ok &= check_ts_tree_for_errors(context, child_node);
     }

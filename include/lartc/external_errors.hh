@@ -61,6 +61,9 @@ void throw_type_cannot_be_logically_manipulated_error(FileDB& file_db, FileDB::P
 // Constant checking
 void throw_expression_is_used_in_constant_context_but_is_not_constant(FileDB& file_db, FileDB::Point& point, Declaration* decl);
 void throw_cyclic_dependency_between_static_variables_is_not_protected_by_usage_of_pointers(FileDB& file_db, FileDB::Point& point, Declaration* static_var_decl, Declaration* requested_static_var_decl);
+void throw_constant_expression_is_not_implemented(FileDB& file_db, FileDB::Point& point, Declaration* decl);
+void throw_was_not_able_to_deduce_binexp_types(FileDB& file_db, FileDB::Point& point, Declaration* decl, Expression* left, Expression* right);
+void throw_was_not_able_to_deduce_monexp_types(FileDB& file_db, FileDB::Point& point, Declaration* decl, Expression* value);
 
 void throw_uncaught_type_checker_error(FileDB& file_db, FileDB::Point& point, Declaration* context, Expression* expr);
 #endif//LARTC_EXTERNAL_ERROR

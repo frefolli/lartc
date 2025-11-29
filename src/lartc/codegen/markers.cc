@@ -63,7 +63,8 @@ std::string Markers::get_param(std::pair<std::string, Type*>* param) {
   if (params.contains(param)) {
     return serialize(params[param]);
   }
-  return "";
+  // TODO: BRUTTISSIMA ROBA
+  return "%" + param->first;
 }
 
 void Markers::clear_params() {

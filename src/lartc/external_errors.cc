@@ -364,7 +364,7 @@ void throw_uncaught_type_checker_error(FileDB& file_db, FileDB::Point& point, De
 void throw_expression_is_used_in_constant_context_but_is_not_constant(FileDB& file_db, FileDB::Point& point, Declaration* decl) {
   FileDB::Point::Print(CERR, file_db, point);
   CERR << ": " << RED_TEXT << "constant checking error" << NORMAL_TEXT << ": expression is used is a constant context";
-  Declaration::PrintShort(CERR << " (`", decl) << "`) but it is not constant'" << std::endl;
+  Declaration::PrintShort(CERR << " (for `", decl) << "`) but it is not constant" << std::endl;
   print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }
 
@@ -376,5 +376,29 @@ void throw_cyclic_dependency_between_static_variables_is_not_protected_by_usage_
   Declaration::PrintShort(CERR, static_var_decl);
   CERR << "' is not protected by usage of pointers" << std::endl;
 
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
+}
+
+void throw_constant_expression_is_not_implemented(FileDB& file_db, FileDB::Point& point, Declaration* decl) {
+  FileDB::Point::Print(CERR, file_db, point);
+  CERR << ": " << RED_TEXT << "constant checking error" << NORMAL_TEXT << ": expression used as constant";
+  Declaration::PrintShort(CERR << " (for `", decl) << "`) but it is not implemented" << std::endl;
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
+}
+
+void throw_was_not_able_to_deduce_binexp_types(FileDB& file_db, FileDB::Point& point, Declaration* decl, Expression* left, Expression* right) {
+  FileDB::Point::Print(CERR, file_db, point);
+  CERR << ": " << RED_TEXT << "constant checking error" << NORMAL_TEXT << ": was not able to deduce the constant operand expression types";
+  Declaration::PrintShort(CERR << " (for `", decl) << "`) involving '";
+  Expression::Print(CERR, left) << "' (which is of type " << left->kind << ") and '";
+  Expression::Print(CERR, right) << "' (which is of type " << right->kind << ")" << std::endl;
+  print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
+}
+
+void throw_was_not_able_to_deduce_monexp_types(FileDB& file_db, FileDB::Point& point, Declaration* decl, Expression* value) {
+  FileDB::Point::Print(CERR, file_db, point);
+  CERR << ": " << RED_TEXT << "constant checking error" << NORMAL_TEXT << ": was not able to deduce the constant operand expression types";
+  Declaration::PrintShort(CERR << " (for `", decl) << "`) involving '";
+  Expression::Print(CERR, value) << "' (which is of type " << value->kind << ")" << std::endl;
   print_line_of_source_code_point(file_db.files[point.file].source_code, point, point.byte_start);
 }

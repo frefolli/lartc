@@ -185,13 +185,10 @@ std::ostream& emit_type_specifier(std::ostream& out, CGContext& context, Declara
       }
     case ARRAY_TYPE:
       {
-        if (type->size > 0) {
-          out << "< " << type->size << " x ";
-          emit_type_specifier(out, context, decl, type->subtype, false) << " >";
-        } else {
-          out << "[ " << type->size << " x ";
-          emit_type_specifier(out, context, decl, type->subtype, false) << " ]";
-        }
+        out << "[ ";
+        out << type->size << " x ";
+        emit_type_specifier(out, context, decl, type->subtype);
+        out << " ]";
         break;
       }
     case SYMBOL_TYPE:
@@ -1294,7 +1291,11 @@ std::ostream& emit_function_declaration(std::ostream& out, CGContext& context, D
     } else {
       out << ", ";
     }
-    emit_type_specifier(out, context, decl, field.second);
+    if (type_is_struct(context, decl, field.second) && context.size_cache.compute_size_of(context.symbol_cache, decl, field.second) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
+      emit_type_specifier(out << "ptr byval(", context, decl, field.second) << ") align 8";
+    } else {
+      emit_type_specifier(out, context, decl, field.second);
+    }
   }
   if (decl->is_variadic) {
     if (decl->parameters.size() > 0)
@@ -1308,17 +1309,20 @@ std::ostream& emit_function_declaration(std::ostream& out, CGContext& context, D
 std::ostream& emit_parameters(std::ostream& out, CGContext& context, Markers& markers, Declaration* func) {
   for (std::uintmax_t param_index = 0; param_index < func->parameters.size(); ++param_index) {
     std::pair<std::string, Type*>* param = func->parameters.data() + param_index;
-    markers.add_param(param);
-    std::string param_marker = markers.get_param(param);
+    if (type_is_struct(context, func, param->second) && context.size_cache.compute_size_of(context.symbol_cache, func, param->second) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
+    } else {
+      markers.add_param(param);
+      std::string param_marker = markers.get_param(param);
 
-    out << param_marker << " = alloca ";
-    emit_type_specifier(out, context, func, param->second);
-    out << ", align 8" << std::endl;
+      out << param_marker << " = alloca ";
+      emit_type_specifier(out, context, func, param->second);
+      out << ", align 8" << std::endl;
 
-    // TODO: ALIGN
-    out << "store ";
-    emit_type_specifier(out, context, func, param->second);
-    out << " %" << param->first << ", ptr " << param_marker << ", align 8" << std::endl;
+      // TODO: ALIGN
+      out << "store ";
+      emit_type_specifier(out, context, func, param->second);
+      out << " %" << param->first << ", ptr " << param_marker << ", align 8" << std::endl;
+    }
   }
   return out;
 }
@@ -1347,7 +1351,11 @@ std::ostream& emit_function_definition(std::ostream& out, CGContext& context, De
     } else {
       out << ", ";
     }
-    emit_type_specifier(out, context, decl, param.second);
+    if (type_is_struct(context, decl, param.second) && context.size_cache.compute_size_of(context.symbol_cache, decl, param.second) > API::STRUCT_PASSED_AS_INLINE_SIZE_LIMIT) {
+      emit_type_specifier(out << "ptr byval(", context, decl, param.second) << ") align 8";
+    } else {
+      emit_type_specifier(out, context, decl, param.second);
+    }
     out << " %" << param.first;
   }
   if (decl->is_variadic) {
@@ -1395,7 +1403,8 @@ std::ostream& emit_static_variable_declaration(std::ostream& out, CGContext& con
   if (decl->value != nullptr) {
     Markers markers;
     std::string output_marker;
-    emit_expression_as_rvalue(out << " ", context, decl, markers, decl->value, output_marker);
+    Expression* value = context.constant_cache.constants[decl];
+    emit_expression_as_rvalue(out << " ", context, decl, markers, value, output_marker);
     out << output_marker;
   }
 
@@ -1429,7 +1438,6 @@ void emit_declaration(std::ostream& out, CGContext& context, Declaration* decl) 
     case STATIC_VARIABLE_DECL:
       {
         emit_static_variable_declaration(out, context, decl);
-        // TODO: STATIC VARIABLES
         break;
       };
   }

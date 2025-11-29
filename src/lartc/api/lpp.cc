@@ -207,6 +207,7 @@ API::Result API::lpp(const std::vector<std::string>& lart_files, std::string& ou
     .symbol_cache = symbol_cache,
     .type_cache = type_cache,
     .size_cache = size_cache,
+    .constant_cache = constant_cache,
     .literal_store = literal_store
   };
   std::ofstream bucket (ll_file);

@@ -101,6 +101,27 @@ Expression* parse_expression_monary(TSContext& context, TSNode& node) {
 
   TSNode operator_ = ts_node_child_by_field_name(node, "operator");
   ts_node_source_code(operator_, context.source_code) >> monary->operator_;
+
+  if (monary->operator_ == operator_t::INC_OP || monary->operator_ == operator_t::DEC_OP) {
+    Expression* change = Expression::New(expression_t::BINARY_EXPR);
+    change->left = Expression::Clone(monary->value);
+    change->right = Expression::New(expression_t::INTEGER_EXPR);
+    change->right->integer_literal = 1;
+
+    if (monary->operator_ == operator_t::INC_OP) {
+      change->operator_ = operator_t::ADD_OP;
+    } else if (monary->operator_ == operator_t::DEC_OP) {
+      change->operator_ = operator_t::SUB_OP;
+    }
+
+    Expression* assignment = Expression::New(expression_t::BINARY_EXPR);
+    assignment->operator_ = operator_t::ASS_OP;
+    assignment->left = Expression::Clone(monary->value);
+    assignment->right = change;
+
+    Expression::Delete(monary);
+    monary = assignment;
+  }
   return monary;
 }
 
